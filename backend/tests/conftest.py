@@ -46,6 +46,18 @@ def seeded_conn(conn, story_path):
     return conn
 
 
+@pytest.fixture
+def client(seeded_conn):
+    """API client whose `get_conn` dependency yields the seeded test DB."""
+    from fastapi.testclient import TestClient
+
+    from onethread.api import app, get_conn
+
+    app.dependency_overrides[get_conn] = lambda: seeded_conn
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+
+
 # ---- agent test helpers: scripted Claude turns, no network ----
 from types import SimpleNamespace  # noqa: E402
 

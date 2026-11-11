@@ -4,13 +4,6 @@ from fastapi.testclient import TestClient
 from onethread.api import app, get_conn
 
 
-@pytest.fixture
-def client(seeded_conn):
-    app.dependency_overrides[get_conn] = lambda: seeded_conn
-    yield TestClient(app)
-    app.dependency_overrides.clear()
-
-
 def test_health():
     assert TestClient(app).get("/api/health").json() == {"status": "ok"}
 

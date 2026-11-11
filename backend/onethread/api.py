@@ -13,7 +13,7 @@ from onethread.agent.replay import default_fixture_path, load_fixture
 from onethread.agent.stream import agent_event_stream
 from onethread.config import settings
 from onethread.db import connect
-from onethread.queries import claims, docs, events, impact, links, metrics, trace
+from onethread.queries import claims, docs, events, impact, links, metrics, thread_flow, trace
 from onethread.queries.common import NotFound
 from onethread.report import ReportDraft, build_report_draft
 
@@ -54,6 +54,11 @@ def api_claim(claim_id: str, conn=Conn) -> claims.Claim:
 @app.get("/api/trace/{serial}")
 def api_trace(serial: str, conn=Conn) -> trace.TraceGraph:
     return trace.trace_serial(conn, serial)
+
+
+@app.get("/api/flow/{id}")
+def api_flow(id: str, conn=Conn) -> thread_flow.FlowGraph:
+    return thread_flow.build_flow(conn, id)
 
 
 @app.get("/api/objects/{object_id}/events")
