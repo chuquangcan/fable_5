@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import type { FlowGraph, FlowNode } from '../api/types'
 import { useDemo } from '../store/demo'
 import { flowLayout } from './flowLayout'
-import { edgeStyle, NODE_EVIDENCE, NODE_H, NODE_W, neutralEdgeStyle, pickSides, type Side } from './layout'
+import { edgeStyle, NODE_H, NODE_W, neutralEdgeStyle, pickSides, type Side } from './layout'
 
 const POS: Record<Side, Position> = { l: Position.Left, r: Position.Right, t: Position.Top, b: Position.Bottom }
 const NAMED_TYPES = new Set(['machine', 'hopper', 'supplier', 'customer', 'aggregate'])
@@ -50,14 +50,8 @@ const nodeTypes = { thread: GraphNode }
 
 export function ThreadGraph({ flow }: { flow: FlowGraph }) {
   const mode = useDemo((s) => s.mode)
-  const setEvidence = useDemo((s) => s.setEvidence)
-  const focusNode = useDemo((s) => s.focusNode)
-  const onNodeClick = (_: unknown, n: Node) => {
-    focusNode(n.id)
-    // Deep evidence tabs only matter while tracing a fault (Task 22 replaces this with selectNode).
-    const ev = NODE_EVIDENCE[n.id]
-    if (ev && useDemo.getState().mode === 'fault') setEvidence(ev)
-  }
+  const selectNode = useDemo((s) => s.selectNode)
+  const onNodeClick = (_: unknown, n: Node) => selectNode(n.id)
 
   const layout = useMemo(() => flowLayout(flow), [flow])
   const { nodes, edges } = useMemo(() => {

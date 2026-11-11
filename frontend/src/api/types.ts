@@ -154,3 +154,23 @@ export interface FlowGraph {
   /** Keyed per node; the same attachment id may appear under several nodes. */
   attachments: Record<string, Attachment[]>
 }
+
+export interface Param {
+  label: string
+  value: string | number
+  unit: string | null
+  source: string
+  source_record_id: string | null
+}
+
+export interface NodeSummary {
+  id: string
+  type: string
+  name: string
+  /** Raw stage code (see FlowStage). */
+  stage: string
+  aliases: string[]
+  params: Param[]
+  docs: DocView[]
+  counts: { links: number; events: number }
+}

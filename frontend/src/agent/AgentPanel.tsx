@@ -1,24 +1,18 @@
 import { Fragment, type ReactNode, useEffect, useState } from 'react'
 import { useDemo } from '../store/demo'
-import { NODE_EVIDENCE } from '../thread/layout'
 import { useAgentMode } from './mode'
 import type { AgentState, Segment } from './reducer'
 import { DEMO_QUESTION } from './sources'
 import { useAgent } from './useAgent'
 
 export function CiteChip({ label, target_id }: { label: string; target_id: string | null }) {
-  const focusNode = useDemo((s) => s.focusNode)
-  const setEvidence = useDemo((s) => s.setEvidence)
+  const selectNode = useDemo((s) => s.selectNode)
   if (target_id === null) return <span className="cite">{label}</span>
   return (
     <button
       className="cite"
       style={{ cursor: 'pointer' }}
-      onClick={() => {
-        focusNode(target_id)
-        const tab = NODE_EVIDENCE[target_id]
-        if (tab) setEvidence(tab)
-      }}
+      onClick={() => selectNode(target_id)}
     >
       {label}
     </button>

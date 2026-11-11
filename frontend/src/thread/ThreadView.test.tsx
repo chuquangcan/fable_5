@@ -7,6 +7,7 @@ import compare from '../test/fixtures/compare.json'
 import cpk from '../test/fixtures/cpk.json'
 import flow from '../test/fixtures/flow_clm0012.json'
 import impact from '../test/fixtures/impact.json'
+import summary from '../test/fixtures/summary_m02.json'
 import trace from '../test/fixtures/trace.json'
 import { useDemo } from '../store/demo'
 import { ThreadView } from './ThreadView'
@@ -28,6 +29,7 @@ beforeEach(() => {
   vi.mocked(api.getCompare).mockResolvedValue(compare as never)
   vi.mocked(api.getMetric).mockResolvedValue(cpk as never)
   vi.mocked(api.getImpact).mockResolvedValue(impact as never)
+  vi.mocked(api.getSummary).mockResolvedValue(summary as never)
 })
 
 test('fetches the flow by claim and toggles fault mode from the toolbar', async () => {

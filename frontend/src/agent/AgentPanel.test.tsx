@@ -4,7 +4,10 @@ import { beforeEach, expect, test } from 'vitest'
 import { useDemo } from '../store/demo'
 import { CiteChip } from './AgentPanel'
 
-beforeEach(() => useDemo.getState().reset())
+beforeEach(() => {
+  useDemo.getState().reset()
+  useDemo.setState({ mode: 'fault' })
+})
 
 test('unknown cite is not clickable', () => { // Review Focus #3
   render(<CiteChip label="IQC-9999" target_id={null} />)
@@ -19,10 +22,10 @@ test('known cite focuses its node and opens the matching evidence tab', async ()
   expect(useDemo.getState().evidenceTab).toBe('lot')
 })
 
-test('cite without an evidence tab keeps the current one', async () => {
+test('cite without a deep evidence tab opens the overview', async () => {
   useDemo.getState().setEvidence('impact')
   render(<CiteChip label="D-12 p.7" target_id="D-12" />)
   await userEvent.click(screen.getByRole('button'))
   expect(useDemo.getState().focusNodeId).toBe('D-12')
-  expect(useDemo.getState().evidenceTab).toBe('impact')
+  expect(useDemo.getState().evidenceTab).toBe('overview')
 })

@@ -32,6 +32,7 @@ const events: Record<string, Record<string, unknown>> = {
 
 beforeEach(() => {
   useDemo.getState().reset()
+  useDemo.setState({ mode: 'fault' })
   vi.mocked(api.getEvents).mockImplementation(async (id, _s, _e, type) => (events[id]?.[type ?? ''] ?? []) as PlantEvent[])
   vi.mocked(api.getCompare).mockResolvedValue(compare as never)
   vi.mocked(api.getMetric).mockResolvedValue(cpk as never)

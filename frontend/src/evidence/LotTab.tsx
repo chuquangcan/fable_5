@@ -1,6 +1,7 @@
 import { getDocs, getEvents, getMetric } from '../api/client'
 import type { DocView, TraceGraph, TraceNode } from '../api/types'
 import { formatPlantTime } from '../lib/time'
+import { DocBadge, docTitle } from './DocBadge'
 import { Pending, useAsync } from './useAsync'
 
 const AT = '2026-11-03T14:05:00+07:00'
@@ -16,16 +17,6 @@ async function load() {
   const docs = new Map<string, DocView>()
   for (const d of [...lotDocs, ...similarDocs]) if (!docs.has(d.doc_id)) docs.set(d.doc_id, d)
   return { cpk, receipts, docs: [...docs.values()].sort((a, b) => b.tier - a.tier === 0 ? b.score! - a.score! : a.tier - b.tier) }
-}
-
-const docTitle = (d: DocView) => (d.page && d.page > 1 ? `${d.doc_id} · p.${d.page}` : d.doc_id)
-
-function Badge({ d }: { d: DocView }) {
-  if (d.status === 'pending') return <span className="chip" style={{ borderStyle: 'dotted', color: 'var(--teal-ink)' }}>{`chờ duyệt · ${d.score?.toFixed(2)}`}</span>
-  if (d.status === 'suggested') return <span className="chip" style={{ borderStyle: 'dotted' }}>{`chỉ gợi ý · bậc ${d.tier}`}</span>
-  return (
-    <span className="chip"><span className="ln" style={{ width: 14, borderTop: '2px solid #0E7C86' }} />{`bậc ${d.tier} · duyệt`}</span>
-  )
 }
 
 const attr = (n: TraceNode | undefined, k: string) => (n?.attributes[k] ?? null) as string | number | null
@@ -91,7 +82,7 @@ export function LotTab({ trace }: { trace: TraceGraph }) {
               ...(d.status === 'suggested' ? { borderStyle: 'dotted', background: '#F7F8F9' } : {}),
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span className="mono">{docTitle(d)}</span><Badge d={d} />
+                <span className="mono">{docTitle(d)}</span><DocBadge d={d} />
               </div>
               <span className="mut" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{d.text}</span>
             </div>
