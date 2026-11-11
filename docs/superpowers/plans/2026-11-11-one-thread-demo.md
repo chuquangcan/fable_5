@@ -14,7 +14,7 @@
 
 - Mọi con số/ID hiển thị phải khớp bảng Story bible của spec; không task nào được tự đặt số mới.
 - Đồng hồ demo cố định `2027-02-12 09:00`, múi giờ hiển thị luôn UTC+7 (giờ nhà máy), không phụ thuộc TZ của máy.
-- Chỉ đọc: API không có endpoint ghi; nút Duyệt/Export/Send chỉ hiện toast.
+- Chỉ đọc: API không có endpoint ghi; nút Duyệt/Export/Send chỉ hiện toast. Ngoại lệ đợt 2: gắn tài liệu + `POST /api/demo/reset`. Xem `2026-11-11-one-thread-phase2.md`, làm Task 16–24 trước Task 14–15.
 - Style UI: token và class (`chip`, `cite`, `btn`, `tab`, `gn`, `sec`, `it`) chép từ `<style>` của mockup; font IBM Plex Sans/Mono 12px; khung chuẩn 1440×900, không vỡ ở 1280×800.
 - Agent: model `claude-opus-5-5`, `output_config.effort` = env `AGENT_EFFORT` (mặc định `low`), không gửi `thinking`, `tool_choice` mặc định (auto), bật `betas=["server-side-fallback-2026-07-01"]` + `fallbacks="default"`. Câu trả lời tiếng Việt; mọi nhận định có marker `[[cite:<ID>]]`.
 - `DEMO_MODE` ∈ `live | replay | auto` (mặc định `auto`), `AGENT_TIMEOUT_S=30`.
@@ -615,6 +615,7 @@ async def test_replay_mode_never_calls_live(): ...   # live_factory raises if ca
   - Nút "Reset demo" trong header (bên trái badge) → `reset()` store + `cancel()` agent + xoá query string.
   - Skeleton loading (khối xám `--line-faint`) cho graph/panel khi fetch; lỗi fetch hiện dòng đỏ "Không tải được dữ liệu · thử lại" có nút retry.
   - Khi `focusNodeId` đổi: các edge trên đường từ root tới node đó tô `stroke-width 3` trong 1.2 s (CSS transition).
+  - (Sau đợt 2) Deep link nhận thêm `mode=normal|fault`; mặc định theo `applyStep`: bước 1 là `normal`, bước 2–4 là `fault`. Nút "Reset demo" gọi thêm `resetDemoData()` (Task 20/24) và `setFaultOrigin(null)`.
 
 - [ ] **Step 1: Write failing tests** — `applyStep(3)` → `{claimId: "CLM-0012", activeTab: "thread", evidenceTab: "lot"}`; sau `reset()` state bằng initial; render `<App />` với `?step=2` (mock api) → thấy "MH20-0001".
 - [ ] **Step 2: Run** → FAIL.

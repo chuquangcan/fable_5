@@ -259,7 +259,7 @@ Tag: `[Infra]` · `[Dummy Data]` · `[Integration]` (API, agent) · `[UI/Fronten
     - **serial:** giờ ép, máy, lô, thùng, lô xuất, claim.
     - **shipment / SO / customer:** part, thùng, trạng thái, ngày, khách.
     - **claim:** triệu chứng, ngày nhận, serial, khách.
-  - `docs` = tài liệu trong 1 bước, gồm cả tài liệu upload (DEMO-20).
+  - `docs` = tài liệu trong 2 bước (để SUP-S1 thấy D-09/D-03 qua CLM-0009), gồm cả tài liệu upload (DEMO-20).
 - **Hardcode:** bộ thông số theo type viết tay trong code, tái dùng các hàm query đợt 1.
 - **DoD:**
   - M02 trả cycle 31/42 s theo lô, mục tiêu 30, lực 12.4/13.1, PM-0241, NV-118, 26.2–26.9 °C.
