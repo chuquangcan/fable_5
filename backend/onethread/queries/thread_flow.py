@@ -9,7 +9,7 @@ import psycopg
 from pydantic import BaseModel
 
 from onethread.flow import UP_IS_FROM, UP_IS_TO, DirectedEdge, collapse_map, flow_edges
-from onethread.queries.common import PLANT_TZ, SKIP_TYPES, NotFound, node_info
+from onethread.queries.common import PLANT_TZ, SKIP_TYPES, NotFound, node_info, press_time
 
 BRANCH_DEPTH = 4
 # Attachment kind by the attached object's type; other types (e.g. line) are not attachments.
@@ -69,17 +69,6 @@ def _resolve_serial(conn: psycopg.Connection, id: str) -> str:
     if info is None or info["type"] != "serial":
         raise NotFound("serial or claim", id)
     return id
-
-
-def _press_time(conn: psycopg.Connection, serial: str) -> datetime:
-    row = conn.execute(
-        "SELECT event_time FROM events WHERE type = 'press_cycle' AND %s = ANY(object_ids)"
-        " ORDER BY event_time LIMIT 1",
-        (serial,),
-    ).fetchone()
-    if row is None:
-        raise NotFound("press_cycle of serial", serial)
-    return row["event_time"]
 
 
 def _spine(conn: psycopg.Connection, root: str, edges: list[DirectedEdge]) -> list[str]:
@@ -251,7 +240,7 @@ def _attachments(conn: psycopg.Connection, nodes: list[str], shown: set[str],
 
 def build_flow(conn: psycopg.Connection, id: str) -> FlowGraph:
     root = _resolve_serial(conn, id)
-    at = _press_time(conn, root)
+    at = press_time(conn, root)
 
     spine = _spine(conn, root, [e for e in flow_edges(conn, at) if not e.shortcut])
     cmap = collapse_map(conn, set(spine))

@@ -1,4 +1,4 @@
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import psycopg
@@ -20,6 +20,18 @@ def ensure_exists(conn: psycopg.Connection, id: str, kind: str = "object") -> No
     ).fetchone()
     if row is None:
         raise NotFound(kind, id)
+
+
+def press_time(conn: psycopg.Connection, serial: str) -> datetime:
+    """Time of the serial's first press_cycle event."""
+    row = conn.execute(
+        "SELECT event_time FROM events WHERE type = 'press_cycle' AND %s = ANY(object_ids)"
+        " ORDER BY event_time LIMIT 1",
+        (serial,),
+    ).fetchone()
+    if row is None:
+        raise NotFound("press_cycle of serial", serial)
+    return row["event_time"]
 
 
 def node_info(conn: psycopg.Connection, ids: set[str] | list[str]) -> dict[str, dict[str, Any]]:
