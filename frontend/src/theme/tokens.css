@@ -43,3 +43,6 @@ table.g td{padding:4px 8px;border-bottom:1px solid #E3E5E8;vertical-align:middle
 .ab{position:relative;width:48px;height:46px;border:0;padding:0;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#8E97A4}
 .ab:disabled{cursor:default}
 .etab{height:30px;padding:0 12px;border:0;border-right:1px solid #D5D8DD;font:inherit;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px}
+
+/* 1280-wide screens: drop secondary chips so the thread header never clips its buttons */
+@media (max-width:1400px){.hide-narrow{display:none!important}}

@@ -1,13 +1,21 @@
 import { ClaimsSidebar } from './claims/ClaimsSidebar'
 import { AppShell } from './shell/AppShell'
 import { useDemo } from './store/demo'
+import { ThreadView } from './thread/ThreadView'
+
+const Placeholder = ({ text }: { text: string }) => (
+  <div className="mut" style={{ flex: 1, display: 'grid', placeItems: 'center' }}>{text}</div>
+)
 
 export default function App() {
   const claimId = useDemo((s) => s.claimId)
-  const main = claimId ? (
-    <div style={{ padding: 16 }}>One Thread</div>
+  const tab = useDemo((s) => s.activeTab)
+  const main = !claimId ? (
+    <Placeholder text="Chọn một claim để bắt đầu truy vết" />
+  ) : tab === 'thread' ? (
+    <ThreadView />
   ) : (
-    <div className="mut" style={{ flex: 1, display: 'grid', placeItems: 'center' }}>Chọn một claim để bắt đầu truy vết</div>
+    <Placeholder text={tab === 'claim' ? `${claimId} · chi tiết claim` : 'Report · nháp'} />
   )
   return <AppShell left={<ClaimsSidebar />} main={main} right={null} />
 }
