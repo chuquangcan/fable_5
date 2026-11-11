@@ -40,7 +40,7 @@ const initial = {
 
 export const useDemo = create<DemoState>((set, get) => ({
   ...initial,
-  openClaim: (id) => set({ claimId: id, openTabs: ['claim', 'thread'], activeTab: 'thread', mode: 'fault' }),
+  openClaim: (id) => set({ claimId: id, openTabs: ['claim', 'thread'], activeTab: 'thread', mode: 'fault', faultOrigin: null }),
   setTab: (t) => set((s) => ({ activeTab: t, openTabs: s.openTabs.includes(t) ? s.openTabs : [...s.openTabs, t] })),
   setEvidence: (t) => set({ evidenceTab: t }),
   focusNode: (id) => set({ focusNodeId: id }),

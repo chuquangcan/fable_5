@@ -45,3 +45,9 @@ test('setFaultOrigin sets fault mode; null only clears; reset clears', () => {
   useDemo.getState().reset()
   expect(useDemo.getState().faultOrigin).toBeNull()
 })
+
+test('openClaim clears a previously picked fault origin and stays in fault mode', () => {
+  useDemo.getState().setFaultOrigin('LOT-B')
+  useDemo.getState().openClaim('CLM-0012')
+  expect([useDemo.getState().faultOrigin, useDemo.getState().mode]).toEqual([null, 'fault'])
+})
