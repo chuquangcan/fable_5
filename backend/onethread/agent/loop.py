@@ -55,7 +55,7 @@ def load_known_ids(conn) -> set[str]:
 
 
 async def run_agent(question: str, claim_id: str, *, conn, turn: Callable,
-                    max_tool_calls: int = 10, known_ids: set[str] | None = None) -> AsyncIterator[AgentEvent]:
+                    max_tool_calls: int = 14, known_ids: set[str] | None = None) -> AsyncIterator[AgentEvent]:
     started = time.monotonic()
     parser = CiteParser(known_ids if known_ids is not None else load_known_ids(conn))
     messages: list[dict] = [{"role": "user", "content": f"{question}\n\nContext: claim {claim_id}"}]

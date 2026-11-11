@@ -71,7 +71,8 @@ TOOLS: list[dict] = [
     {
         "name": "get_events",
         "description": "Time-ordered events for an object (machine, lot, line...). Returns up to 200 events plus a "
-                       "summary over all matches (count, per-lot mean cycle time and force).",
+                       "summary over all matches (count, per-lot mean cycle time and force). "
+                       "press_cycle/maintenance/shift events are on the machine; env_temp events are on the line (e.g. LINE-1).",
         "input_schema": _schema({"object_id": _STR, "start": _TS, "end": _TS,
                                  "type": {**_STR, "description": "e.g. press_cycle, maintenance, shift, env_temp"}},
                                 ["object_id"]),

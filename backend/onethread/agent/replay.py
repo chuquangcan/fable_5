@@ -53,14 +53,11 @@ async def record_run(question: str, claim_id: str, out_path: str | Path, *,
     so a flaky recording can never clobber a good fixture.
     """
     if live is None:
-        import anthropic
-
-        from onethread.agent.loop import ClaudeTurn, run_agent
+        from onethread.agent.loop import run_agent
+        from onethread.agent.providers import make_turn
         from onethread.db import connect
 
-        conn = connect()
-        turn = ClaudeTurn(anthropic.AsyncAnthropic(), settings.agent_model, settings.agent_effort)
-        live = run_agent(question, claim_id, conn=conn, turn=turn)
+        live = run_agent(question, claim_id, conn=connect(), turn=make_turn())
     events: list[dict] = []
     last = time.monotonic()
     async for ev in live:

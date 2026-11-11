@@ -1,5 +1,11 @@
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Repo-root .env (git-ignored) holds the API keys. Real environment variables win over the file.
+load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
 
 
 def _env(name: str, default: str) -> str:

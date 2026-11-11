@@ -2,13 +2,13 @@ from collections.abc import Callable, Iterator
 from datetime import date, datetime
 from typing import Literal
 
-import anthropic
 import psycopg
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
 
-from onethread.agent.loop import ClaudeTurn, run_agent
+from onethread.agent.loop import run_agent
+from onethread.agent.providers import active_provider, make_turn
 from onethread.agent.replay import default_fixture_path, load_fixture
 from onethread.agent.stream import agent_event_stream
 from onethread.config import settings
@@ -96,7 +96,13 @@ def api_report_draft(claim_id: str, conn=Conn) -> ReportDraft:
 
 def get_turn_factory() -> Callable[[], Callable]:
     """Builds the Claude turn lazily so missing credentials surface as an SSE `error` event."""
-    return lambda: ClaudeTurn(anthropic.AsyncAnthropic(), settings.agent_model, settings.agent_effort)
+    return make_turn
+
+
+@app.get("/api/agent/provider")
+def api_agent_provider() -> dict[str, str | None]:
+    """Which LLM live mode would use right now (from the configured API keys) and the DEMO_MODE."""
+    return {**active_provider(), "mode": settings.demo_mode}
 
 
 @app.get("/api/agent/ask")

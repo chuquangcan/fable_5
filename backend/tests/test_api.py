@@ -183,3 +183,13 @@ def test_agent_ask_auto_falls_back_to_replay_when_claude_fails(client, monkeypat
 def test_agent_ask_rejects_unknown_mode(client):
     app.dependency_overrides[get_turn_factory] = lambda: (lambda: FakeTurn([]))
     assert client.get("/api/agent/ask", params={"q": "x", "claim": "CLM-0012", "mode": "bogus"}).status_code == 422
+
+
+def test_agent_provider_endpoint_reports_key_based_choice(client, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "ds")
+    monkeypatch.delenv("AGENT_PROVIDER", raising=False)
+    body = client.get("/api/agent/provider").json()
+    assert body["provider"] == "deepseek" and body["model"] == "deepseek-flash" and body["mode"] in {"live", "replay", "auto"}
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "")
+    assert client.get("/api/agent/provider").json()["provider"] is None
