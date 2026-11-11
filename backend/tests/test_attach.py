@@ -1,4 +1,5 @@
 import dataclasses
+import re
 
 import pytest
 
@@ -32,10 +33,21 @@ def test_manual_needs_hint(client):
 
 
 def test_unsafe_and_duplicate_names(client, tmp_path):     # Review Focus #4
+    parent_before = {p.name for p in tmp_path.parent.iterdir()}
     a = client.post("/api/documents", files={"file": ("../../etc/Biên bản M02.txt", b"M02")}).json()
     b = client.post("/api/documents", files={"file": ("../../etc/Biên bản M02.txt", b"M02")}).json()
     assert b["duplicate"] and b["doc_id"] == a["doc_id"]
-    assert all(p.parent == tmp_path for p in tmp_path.iterdir())
+    names = [p.name for p in tmp_path.iterdir()]
+    assert len(names) == 1 and re.fullmatch(r"D-U\d{2}_[A-Za-z0-9._-]+", names[0])
+    assert {p.name for p in tmp_path.parent.iterdir()} == parent_before  # nothing escaped the uploads dir
+
+    c = client.post("/api/documents", data={"target_hint": "HOP-1"},
+                    files={"file": ("..\\..\\x.txt", b"khong co ma")}).json()
+    assert c["method"] == "manual" and not c["duplicate"]
+    assert len(list(tmp_path.iterdir())) == 2
+    f = tmp_path / f"{c['doc_id']}_x.txt"
+    assert f.is_file() and "\\" not in f.name and "/" not in f.name
+    assert {p.name for p in tmp_path.parent.iterdir()} == parent_before
 
 
 def test_limits(client):
