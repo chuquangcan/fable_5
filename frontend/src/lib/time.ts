@@ -1,6 +1,6 @@
 export const DEMO_NOW = '2027-02-12T09:00:00+07:00'
 
-export type PlantTimeFormat = 'MM-DD HH:mm' | 'YYYY-MM-DD HH:mm' | 'HH:mm'
+export type PlantTimeFormat = 'MM-DD HH:mm' | 'YYYY-MM-DD HH:mm' | 'YYYY-MM-DD HH:mm:ss' | 'HH:mm'
 
 const formatter = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Asia/Ho_Chi_Minh', // plant time, UTC+7, regardless of the machine's TZ
@@ -9,6 +9,7 @@ const formatter = new Intl.DateTimeFormat('en-GB', {
   day: '2-digit',
   hour: '2-digit',
   minute: '2-digit',
+  second: '2-digit',
   hourCycle: 'h23',
 })
 
@@ -17,5 +18,6 @@ export function formatPlantTime(iso: string, fmt: PlantTimeFormat = 'MM-DD HH:mm
   const hm = `${p.hour}:${p.minute}`
   if (fmt === 'HH:mm') return hm
   const md = `${p.month}-${p.day}`
+  if (fmt === 'YYYY-MM-DD HH:mm:ss') return `${p.year}-${md} ${hm}:${p.second}`
   return fmt === 'YYYY-MM-DD HH:mm' ? `${p.year}-${md} ${hm}` : `${md} ${hm}`
 }

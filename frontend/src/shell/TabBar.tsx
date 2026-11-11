@@ -1,22 +1,28 @@
 import { type MainTab, useDemo } from '../store/demo'
 
-const SERIAL = 'MH20-0001'
-
 export function TabBar() {
-  const { openTabs, activeTab, claimId, setTab } = useDemo()
+  const openTabs = useDemo((s) => s.openTabs)
+  const activeTab = useDemo((s) => s.activeTab)
+  const claimId = useDemo((s) => s.claimId)
+  const root = useDemo((s) => s.threadRoot)
+  const setTab = useDemo((s) => s.setTab)
+  const closeTab = useDemo((s) => s.closeTab)
   const label: Record<MainTab, string> = {
     claim: `${claimId ?? ''} · claim`,
-    thread: `Thread · ${SERIAL}`,
-    report: 'Report · nháp',
+    thread: `Thread · ${root ?? '…'}`,
+    report: 'Báo cáo RCA · nháp',
   }
+  if (openTabs.length === 0) return null
   return (
-    <div style={{ height: 32, flex: 'none', display: 'flex', background: '#ECEEF1', borderBottom: '1px solid var(--line)' }}>
+    <div role="tablist" aria-label="Tab đang mở" style={{ height: 32, flex: 'none', display: 'flex', background: '#ECEEF1', borderBottom: '1px solid var(--line)' }}>
       {openTabs.map((t) => (
-        <button key={t} className={`tab${t === activeTab ? ' on' : ''}`} onClick={() => setTab(t)}>
-          {t === 'claim' && <span style={{ width: 6, height: 6, background: 'var(--red)' }} />}
-          {label[t]}
-          <span className="mut">×</span>
-        </button>
+        <div key={t} className={`tab${t === activeTab ? ' on' : ''}`}>
+          <button role="tab" aria-selected={t === activeTab} className="tab-btn" onClick={() => setTab(t)}>
+            {t === 'claim' && <span style={{ width: 6, height: 6, background: 'var(--red)' }} />}
+            {label[t]}
+          </button>
+          <button className="xbtn" aria-label={`Đóng ${label[t]}`} onClick={() => closeTab(t)}>✕</button>
+        </div>
       ))}
     </div>
   )

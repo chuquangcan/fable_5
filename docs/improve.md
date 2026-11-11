@@ -1,5 +1,7 @@
 # Cải tiến cần làm — One Thread demo
 
+> **Cập nhật đợt 3 (2026-11-11):** mục 1, 2, 3 đã làm, xem `docs/superpowers/specs/2026-11-11-one-thread-phase3.md`. Mục 4 (review UI với team) vẫn cần làm. Phần payload thô (`changed: False`) đã có nhãn tiếng Việt.
+
 Ghi nhận ngày 2026-11-11, sau khi xong đợt 2 (DEMO-16 → 24, branch `feat/one-thread-demo`).
 
 ## 1. Xem chi tiết tài liệu gắn với node

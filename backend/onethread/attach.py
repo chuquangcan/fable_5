@@ -22,7 +22,7 @@ ALLOWED_EXT = {"pdf", "txt", "png", "jpg", "docx"}
 MAX_BYTES = 10 * 2**20
 MIN_CODE_LEN = 3  # M01..M03 are real object ids
 RULE_VERSION = "demo-attach-v0"
-EFFECTIVE_FROM = "2027-02-12T09:00:00+07:00"
+EFFECTIVE_FROM = config.DEMO_NOW
 MAX_SAFE_NAME = 120
 MAX_TEXT = 5000
 

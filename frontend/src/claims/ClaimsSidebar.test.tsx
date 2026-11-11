@@ -21,10 +21,17 @@ const trace = {
   edges: [edge('a', 'b', 'confirmed'), edge('b', 'c', 'confirmed'), edge('c', 'd', 'inferred', 0.81), edge('D-07', 'LOT-B', 'pending', 0.78), edge('D-03', 'CLM-0009', 'suggested', 0.64)],
 } as TraceGraph
 
+const item = (link_id: number, from_id: string, to_id: string, status: string, score: number, doc_id: string | null) => ({
+  link_id, from_id, from_name: from_id === doc_id ? 'meeting_minutes p.1' : from_id, from_type: from_id === doc_id ? 'document' : 'claim',
+  to_id, to_name: to_id, to_type: 'lot', relation: 'mentions', tier: 4, status, score, method: null, reason: null, doc_id,
+})
+const queue = { pending: [item(17, 'D-07', 'LOT-B', 'pending', 0.78, 'D-07'), item(14, 'CLM-0009', 'SUP-S1', 'inferred', 0.81, null)], decided: [] }
+
 beforeEach(() => {
   useDemo.getState().reset()
   vi.mocked(api.getClaims).mockResolvedValue(claims)
   vi.mocked(api.getTrace).mockResolvedValue(trace)
+  vi.mocked(api.getReviewQueue).mockResolvedValue(queue as never)
 })
 
 test('clicking CLM-0012 opens the thread; CLM-0011 is static', async () => {
@@ -36,25 +43,30 @@ test('clicking CLM-0012 opens the thread; CLM-0011 is static', async () => {
   expect(s.openTabs).toEqual(['claim', 'thread'])
   expect(screen.getByText('CLM-0011')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /CLM-0011/ })).toBeNull()
-  expect(screen.queryByRole('button', { name: /CLM-0009/ })).toBeNull()
+  // CLM-0009 still appears in the review queue (CLM-0009 → SUP-S1), but never as a claim button
+  expect(screen.queryAllByRole('button', { name: /CLM-0009/ }).filter((b) => !b.textContent?.includes('→'))).toHaveLength(0)
 })
 
-test('confidence counts and review queue appear only after a claim is opened', async () => {
+test('confidence counts appear only after a claim is opened', async () => {
   render(<ClaimsSidebar />)
   await screen.findByText('CLM-0012')
   expect(screen.queryByText(/Confirmed · bậc 1–2/)).toBeNull()
-  expect(screen.queryByText('D-07 → LOT-B')).toBeNull()
   await userEvent.click(screen.getByRole('button', { name: /CLM-0012/ }))
-  await waitFor(() => expect(screen.getByText('D-07 → LOT-B')).toBeInTheDocument())
+  await waitFor(() => expect(screen.getByText(/Confirmed · bậc 1–2/)).toBeInTheDocument())
   expect(api.getTrace).toHaveBeenCalledWith('MH20-0001')
   expect(screen.getByText(/Confirmed · bậc 1–2/).parentElement).toHaveTextContent('2')
   expect(screen.getByText(/Chờ duyệt · bậc 4/).parentElement).toHaveTextContent('1')
-  expect(screen.getByText('0.78')).toBeInTheDocument()
 })
 
-test('alias block is always shown', async () => {
+test('the review queue is global; a doc item opens its drawer, a non-doc item the full queue', async () => {
   render(<ClaimsSidebar />)
-  expect(await screen.findByText('S1-6203-B')).toBeInTheDocument()
+  expect(await screen.findByText('D-07 → LOT-B')).toBeInTheDocument()
+  expect(screen.getByText('Chờ duyệt · 0.78')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /^Duyệt/ })).toBeNull()  // decisions are made in the drawer / data view
+  await userEvent.click(screen.getByText('D-07 → LOT-B'))
+  expect(useDemo.getState().docId).toBe('D-07')
+  await userEvent.click(screen.getByText('CLM-0009 → SUP-S1'))
+  expect([useDemo.getState().view, useDemo.getState().dataTab]).toEqual(['data', 'review'])
 })
 
 test('a data write refetches the claims and the open claim trace', async () => {
@@ -65,4 +77,5 @@ test('a data write refetches the claims and the open claim trace', async () => {
   act(() => useDemo.getState().bumpData())
   await waitFor(() => expect(api.getTrace).toHaveBeenCalledTimes(2))
   expect(api.getClaims).toHaveBeenCalledTimes(2)
+  expect(api.getReviewQueue).toHaveBeenCalledTimes(2)
 })
