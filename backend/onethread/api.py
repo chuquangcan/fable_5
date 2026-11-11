@@ -13,7 +13,7 @@ from onethread.agent.replay import default_fixture_path, load_fixture
 from onethread.agent.stream import agent_event_stream
 from onethread.config import settings
 from onethread.db import connect
-from onethread.queries import claims, docs, events, impact, links, metrics, thread_flow, trace
+from onethread.queries import claims, docs, events, impact, links, metrics, summary, thread_flow, trace
 from onethread.queries.common import NotFound
 from onethread.report import ReportDraft, build_report_draft
 
@@ -71,6 +71,11 @@ def api_events(object_id: str, start: datetime | None = None, end: datetime | No
 @app.get("/api/objects/{object_id}/links")
 def api_links(object_id: str, status: str | None = None, conn=Conn) -> list[links.LinkView]:
     return links.get_links(conn, object_id, status.split(",") if status else None)
+
+
+@app.get("/api/objects/{object_id}/summary")
+def api_summary(object_id: str, conn=Conn) -> summary.NodeSummary:
+    return summary.node_summary(conn, object_id)
 
 
 @app.get("/api/objects/{object_id}/docs")
