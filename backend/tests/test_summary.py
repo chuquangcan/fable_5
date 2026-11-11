@@ -45,3 +45,9 @@ def test_every_flow_node_has_summary(client):
 @pytest.mark.parametrize("id", ["NOPE-1", "AGG-NOPE", "AGG-M02"])
 def test_summary_404(client, id):
     assert client.get(f"/api/objects/{id}/summary").status_code == 404
+
+
+def test_stage_is_raw_code(client):
+    assert client.get("/api/objects/M02/summary").json()["stage"] == "san_xuat"
+    assert client.get("/api/objects/IQC-5531/summary").json()["stage"] == "dinh_kem"
+    assert client.get("/api/objects/AGG-LOT-B/summary").json()["stage"] == "san_xuat"

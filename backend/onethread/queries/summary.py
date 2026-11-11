@@ -7,12 +7,13 @@ from typing import Any
 import psycopg
 from pydantic import BaseModel
 
-from onethread.flow import FLOW_STATUSES, STAGES, flow_edges
+from onethread.flow import FLOW_STATUSES, flow_edges
 from onethread.queries.common import PLANT_TZ, NotFound, node_info
 from onethread.queries.docs import DocView, get_docs
 from onethread.queries.events import Event, get_events
 from onethread.queries.impact import compare_by_lot, trace_forward
 from onethread.queries.links import get_links
+from onethread.queries.thread_flow import DEFAULT_STAGE
 
 AGG_PREFIX = "AGG-"
 TIME = "%Y-%m-%d %H:%M"
@@ -84,7 +85,9 @@ def _receipt_param(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> 
 # ---- one params builder per node type: (conn, id, attributes) -> list[Param] ----
 
 def _production_day(conn: psycopg.Connection, machine_id: str) -> date | None:
-    """The plant day with the most press cycles (the night spill past 00:00 does not move it)."""
+    """The plant day with the most press cycles, not the day of the latest one: LOT-B cycles run past
+    midnight (until 01:31 the next day), so the latest cycle falls on a day with only a few cycles and
+    no LOT-A to compare against. The spill past 00:00 does not move the busiest day."""
     hours = int(PLANT_TZ.utcoffset(None).total_seconds() // 3600)
     row = conn.execute(
         """SELECT ((event_time AT TIME ZONE 'UTC') + make_interval(hours => %s))::date AS d, count(*) AS n
@@ -266,7 +269,7 @@ def _aggregate_summary(conn: psycopg.Connection, lot: str) -> NodeSummary:
     params = _params_aggregate(conn, lot)  # NotFound unless `lot` is a lot
     parts = params[0].value
     return NodeSummary(id=f"{AGG_PREFIX}{lot}", type="aggregate", name=f"+{parts:,} part · {lot}",
-                       stage=STAGES["san_xuat"], aliases=[], params=params, docs=[],
+                       stage=DEFAULT_STAGE["aggregate"], aliases=[], params=params, docs=[],
                        counts={"links": 0, "events": 0})
 
 
@@ -285,7 +288,7 @@ def node_summary(conn: psycopg.Connection, id: str) -> NodeSummary:
     aliases = [r["to_id"] if r["from_id"] == id else r["from_id"] for r in alias_rows]
     n_events = conn.execute("SELECT count(*) AS n FROM events WHERE %s = ANY(object_ids)", (id,)).fetchone()["n"]
     return NodeSummary(
-        id=id, type=info["type"], name=info["name"], stage=STAGES.get(attrs.get("stage", ""), ""),
+        id=id, type=info["type"], name=info["name"], stage=attrs.get("stage") or DEFAULT_STAGE.get(info["type"], ""),
         aliases=aliases, params=params, docs=get_docs(conn, id),
         counts={"links": len(get_links(conn, id)), "events": n_events},
     )
