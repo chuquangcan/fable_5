@@ -269,7 +269,7 @@ PARAMS_BY_TYPE = {
 def _aggregate_summary(conn: psycopg.Connection, lot: str) -> NodeSummary:
     params = _params_aggregate(conn, lot)  # NotFound unless `lot` is a lot
     parts = params[0].value
-    return NodeSummary(id=f"{AGG_PREFIX}{lot}", type="aggregate", name=f"+{parts:,} part · {lot}",
+    return NodeSummary(id=f"{AGG_PREFIX}{lot}", type="aggregate", name=f"{lot} · toàn lô ({parts:,} part)",
                        stage=DEFAULT_STAGE["aggregate"], aliases=[], params=params, docs=[],
                        counts={"links": 0, "events": 0})
 

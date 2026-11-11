@@ -28,6 +28,7 @@ def test_supplier_docs(client):
 def test_aggregate_summary(client):                       # Review Focus #1
     s = client.get("/api/objects/AGG-LOT-B/summary").json()
     assert s["type"] == "aggregate" and p(s, "Số part")["value"] == 1000 and p(s, "Số thùng")["value"] == 42
+    assert s["name"] == "LOT-B · toàn lô (1,000 part)"   # whole lot; the graph node shows "+999" (minus the root)
 
 
 def test_empty_node_summary(client):                      # Review Focus #5
