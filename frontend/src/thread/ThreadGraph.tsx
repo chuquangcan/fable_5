@@ -25,7 +25,7 @@ function GraphNode({ data }: NodeProps<Node<GraphNodeData>>) {
         title={reason ?? (claimMark ? 'điểm báo lỗi' : undefined)}
         style={{
           position: 'relative', padding: '2px 4px', whiteSpace: 'nowrap', overflow: 'hidden',
-          ...(claimMark ? { border: '2px solid #000', background: '#FFFFFF' } : {}),
+          ...(claimMark ? { border: '2px solid #000', ...(tone ? {} : { background: '#FFFFFF' }) } : {}),
           ...(focused ? { outline: '2px solid #0E7C86', outlineOffset: 1 } : {}),
         }}
       >
@@ -67,7 +67,7 @@ export function ThreadGraph({ flow, marks, reasons }: { flow: FlowGraph; marks?:
         data: {
           node: n, attachments: flow.attachments[n.id]?.length ?? 0,
           tone: marks?.[n.id], reason: marks?.[n.id] ? reasons?.[n.id] : undefined,
-          claimMark: !!marks && n.type === 'claim' && !marks[n.id],
+          claimMark: !!marks && n.type === 'claim',
         },
       }
     })

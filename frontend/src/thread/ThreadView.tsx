@@ -15,7 +15,7 @@ export function ThreadView() {
   const focusNodeId = useDemo((s) => s.focusNodeId)
   const faultOrigin = useDemo((s) => s.faultOrigin)
   const setFaultOrigin = useDemo((s) => s.setFaultOrigin)
-  const [faultData, setFaultData] = useState<{ claimId: string; trace: FaultTrace } | null>(null)
+  const [faultData, setFaultData] = useState<{ claimId: string; origin: string | null; trace: FaultTrace } | null>(null)
   const [faultError, setFaultError] = useState(false)
   const [data, setData] = useState<{ claim: Claim; trace: TraceGraph; flow: FlowGraph } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -40,22 +40,23 @@ export function ThreadView() {
     if (!claimId || mode !== 'fault') { setFaultError(false); return }
     let stale = false
     setFaultError(false)
+    setFaultData(null)
     getClaimFault(claimId)
       .then((cf) => (faultOrigin ? getFault(faultOrigin, cf.at) : cf))
-      .then((trace) => { if (!stale) setFaultData({ claimId, trace }) })
+      .then((trace) => { if (!stale) setFaultData({ claimId, origin: faultOrigin, trace }) })
       .catch(() => { if (!stale) setFaultError(true) })
     return () => { stale = true }
   }, [claimId, mode, faultOrigin])
 
   const { marks, reasons } = useMemo(() => {
-    if (mode !== 'fault' || !faultData || faultData.claimId !== claimId) return { marks: undefined, reasons: undefined }
+    if (mode !== 'fault' || !faultData || faultData.claimId !== claimId || faultData.origin !== faultOrigin) return { marks: undefined, reasons: undefined }
     const t = faultData.trace
     const marks: Record<string, 'red' | 'orange'> = {}
     const reasons: Record<string, string> = {}
     for (const [list, tone] of [[t.orange, 'orange'], [t.red, 'red']] as const)
       for (const m of list) { marks[m.id] = tone; reasons[m.id] = m.reason }
     return { marks, reasons }
-  }, [mode, faultData, claimId])
+  }, [mode, faultData, claimId, faultOrigin])
 
   const layout = useMemo(() => (data ? flowLayout(data.flow) : null), [data])
   // Keep the focused node in view: the graph is wider than the main area and scrolls horizontally.

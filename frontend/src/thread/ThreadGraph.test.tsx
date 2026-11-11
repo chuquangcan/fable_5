@@ -95,3 +95,16 @@ test('edges between two red nodes are thick red; others keep their style', () =>
   expect(faultEdgeStyle('red', 'orange')).toEqual({})
   expect(faultEdgeStyle(undefined, 'red')).toEqual({})
 })
+
+test('the claim node keeps the black border even when it carries a tone, and keeps the tone class', () => {
+  render(<ThreadGraph flow={flow} marks={{ 'CLM-0012': 'red' }} reasons={{ 'CLM-0012': 'điểm lỗi' }} />)
+  const claim = screen.getByText('CLM-0012').closest('button')!
+  expect(claim).toHaveClass('gn-red')
+  expect(claim).toHaveStyle({ border: '2px solid #000' })
+  expect(claim.style.background).toBe('')
+})
+
+test('normal mode (no marks) gives the claim no black border', () => {
+  render(<ThreadGraph flow={flow} />)
+  expect(screen.getByText('CLM-0012').closest('button')!.style.border).toBe('')
+})

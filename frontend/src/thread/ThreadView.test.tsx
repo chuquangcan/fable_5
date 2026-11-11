@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
@@ -97,4 +97,25 @@ test('a fault fetch error shows an inline message and keeps the graph', async ()
   render(<ThreadView />)
   expect(await screen.findByText('Không tải được dữ liệu dò lỗi')).toBeInTheDocument()
   expect(screen.getByTestId('att-SUP-S1')).toBeInTheDocument()
+})
+
+test('after an origin change with a pending fetch the previous origin marks are not shown', async () => {
+  useDemo.getState().openClaim('CLM-0012')
+  const { container } = render(<ThreadView />)
+  await vi.waitFor(() => expect(container.querySelectorAll('.gn-red')).toHaveLength(7))
+  vi.mocked(api.getFault).mockReturnValue(new Promise(() => {}))
+  act(() => useDemo.getState().setFaultOrigin('LOT-B'))
+  expect(await screen.findByText('Điểm lỗi: LOT-B')).toBeInTheDocument()
+  await vi.waitFor(() => expect(api.getFault).toHaveBeenCalled())
+  expect(container.querySelectorAll('.gn-red, .gn-orange')).toHaveLength(0)
+})
+
+test('a failing origin fetch shows the error and no stale marks', async () => {
+  useDemo.getState().openClaim('CLM-0012')
+  const { container } = render(<ThreadView />)
+  await vi.waitFor(() => expect(container.querySelectorAll('.gn-red')).toHaveLength(7))
+  vi.mocked(api.getFault).mockRejectedValue(new Error('500'))
+  act(() => useDemo.getState().setFaultOrigin('LOT-B'))
+  expect(await screen.findByText('Không tải được dữ liệu dò lỗi')).toBeInTheDocument()
+  expect(container.querySelectorAll('.gn-red, .gn-orange')).toHaveLength(0)
 })
