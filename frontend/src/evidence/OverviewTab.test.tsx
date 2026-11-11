@@ -62,10 +62,14 @@ test('docs render with status badges', async () => {
       { doc_id: 'D-01', page: null, type: 'coa', text: 'x', extracted_codes: [], tier: 4, status: 'confirmed', score: null },
       { doc_id: 'D-02', page: 3, type: 'coa', text: 'y', extracted_codes: [], tier: 3, status: 'pending', score: 0.78 },
       { doc_id: 'D-03', page: null, type: 'coa', text: 'z', extracted_codes: [], tier: 5, status: 'suggested', score: 0.5 },
+      { doc_id: 'D-04', page: null, type: 'coa', text: 'w', extracted_codes: [], tier: 4, status: 'inferred', score: 0.9 },
     ],
   } as never)
   render(<OverviewTab id="M01" />)
   expect(await screen.findByText('bậc 4 · duyệt')).toBeInTheDocument()
+  expect(screen.getAllByText(/bậc 4 · duyệt/)).toHaveLength(1)
+  const auto = screen.getByText('bậc 4 · tự động 0.90')
+  expect(auto).toHaveStyle({ borderStyle: 'dashed' })
   expect(screen.getByText('chờ duyệt · 0.78')).toBeInTheDocument()
   expect(screen.getByText('chỉ gợi ý · bậc 5')).toBeInTheDocument()
   expect(screen.getByText('D-02 · p.3')).toBeInTheDocument()
