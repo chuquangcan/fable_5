@@ -28,3 +28,13 @@ def conn():
     apply_schema(c)
     yield c
     c.close()
+
+
+@pytest.fixture
+def seeded_conn(conn, story_path):
+    """`conn` with the story seeded (re-seeds if an earlier test wiped the schema)."""
+    from onethread.seed import seed
+
+    if conn.execute("select count(*) as n from objects").fetchone()["n"] == 0:
+        seed(conn, story_path)
+    return conn

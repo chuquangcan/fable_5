@@ -4,7 +4,7 @@ db:
 	docker compose up -d --wait db
 
 seed: db
-	@echo "seed: not implemented yet (DEMO-03)"
+	cd backend && uv run python -m onethread.seed
 
 api:
 	cd backend && uv run uvicorn onethread.api:app --port 8000 --reload
