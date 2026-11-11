@@ -30,11 +30,17 @@ def conn():
     c.close()
 
 
+_seeded_this_session = False
+
+
 @pytest.fixture
 def seeded_conn(conn, story_path):
-    """`conn` with the story seeded (re-seeds if an earlier test wiped the schema)."""
+    """`conn` freshly seeded once per session; re-seeds if a later test wiped the schema."""
+    global _seeded_this_session
     from onethread.seed import seed
 
-    if conn.execute("select count(*) as n from objects").fetchone()["n"] == 0:
+    empty = conn.execute("select count(*) as n from objects").fetchone()["n"] == 0
+    if empty or not _seeded_this_session:
         seed(conn, story_path)
+        _seeded_this_session = True
     return conn
