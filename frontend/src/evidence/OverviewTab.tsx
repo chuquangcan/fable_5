@@ -26,7 +26,13 @@ function Params({ params }: { params: Param[] }) {
 }
 
 function Docs({ docs }: { docs: NodeSummary['docs'] }) {
-  if (docs.length === 0) return <div className="mut" style={{ padding: '8px 10px' }}>Chưa có tài liệu · Gắn tài liệu</div>
+  const openAttach = useDemo((s) => s.openAttach)
+  if (docs.length === 0)
+    return (
+      <div className="mut" style={{ padding: '8px 10px' }}>
+        Chưa có tài liệu · <button className="btn" onClick={openAttach}>Gắn tài liệu</button>
+      </div>
+    )
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 10px' }}>
       {docs.map((d) => (
@@ -36,7 +42,10 @@ function Docs({ docs }: { docs: NodeSummary['docs'] }) {
           ...(d.status === 'suggested' ? { borderStyle: 'dotted', background: '#F7F8F9' } : {}),
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span className="mono">{docTitle(d)}</span><DocBadge d={d} />
+            <span className="mono">{docTitle(d)}</span><span style={{ display: 'flex', gap: 4 }}>
+              {d.doc_id.startsWith('D-U') && <span className="chip" style={{ borderColor: 'var(--teal)', color: 'var(--teal-ink)' }}>mới</span>}
+              <DocBadge d={d} />
+            </span>
           </div>
           <span className="mut" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{d.text}</span>
         </div>
@@ -48,6 +57,7 @@ function Docs({ docs }: { docs: NodeSummary['docs'] }) {
 export function OverviewTab({ id }: { id: string }) {
   const dataVersion = useDemo((s) => s.dataVersion)
   const setFaultOrigin = useDemo((s) => s.setFaultOrigin)
+  const openAttach = useDemo((s) => s.openAttach)
   const s = useAsync(() => getSummary(id), [id, dataVersion])
   if (s.status !== 'ok') return <Pending state={s} />
   const d = s.data
@@ -59,7 +69,7 @@ export function OverviewTab({ id }: { id: string }) {
           <span className="mut">{STAGES[d.stage as FlowStage] ?? d.stage}</span>
           <span style={{ flex: 1 }} />
           {d.type !== 'aggregate' && <button className="btn" onClick={() => setFaultOrigin(id)}>Đặt làm điểm lỗi</button>}
-          <button className="btn" disabled>Gắn tài liệu</button>
+          <button className="btn" onClick={openAttach}>Gắn tài liệu</button>
         </div>
         <Params params={d.params} />
       </div>

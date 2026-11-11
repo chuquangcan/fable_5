@@ -17,11 +17,12 @@ interface GraphNodeData extends Record<string, unknown> { node: FlowNode; attach
 function GraphNode({ data }: NodeProps<Node<GraphNodeData>>) {
   const { node, attachments, tone, reason, claimMark } = data
   const focused = useDemo((s) => s.focusNodeId === node.id)
+  const flashing = useDemo((s) => s.flashNodeId === node.id)
   const head = title(node)
   return (
     <>
       <button
-        className={tone ? `gn gn-${tone}` : 'gn'}
+        className={`${tone ? `gn gn-${tone}` : 'gn'}${flashing ? ' gn-flash' : ''}`}
         title={reason ?? (claimMark ? 'điểm báo lỗi' : undefined)}
         style={{
           position: 'relative', padding: '2px 4px', whiteSpace: 'nowrap', overflow: 'hidden',

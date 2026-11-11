@@ -1,3 +1,4 @@
+import { AttachDialog } from './attach/AttachDialog'
 import { AgentPanel } from './agent/AgentPanel'
 import { ClaimsSidebar } from './claims/ClaimsSidebar'
 import { ReportView } from './report/ReportView'
@@ -21,5 +22,10 @@ export default function App() {
   ) : (
     <Placeholder text={`${claimId} · chi tiết claim`} />
   )
-  return <AppShell left={<ClaimsSidebar />} main={main} right={<AgentPanel />} />
+  return (
+    <>
+      <AppShell left={<ClaimsSidebar />} main={main} right={<AgentPanel />} />
+      <AttachDialog />
+    </>
+  )
 }

@@ -51,6 +51,19 @@ test('fetches the flow by claim and toggles fault mode from the toolbar', async 
   expect(useDemo.getState().mode).toBe('fault')
 })
 
+test('toolbar attach button opens the dialog; dataVersion refetches only the flow', async () => {
+  useDemo.getState().openClaim('CLM-0012')
+  render(<ThreadView />)
+  await screen.findByRole('button', { name: 'Truy lỗi' })
+  expect(api.getFlow).toHaveBeenCalledTimes(1)
+  await userEvent.click(screen.getAllByRole('button', { name: 'Gắn tài liệu' })[0])
+  expect(useDemo.getState().attachOpen).toBe(true)
+  act(() => useDemo.getState().bumpData())
+  await vi.waitFor(() => expect(api.getFlow).toHaveBeenCalledTimes(2))
+  expect(api.getClaim).toHaveBeenCalledTimes(1)
+  expect(api.getTrace).toHaveBeenCalledTimes(1)
+})
+
 test('graph area scrolls horizontally on its own', async () => {
   useDemo.getState().openClaim('CLM-0012')
   render(<ThreadView />)

@@ -21,6 +21,14 @@ test('renders every spine and branch node', () => {
   expect(screen.queryByTestId('att-PO-4410')).toBeNull()
 })
 
+test('the flashed node gets the flash class, others do not', () => {
+  useDemo.setState({ flashNodeId: 'LOT-B' })
+  const { container } = render(<ThreadGraph flow={flow} />)
+  const flashed = container.querySelectorAll('.gn-flash')
+  expect(flashed).toHaveLength(1)
+  expect(flashed[0]).toHaveTextContent('LOT-B')
+})
+
 test('stage bands are labelled', () => {
   render(<ThreadGraph flow={flow} />)
   for (const l of ['Cung ứng', 'Kho', 'Sản xuất', 'Logistics', 'Khách hàng', 'Hậu mãi']) expect(screen.getByText(l)).toBeInTheDocument()

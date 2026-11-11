@@ -187,3 +187,21 @@ export interface FaultTrace {
   red: Mark[]
   orange: Mark[]
 }
+
+export type AttachMethod = 'code' | 'rule' | 'llm' | 'manual'
+
+export interface AttachLink {
+  to_id: string
+  tier: number
+  status: string
+  score: number
+}
+
+export interface AttachResult {
+  doc_id: string
+  type: string
+  method: AttachMethod
+  links: AttachLink[]
+  reason: string
+  duplicate: boolean
+}

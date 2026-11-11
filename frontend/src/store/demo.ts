@@ -16,6 +16,9 @@ interface DemoState {
   faultOrigin: string | null
   /** Bumped after a write (fault origin, attachment) so views refetch. */
   dataVersion: number
+  /** Node briefly highlighted after an attachment lands on it. */
+  flashNodeId: string | null
+  attachOpen: boolean
   openClaim: (id: string) => void
   setTab: (t: MainTab) => void
   setEvidence: (t: EvidenceTab) => void
@@ -24,6 +27,9 @@ interface DemoState {
   setFaultOrigin: (id: string | null) => void
   selectNode: (id: string) => void
   bumpData: () => void
+  flash: (id: string) => void
+  openAttach: () => void
+  closeAttach: () => void
   reset: () => void
 }
 
@@ -36,7 +42,11 @@ const initial = {
   mode: 'normal' as Mode,
   faultOrigin: null as string | null,
   dataVersion: 0,
+  flashNodeId: null as string | null,
+  attachOpen: false,
 }
+
+let flashTimer: ReturnType<typeof setTimeout> | undefined
 
 export const useDemo = create<DemoState>((set, get) => ({
   ...initial,
@@ -51,5 +61,15 @@ export const useDemo = create<DemoState>((set, get) => ({
     set({ focusNodeId: id, evidenceTab: get().mode === 'fault' && ev ? ev : 'overview' })
   },
   bumpData: () => set((s) => ({ dataVersion: s.dataVersion + 1 })),
-  reset: () => set({ ...initial, openTabs: [] }),
+  flash: (id) => {
+    clearTimeout(flashTimer)
+    set({ flashNodeId: id })
+    flashTimer = setTimeout(() => set({ flashNodeId: null }), 1200)
+  },
+  openAttach: () => set({ attachOpen: true }),
+  closeAttach: () => set({ attachOpen: false }),
+  reset: () => {
+    clearTimeout(flashTimer)
+    set({ ...initial, openTabs: [] })
+  },
 }))

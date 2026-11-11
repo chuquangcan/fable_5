@@ -37,6 +37,8 @@ body{margin:0}
 .mut{color:#5F6670}
 .gn{position:absolute;width:104px;height:34px;border:1px solid #8E959F;background:#FFFFFF;padding:2px 6px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;font:inherit;font-size:11px;line-height:1.25;color:#1B1F24;text-align:left;cursor:pointer;border-radius:0}
 /* Fault-trace node tones (applied by Task 23): upstream cause red, downstream impact orange */
+@keyframes gn-flash{0%,100%{outline-color:transparent}25%,75%{outline-color:#0E7C86}50%{outline-color:transparent}}
+.gn.gn-flash{outline:3px solid #0E7C86;outline-offset:2px;animation:gn-flash 1.2s ease-in-out}
 .gn.gn-red{border:2px solid var(--red);background:var(--red-bg);color:var(--red-ink)}
 .gn.gn-orange{border:2px solid var(--amber);background:var(--amber-bg);color:var(--amber-ink)}
 .ln{display:inline-block;width:22px;vertical-align:middle;margin-right:5px}

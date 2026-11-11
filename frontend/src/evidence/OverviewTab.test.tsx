@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
@@ -36,18 +36,21 @@ test('node without params or docs shows empty states', async () => {
   expect(screen.getByText(/Chưa có tài liệu/)).toBeInTheDocument()
 })
 
-test('fault button sets the origin; attach stays disabled; fault button hidden for aggregates', async () => {
+test('fault button sets the origin; attach button opens the dialog; fault button hidden for aggregates', async () => {
   const { unmount } = render(<OverviewTab id="M02" />)
   await screen.findByText('Cycle TB · LOT-B')
   expect(screen.getByRole('button', { name: 'Đặt làm điểm lỗi' })).toBeEnabled()
   await userEvent.click(screen.getByRole('button', { name: 'Đặt làm điểm lỗi' }))
   expect([useDemo.getState().faultOrigin, useDemo.getState().mode]).toEqual(['M02', 'fault'])
-  expect(screen.getByRole('button', { name: 'Gắn tài liệu' })).toBeDisabled()
+  // the header button comes first; the empty docs state has a second one
+  expect(screen.getAllByRole('button', { name: 'Gắn tài liệu' })[0]).toBeEnabled()
+  await userEvent.click(screen.getAllByRole('button', { name: 'Gắn tài liệu' })[0])
+  expect(useDemo.getState().attachOpen).toBe(true)
   unmount()
   render(<OverviewTab id="AGG-LOT-B" />)
   await screen.findByText('AGG-LOT-B · aggregate')
   expect(screen.queryByRole('button', { name: 'Đặt làm điểm lỗi' })).toBeNull()
-  expect(screen.getByRole('button', { name: 'Gắn tài liệu' })).toBeInTheDocument()
+  expect(screen.getAllByRole('button', { name: 'Gắn tài liệu' })[0]).toBeInTheDocument()
 })
 
 test('docs render with status badges', async () => {
@@ -64,6 +67,23 @@ test('docs render with status badges', async () => {
   expect(screen.getByText('chờ duyệt · 0.78')).toBeInTheDocument()
   expect(screen.getByText('chỉ gợi ý · bậc 5')).toBeInTheDocument()
   expect(screen.getByText('D-02 · p.3')).toBeInTheDocument()
+})
+
+test('uploaded docs carry a "mới" badge; empty-state attach is actionable', async () => {
+  vi.mocked(api.getSummary).mockResolvedValueOnce({
+    ...m01,
+    docs: [
+      { doc_id: 'D-U01', page: null, type: 'coa', text: 'x', extracted_codes: [], tier: 4, status: 'inferred', score: 0.9 },
+      { doc_id: 'D-01', page: null, type: 'coa', text: 'y', extracted_codes: [], tier: 4, status: 'confirmed', score: null },
+    ],
+  } as never)
+  const { unmount } = render(<OverviewTab id="M01" />)
+  expect(await screen.findAllByText('mới')).toHaveLength(1)
+  unmount()
+  render(<OverviewTab id="M01" />)
+  const empty = await screen.findByText(/Chưa có tài liệu/)
+  await userEvent.click(within(empty).getByRole('button', { name: 'Gắn tài liệu' }))
+  expect(useDemo.getState().attachOpen).toBe(true)
 })
 
 test('refetches when dataVersion changes', async () => {

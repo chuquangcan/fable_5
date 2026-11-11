@@ -14,6 +14,8 @@ export function ThreadView() {
   const setMode = useDemo((s) => s.setMode)
   const focusNodeId = useDemo((s) => s.focusNodeId)
   const faultOrigin = useDemo((s) => s.faultOrigin)
+  const dataVersion = useDemo((s) => s.dataVersion)
+  const openAttach = useDemo((s) => s.openAttach)
   const setFaultOrigin = useDemo((s) => s.setFaultOrigin)
   const [faultData, setFaultData] = useState<{ claimId: string; origin: string | null; trace: FaultTrace } | null>(null)
   const [faultError, setFaultError] = useState(false)
@@ -34,6 +36,19 @@ export function ThreadView() {
       .catch((e: Error) => { if (!stale) setError(e.message) })
     return () => { stale = true }
   }, [claimId])
+
+  // A write (e.g. an attachment) refetches just the flow; the initial load above already covers version 0 / claim changes.
+  const seenVersion = useRef(dataVersion)
+  useEffect(() => {
+    if (seenVersion.current === dataVersion) return
+    seenVersion.current = dataVersion
+    if (!claimId) return
+    let stale = false
+    getFlow(claimId)
+      .then((flow) => { if (!stale) setData((d) => (d ? { ...d, flow } : d)) })
+      .catch(() => {})
+    return () => { stale = true }
+  }, [claimId, dataVersion])
 
   // Fault colouring: the claim's own fault gives the reference time; an explicit origin is traced at that time.
   useEffect(() => {
@@ -89,6 +104,7 @@ export function ThreadView() {
         )}
         {fault && faultError && <span style={{ fontSize: 11, color: 'var(--red)' }}>Không tải được dữ liệu dò lỗi</span>}
         <span style={{ flex: 1 }} />
+        <button className="btn" onClick={openAttach}>Gắn tài liệu</button>
         <button
           className={fault ? 'btn pri' : 'btn'}
           aria-pressed={fault}

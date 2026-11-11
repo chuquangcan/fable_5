@@ -1,7 +1,16 @@
-import type { Claim, DocView, FaultTrace, FlowGraph, Impact, LinkView, LotStat, MetricValue, NodeSummary, PlantEvent, ReportDraft, TraceGraph } from './types'
+import type { AttachResult, Claim, DocView, FaultTrace, FlowGraph, Impact, LinkView, LotStat, MetricValue, NodeSummary, PlantEvent, ReportDraft, TraceGraph } from './types'
 
 export async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(path)
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}) as { detail?: string })
+    throw new Error(`${res.status} ${(body as { detail?: string }).detail ?? res.statusText}`)
+  }
+  return res.json() as Promise<T>
+}
+
+async function sendJSON<T>(path: string, init: RequestInit): Promise<T> {
+  const res = await fetch(path, init)
   if (!res.ok) {
     const body = await res.json().catch(() => ({}) as { detail?: string })
     throw new Error(`${res.status} ${(body as { detail?: string }).detail ?? res.statusText}`)
@@ -37,3 +46,13 @@ export const getReportDraft = (claimId: string) => getJSON<ReportDraft>(`/api/re
 export const getSummary = (id: string) => getJSON<NodeSummary>(`/api/objects/${enc(id)}/summary`)
 export const getClaimFault = (claimId: string) => getJSON<FaultTrace>(`/api/claims/${enc(claimId)}/fault-trace`)
 export const getFault = (origin: string, at?: string) => getJSON<FaultTrace>(`/api/fault-trace${qs({ origin, at })}`)
+
+export function uploadDocument(file: File, targetHint?: string): Promise<AttachResult> {
+  const form = new FormData()
+  form.append('file', file)
+  if (targetHint) form.append('target_hint', targetHint)
+  return sendJSON<AttachResult>('/api/documents', { method: 'POST', body: form })
+}
+export const listSamples = () => getJSON<string[]>('/api/documents/samples')
+export const attachSample = (name: string) => sendJSON<AttachResult>(`/api/documents/samples/${enc(name)}`, { method: 'POST' })
+export const resetDemoData = () => sendJSON<{ removed: number }>('/api/demo/reset', { method: 'POST' })
