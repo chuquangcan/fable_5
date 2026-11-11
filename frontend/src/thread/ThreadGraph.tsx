@@ -4,25 +4,28 @@ import { useMemo } from 'react'
 import type { FlowGraph, FlowNode } from '../api/types'
 import { useDemo } from '../store/demo'
 import { flowLayout } from './flowLayout'
-import { edgeStyle, NODE_H, NODE_W, neutralEdgeStyle, pickSides, type Side } from './layout'
+import { edgeStyle, faultEdgeStyle, NODE_H, NODE_W, neutralEdgeStyle, pickSides, type Side } from './layout'
 
 const POS: Record<Side, Position> = { l: Position.Left, r: Position.Right, t: Position.Top, b: Position.Bottom }
 const NAMED_TYPES = new Set(['machine', 'hopper', 'supplier', 'customer', 'aggregate'])
 
 const title = (n: FlowNode) => (NAMED_TYPES.has(n.type) ? n.name : n.id)
 
-interface GraphNodeData extends Record<string, unknown> { node: FlowNode; attachments: number }
+type Tone = 'red' | 'orange'
+interface GraphNodeData extends Record<string, unknown> { node: FlowNode; attachments: number; tone?: Tone; reason?: string; claimMark: boolean }
 
 function GraphNode({ data }: NodeProps<Node<GraphNodeData>>) {
-  const { node, attachments } = data
+  const { node, attachments, tone, reason, claimMark } = data
   const focused = useDemo((s) => s.focusNodeId === node.id)
   const head = title(node)
   return (
     <>
       <button
-        className="gn"
+        className={tone ? `gn gn-${tone}` : 'gn'}
+        title={reason ?? (claimMark ? 'điểm báo lỗi' : undefined)}
         style={{
           position: 'relative', padding: '2px 4px', whiteSpace: 'nowrap', overflow: 'hidden',
+          ...(claimMark ? { border: '2px solid #000', background: '#FFFFFF' } : {}),
           ...(focused ? { outline: '2px solid #0E7C86', outlineOffset: 1 } : {}),
         }}
       >
@@ -48,7 +51,7 @@ function GraphNode({ data }: NodeProps<Node<GraphNodeData>>) {
 
 const nodeTypes = { thread: GraphNode }
 
-export function ThreadGraph({ flow }: { flow: FlowGraph }) {
+export function ThreadGraph({ flow, marks, reasons }: { flow: FlowGraph; marks?: Record<string, Tone>; reasons?: Record<string, string> }) {
   const mode = useDemo((s) => s.mode)
   const selectNode = useDemo((s) => s.selectNode)
   const onNodeClick = (_: unknown, n: Node) => selectNode(n.id)
@@ -61,7 +64,11 @@ export function ThreadGraph({ flow }: { flow: FlowGraph }) {
       return {
         id: n.id, type: 'thread', position: { x: p.x, y: p.y },
         width: NODE_W, height: NODE_H, initialWidth: NODE_W, initialHeight: NODE_H,
-        data: { node: n, attachments: flow.attachments[n.id]?.length ?? 0 },
+        data: {
+          node: n, attachments: flow.attachments[n.id]?.length ?? 0,
+          tone: marks?.[n.id], reason: marks?.[n.id] ? reasons?.[n.id] : undefined,
+          claimMark: !!marks && n.type === 'claim' && !marks[n.id],
+        },
       }
     })
     const style = mode === 'fault' ? edgeStyle : neutralEdgeStyle
@@ -72,11 +79,11 @@ export function ThreadGraph({ flow }: { flow: FlowGraph }) {
         return {
           id: `${e.up}>${e.relation}>${e.down}`, source: e.up, target: e.down,
           sourceHandle: `s-${a}`, targetHandle: `t-${b}`, type: 'smoothstep',
-          style: { strokeWidth: 2, ...style(e.status), ...(e.active ? {} : { opacity: 0.45 }) },
+          style: { strokeWidth: 2, ...style(e.status), ...faultEdgeStyle(marks?.[e.up], marks?.[e.down]), ...(e.active ? {} : { opacity: 0.45 }) },
         }
       })
     return { nodes, edges }
-  }, [flow, layout, mode])
+  }, [flow, layout, mode, marks, reasons])
 
   const { width, height, bands } = layout
   const ink = mode === 'fault' ? '#0E7C86' : '#8E959F'
@@ -102,6 +109,7 @@ export function ThreadGraph({ flow }: { flow: FlowGraph }) {
         <span><span className="ln" style={{ borderTop: `2px dashed ${ink}` }} />inferred</span>
         <span><span className="ln" style={{ borderTop: `2px dotted ${ink}` }} />chờ duyệt</span>
         <span><span className="ln" style={{ borderTop: '2px dotted #8E959F' }} />gợi ý</span>
+        {marks && <span>Đỏ: điểm lỗi và thượng nguồn · Cam: hạ nguồn có thể bị ảnh hưởng</span>}
       </div>
     </div>
   )

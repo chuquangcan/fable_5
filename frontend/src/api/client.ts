@@ -1,4 +1,4 @@
-import type { Claim, DocView, FlowGraph, Impact, LinkView, LotStat, MetricValue, NodeSummary, PlantEvent, ReportDraft, TraceGraph } from './types'
+import type { Claim, DocView, FaultTrace, FlowGraph, Impact, LinkView, LotStat, MetricValue, NodeSummary, PlantEvent, ReportDraft, TraceGraph } from './types'
 
 export async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(path)
@@ -35,3 +35,5 @@ export const getCompare = (machine: string, day: string) =>
 export const getImpact = (lot: string) => getJSON<Impact>(`/api/impact/${enc(lot)}`)
 export const getReportDraft = (claimId: string) => getJSON<ReportDraft>(`/api/reports/${enc(claimId)}/draft`)
 export const getSummary = (id: string) => getJSON<NodeSummary>(`/api/objects/${enc(id)}/summary`)
+export const getClaimFault = (claimId: string) => getJSON<FaultTrace>(`/api/claims/${enc(claimId)}/fault-trace`)
+export const getFault = (origin: string, at?: string) => getJSON<FaultTrace>(`/api/fault-trace${qs({ origin, at })}`)

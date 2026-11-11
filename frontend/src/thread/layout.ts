@@ -20,6 +20,11 @@ export function neutralEdgeStyle(status: EdgeStatus): { stroke: string; strokeDa
   return { ...edgeStyle(status), stroke: '#8E959F' }
 }
 
+/** Fault trace: an edge between two red nodes is the thick red path of the cause chain. */
+export function faultEdgeStyle(up?: string, down?: string): { stroke?: string; strokeWidth?: number } {
+  return up === 'red' && down === 'red' ? { stroke: '#C62828', strokeWidth: 3 } : {}
+}
+
 export type Side = 'l' | 'r' | 't' | 'b'
 
 /** Pick the connection sides so edges leave toward the neighbouring node. */

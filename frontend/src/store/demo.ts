@@ -12,6 +12,8 @@ interface DemoState {
   evidenceTab: EvidenceTab
   focusNodeId: string | null
   mode: Mode
+  /** Explicit fault origin picked by the user; null = the claim's own fault point. */
+  faultOrigin: string | null
   /** Bumped after a write (fault origin, attachment) so views refetch. */
   dataVersion: number
   openClaim: (id: string) => void
@@ -19,6 +21,7 @@ interface DemoState {
   setEvidence: (t: EvidenceTab) => void
   focusNode: (id: string | null) => void
   setMode: (m: Mode) => void
+  setFaultOrigin: (id: string | null) => void
   selectNode: (id: string) => void
   bumpData: () => void
   reset: () => void
@@ -31,6 +34,7 @@ const initial = {
   evidenceTab: 'm02' as EvidenceTab,
   focusNodeId: null,
   mode: 'normal' as Mode,
+  faultOrigin: null as string | null,
   dataVersion: 0,
 }
 
@@ -41,6 +45,7 @@ export const useDemo = create<DemoState>((set, get) => ({
   setEvidence: (t) => set({ evidenceTab: t }),
   focusNode: (id) => set({ focusNodeId: id }),
   setMode: (m) => set({ mode: m }),
+  setFaultOrigin: (id) => set(id === null ? { faultOrigin: null } : { faultOrigin: id, mode: 'fault' }),
   selectNode: (id) => {
     const ev = NODE_EVIDENCE[id]
     set({ focusNodeId: id, evidenceTab: get().mode === 'fault' && ev ? ev : 'overview' })

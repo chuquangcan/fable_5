@@ -33,3 +33,15 @@ test('setTab opens the report tab on demand and reset restores the initial state
   expect(useDemo.getState().claimId).toBeNull()
   expect(useDemo.getState().evidenceTab).toBe('m02')
 })
+
+test('setFaultOrigin sets fault mode; null only clears; reset clears', () => {
+  expect(useDemo.getState().faultOrigin).toBeNull()
+  useDemo.getState().setFaultOrigin('M02')
+  expect([useDemo.getState().faultOrigin, useDemo.getState().mode]).toEqual(['M02', 'fault'])
+  useDemo.getState().setMode('normal')
+  useDemo.getState().setFaultOrigin(null)
+  expect([useDemo.getState().faultOrigin, useDemo.getState().mode]).toEqual([null, 'normal'])
+  useDemo.getState().setFaultOrigin('M02')
+  useDemo.getState().reset()
+  expect(useDemo.getState().faultOrigin).toBeNull()
+})

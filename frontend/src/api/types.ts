@@ -174,3 +174,16 @@ export interface NodeSummary {
   docs: DocView[]
   counts: { links: number; events: number }
 }
+
+export interface Mark {
+  id: string
+  reason: string
+}
+
+/** Fault trace from an origin: red = origin + upstream, orange = downstream that may be affected. */
+export interface FaultTrace {
+  origin: string
+  at: string
+  red: Mark[]
+  orange: Mark[]
+}

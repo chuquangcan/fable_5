@@ -47,6 +47,7 @@ function Docs({ docs }: { docs: NodeSummary['docs'] }) {
 
 export function OverviewTab({ id }: { id: string }) {
   const dataVersion = useDemo((s) => s.dataVersion)
+  const setFaultOrigin = useDemo((s) => s.setFaultOrigin)
   const s = useAsync(() => getSummary(id), [id, dataVersion])
   if (s.status !== 'ok') return <Pending state={s} />
   const d = s.data
@@ -57,7 +58,7 @@ export function OverviewTab({ id }: { id: string }) {
           <span style={{ fontWeight: 600 }}>{`${d.name} · ${d.type}`}</span>
           <span className="mut">{STAGES[d.stage as FlowStage] ?? d.stage}</span>
           <span style={{ flex: 1 }} />
-          {d.type !== 'aggregate' && <button className="btn" disabled>Đặt làm điểm lỗi</button>}
+          {d.type !== 'aggregate' && <button className="btn" onClick={() => setFaultOrigin(id)}>Đặt làm điểm lỗi</button>}
           <button className="btn" disabled>Gắn tài liệu</button>
         </div>
         <Params params={d.params} />

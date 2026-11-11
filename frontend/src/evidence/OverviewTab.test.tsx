@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
 import type { TraceGraph } from '../api/types'
@@ -35,10 +36,12 @@ test('node without params or docs shows empty states', async () => {
   expect(screen.getByText(/Chưa có tài liệu/)).toBeInTheDocument()
 })
 
-test('action buttons are disabled until wired; fault button hidden for aggregates', async () => {
+test('fault button sets the origin; attach stays disabled; fault button hidden for aggregates', async () => {
   const { unmount } = render(<OverviewTab id="M02" />)
   await screen.findByText('Cycle TB · LOT-B')
-  expect(screen.getByRole('button', { name: 'Đặt làm điểm lỗi' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Đặt làm điểm lỗi' })).toBeEnabled()
+  await userEvent.click(screen.getByRole('button', { name: 'Đặt làm điểm lỗi' }))
+  expect([useDemo.getState().faultOrigin, useDemo.getState().mode]).toEqual(['M02', 'fault'])
   expect(screen.getByRole('button', { name: 'Gắn tài liệu' })).toBeDisabled()
   unmount()
   render(<OverviewTab id="AGG-LOT-B" />)
