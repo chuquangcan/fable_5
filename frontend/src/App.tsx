@@ -1,3 +1,4 @@
+import { AgentPanel } from './agent/AgentPanel'
 import { ClaimsSidebar } from './claims/ClaimsSidebar'
 import { AppShell } from './shell/AppShell'
 import { useDemo } from './store/demo'
@@ -17,5 +18,5 @@ export default function App() {
   ) : (
     <Placeholder text={tab === 'claim' ? `${claimId} · chi tiết claim` : 'Report · nháp'} />
   )
-  return <AppShell left={<ClaimsSidebar />} main={main} right={null} />
+  return <AppShell left={<ClaimsSidebar />} main={main} right={<AgentPanel />} />
 }
