@@ -96,3 +96,16 @@ export interface Impact {
   delivered_parts: number
   held_parts: number
 }
+
+export type ReportSegment = { kind: 'text'; text: string } | { kind: 'cite'; label: string; target_id: string | null }
+
+export interface ReportDraft {
+  id: string
+  title: string
+  subtitle: string
+  summary: ReportSegment[]
+  chain: { id: string; label: string; tone: 'bad' | 'suspect' | 'neutral' }[]
+  impact: Impact
+  cause: ReportSegment[]
+  actions: string[]
+}

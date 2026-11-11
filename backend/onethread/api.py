@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from onethread.db import connect
 from onethread.queries import claims, docs, events, impact, links, metrics, trace
 from onethread.queries.common import NotFound
+from onethread.report import ReportDraft, build_report_draft
 
 app = FastAPI(title="One Thread demo API")
 
@@ -80,3 +81,8 @@ def api_compare(machine: str, day: date, conn=Conn) -> list[impact.LotStat]:
 @app.get("/api/impact/{lot}")
 def api_impact(lot: str, conn=Conn) -> impact.Impact:
     return impact.trace_forward(conn, lot)
+
+
+@app.get("/api/reports/{claim_id}/draft")
+def api_report_draft(claim_id: str, conn=Conn) -> ReportDraft:
+    return build_report_draft(conn, claim_id)

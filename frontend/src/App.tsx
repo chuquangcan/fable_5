@@ -1,5 +1,6 @@
 import { AgentPanel } from './agent/AgentPanel'
 import { ClaimsSidebar } from './claims/ClaimsSidebar'
+import { ReportView } from './report/ReportView'
 import { AppShell } from './shell/AppShell'
 import { useDemo } from './store/demo'
 import { ThreadView } from './thread/ThreadView'
@@ -15,8 +16,10 @@ export default function App() {
     <Placeholder text="Chọn một claim để bắt đầu truy vết" />
   ) : tab === 'thread' ? (
     <ThreadView />
+  ) : tab === 'report' ? (
+    <ReportView />
   ) : (
-    <Placeholder text={tab === 'claim' ? `${claimId} · chi tiết claim` : 'Report · nháp'} />
+    <Placeholder text={`${claimId} · chi tiết claim`} />
   )
   return <AppShell left={<ClaimsSidebar />} main={main} right={<AgentPanel />} />
 }
