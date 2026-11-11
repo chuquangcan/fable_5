@@ -1,0 +1,1 @@
+{"machine":"M02","name":"Machine 02","day":"2026-11-03","start":"2026-11-03T12:00:00+07:00","end":"2026-11-03T16:00:00+07:00","cycle_source":"PLC2","target_s":30.0,"line":"LINE-1","hoppers":["HOP-1"],"change":{"time":"2026-11-03T06:52:00Z","lot":"LOT-B","hopper":"HOP-1","source":"WMS","source_record_id":"ISS-1103"},"offset_s":38.0}

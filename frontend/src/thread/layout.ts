@@ -4,7 +4,7 @@ export const NODE_W = 104
 export const NODE_H = 34
 
 /** Which evidence tab a node opens when clicked (IQC-5531 is an attachment now, but agent cite clicks still use it). */
-export const NODE_EVIDENCE: Record<string, 'm02' | 'lot'> = { M02: 'm02', 'LOT-B': 'lot', 'IQC-5531': 'lot' }
+export const NODE_EVIDENCE: Record<string, 'machine' | 'lot'> = { M02: 'machine', 'LOT-B': 'lot', 'IQC-5531': 'lot' }
 
 export function edgeStyle(status: EdgeStatus): { stroke: string; strokeDasharray?: string } {
   switch (status) {

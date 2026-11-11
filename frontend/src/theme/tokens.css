@@ -130,5 +130,15 @@ table.kv td{white-space:normal}
 .btn:disabled{opacity:.5;cursor:default}
 a.btn{text-decoration:none}
 
+@keyframes skel{0%{background-position:100% 0}100%{background-position:0 0}}
+.skel{height:12px;border-radius:2px;background:linear-gradient(90deg,var(--line-faint) 25%,#F0F1F3 50%,var(--line-faint) 75%);background-size:300% 100%;animation:skel 1.2s linear infinite}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+
+/* path from the thread root to the focused node (DEMO-14) */
+.react-flow__edge path.react-flow__edge-path{transition:stroke-width .3s ease}
+.react-flow__edge.on-path path.react-flow__edge-path{stroke-width:4px!important}
+
+.att-badge{position:absolute;right:-7px;top:-8px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#FFFFFF;border:1px solid #8E959F;color:var(--label);font-size:10px;line-height:14px;text-align:center;pointer-events:none;font-family:'IBM Plex Mono',monospace}
+
 /* 1280-wide screens: drop secondary chips so the thread header never clips its buttons */
 @media (max-width:1400px){.hide-narrow{display:none!important}}

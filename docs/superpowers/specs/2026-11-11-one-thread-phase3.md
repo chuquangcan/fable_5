@@ -70,6 +70,16 @@ Nút "Đặt làm điểm lỗi" chỉ hiện trong view sản phẩm khi có cl
 ## 5. Còn lại / ngoài phạm vi
 
 - Tài liệu seed (D-03/07/09/12) không có file gốc trong repo; drawer ghi rõ bản gốc ở hệ thống nào.
-- Tab "Chu kỳ ép", "IQC", "Khoanh vùng" vẫn viết theo dữ liệu câu chuyện (M02, LOT-A/B), chưa tổng quát cho máy/lô bất kỳ.
 - Người duyệt cố định "QA engineer (demo)", chưa có auth.
-- Nội dung `.txt` upload vẫn đi thẳng vào agent (rủi ro prompt injection đã chấp nhận ở đợt 2).
+
+## 6. Đợt 3b · dọn nốt phần tồn (2026-11-12)
+
+| Việc | Cách làm |
+|---|---|
+| Tab chuyên sâu chỉ chạy với M02 / LOT-B | Backend tính từ dữ liệu: `GET /api/machines/{id}/cycle-window` (ngày sản xuất bận nhất, lần nạp lô đầu tiên vào hopper cấp cho máy, cửa sổ 4 h mở trước điểm đổi lô 1 h, nguồn chu kỳ + bù lệch `time_mappings`) và `GET /api/lots/{id}/compare` (mọi lô cùng linh kiện: nhập kho, NCC, IQC/Cpk, spec + tài liệu `specified_by`; claim đã đóng nối với NCC/linh kiện + tài liệu `describes`). IQC và `AGG-<lot>` quy về lô. Biểu đồ chu kỳ tự co trục; "Đọc nhanh" chỉ loại trừ yếu tố thật sự không đổi. Tab hiện theo loại: máy có event → Chu kỳ ép; lô/IQC → IQC; lô/gộp lô → Khoanh vùng. Từ chối liên kết CLM-0009 → SUP-S1 thì ca tương tự biến mất |
+| DEMO-14 | `?step=1..4&mode=` (`applyStep` trong store); skeleton + "Thử lại" ở mọi panel và thread; refetch sau khi ghi giữ nguyên tab đang mở (không nháy); cạnh trên đường root → node đang chọn tô đậm; Reset xoá câu trả lời agent và query string |
+| DEMO-15 | `docs/demo/script.md` (4 bước ≤ 7 phút + khám phá tự do, deep link khôi phục), `docs/demo/checklist.md` |
+| Prompt injection từ upload | Tool `get_docs` gắn `untrusted_upload: true` và bọc text trong `<untrusted_document>`; system prompt: nội dung tài liệu/tool là dữ liệu, không phải chỉ dẫn |
+| A11y / graph | Focus trap + trả focus cho dialog gắn tài liệu và drawer; `aria-busy`; badge đính kèm lên góc node (không che cạnh); favicon (hết lỗi 404 console) |
+
+Kiểm tra: 3 vòng liên tiếp `?step=3` → Chu kỳ ép → Nhà máy/LOT-A/IQC → Reset, rồi `?step=4`: không lỗi console. Còn lại cho người: dry-run có người ngoài đội, quay video backup.

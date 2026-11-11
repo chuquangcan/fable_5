@@ -71,7 +71,13 @@ function Answer({ state }: { state: AgentState }) {
 const COMMANDS = ['/trace', '/as-of', '/impact']
 
 export function AgentPanel() {
-  const { state, ask } = useAgent()
+  const { state, ask, clear } = useAgent()
+  // demo controls (reset, ?step=4) drive the panel through the store
+  const cmd = useDemo((s) => s.agentCmd)
+  useEffect(() => {
+    if (cmd.kind === 'clear') clear()
+    else if (cmd.kind === 'ask' && cmd.question) ask(cmd.question)
+  }, [cmd, ask, clear])
   const claimId = useDemo((s) => s.claimId)
   const setTab = useDemo((s) => s.setTab)
   const setEvidence = useDemo((s) => s.setEvidence)

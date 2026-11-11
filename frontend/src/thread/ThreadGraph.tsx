@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import type { FlowGraph, FlowNode } from '../api/types'
 import { useDemo } from '../store/demo'
 import { flowLayout } from './flowLayout'
+import { pathEdges } from './path'
 import { edgeStyle, faultEdgeStyle, NODE_H, NODE_W, neutralEdgeStyle, pickSides, type Side } from './layout'
 
 const POS: Record<Side, Position> = { l: Position.Left, r: Position.Right, t: Position.Top, b: Position.Bottom }
@@ -42,8 +43,9 @@ function GraphNode({ data }: NodeProps<Node<GraphNodeData>>) {
         )}
       </button>
       {attachments > 0 && (
-        <span data-testid={`att-${node.id}`} className="chip mut" style={{ position: 'absolute', left: 0, top: NODE_H + 3, height: 16, fontSize: 10.5 }}>
-          {attachments} đính kèm
+        // corner badge: under the node it sat on the vertical edges to the branch row
+        <span data-testid={`att-${node.id}`} className="att-badge" title={`${attachments} đính kèm`}>
+          {attachments}<span className="sr-only"> đính kèm</span>
         </span>
       )}
     </>
@@ -55,6 +57,8 @@ const nodeTypes = { thread: GraphNode }
 export function ThreadGraph({ flow, marks, reasons }: { flow: FlowGraph; marks?: Record<string, Tone>; reasons?: Record<string, string> }) {
   const mode = useDemo((s) => s.mode)
   const selectNode = useDemo((s) => s.selectNode)
+  const focusNodeId = useDemo((s) => s.focusNodeId)
+  const onPath = useMemo(() => pathEdges(flow, focusNodeId), [flow, focusNodeId])
   const onNodeClick = (_: unknown, n: Node) => selectNode(n.id)
 
   const layout = useMemo(() => flowLayout(flow), [flow])
@@ -77,14 +81,15 @@ export function ThreadGraph({ flow, marks, reasons }: { flow: FlowGraph; marks?:
       .filter((e) => pos.has(e.up) && pos.has(e.down))
       .map((e) => {
         const [a, b] = pickSides(pos.get(e.up)!, pos.get(e.down)!)
+        const id = `${e.up}>${e.relation}>${e.down}`
         return {
-          id: `${e.up}>${e.relation}>${e.down}`, source: e.up, target: e.down,
+          id, source: e.up, target: e.down, className: onPath.has(id) ? 'on-path' : undefined,
           sourceHandle: `s-${a}`, targetHandle: `t-${b}`, type: 'smoothstep',
           style: { strokeWidth: 2, ...style(e.status), ...faultEdgeStyle(marks?.[e.up], marks?.[e.down]), ...(e.active ? {} : { opacity: 0.45 }) },
         }
       })
     return { nodes, edges }
-  }, [flow, layout, mode, marks, reasons])
+  }, [flow, layout, mode, marks, reasons, onPath])
 
   const { width, height, bands } = layout
   const ink = mode === 'fault' ? '#0E7C86' : '#8E959F'

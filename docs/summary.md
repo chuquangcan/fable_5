@@ -15,10 +15,10 @@ Cập nhật: 2026-11-11 · plan: `docs/superpowers/plans/2026-11-11-one-thread-
 | 12b | Chọn provider theo key (Claude hoặc DeepSeek flash) + đọc `.env` | Xong |
 | 16–24 | Đợt 2: flow bible, thread thẳng, dò lỗi, overview, gắn tài liệu | Xong |
 | Đợt 3 | Dọn UI, drawer tài liệu, duyệt liên kết, view Nhà máy, view Kho dữ liệu, tìm kiếm, nút Reset demo | Xong |
-| 14 | Deep link `?step=`, skeleton loading (nút Reset đã có ở header) | **Chưa làm** |
-| 15 | Kịch bản thuyết trình + checklist (`docs/demo/`) | **Chưa làm** |
+| 14 | Deep link `?step=1..4&mode=`, skeleton loading + nút Thử lại, tô đậm đường tới node đang chọn, Reset xoá cả câu trả lời agent | Xong |
+| 15 | Kịch bản thuyết trình + checklist (`docs/demo/script.md`, `docs/demo/checklist.md`) | Xong — còn dry-run có người ngoài đội và quay video backup (việc của người) |
 
-Test: backend 156 pytest, frontend 103 vitest, `tsc -b` sạch.
+Test: backend 161 pytest, frontend 112 vitest, `tsc -b` sạch.
 
 ## 2. Kiến trúc pipeline
 
@@ -115,6 +115,10 @@ Ví dụ: `DEMO_MODE=replay make api`, hoặc `curl -N "localhost:8000/api/agent
 - `server` (mặc định khi chạy `make web`): stream SSE từ `/api/agent/ask`, claim lấy từ claim đang mở.
 - Bất kỳ giá trị khác / không đặt: phát kịch bản có sẵn từ `public/fixtures/agent_clm0012.json` ngay trên trình duyệt (không cần backend agent). Vitest không đọc `.env.development` nên test luôn dùng bản scripted.
 
+### Deep link (DEMO-14)
+
+`?step=1` inbox · `?step=2` thread CLM-0012 (truy lỗi) · `?step=3` + LOT-B tab IQC · `?step=4` + agent tự hỏi câu mặc định. Thêm `&mode=normal|fault` để đổi chế độ tô màu. **Reset demo** (header) xoá tài liệu đã gắn, hoàn tác duyệt, xoá câu trả lời agent và query string. Kịch bản nói: `docs/demo/script.md`; checklist trước giờ: `docs/demo/checklist.md`.
+
 ### Phím tắt trình chiếu
 
 - **`Alt+Shift+D`**: bật/tắt ép `mode=replay` cho các câu hỏi tiếp theo (chấm amber cạnh chữ "Agent" khi đang bật). Dùng khi mạng hội trường chập chờn.
@@ -127,7 +131,7 @@ Ví dụ: `DEMO_MODE=replay make api`, hoặc `curl -N "localhost:8000/api/agent
 
 ## 7. API (tiền tố `/api`)
 
-Đợt 3 thêm: `GET /documents`, `/documents/{id}`, `/documents/{id}/file`, `/review-queue`, `/plant`, `/db/tables`, `/db/tables/{name}`, `/search`; `POST /links/{id}/review` (chi tiết ở spec đợt 3 §4).
+Đợt 3 thêm: `GET /machines/{id}/cycle-window`, `/lots/{id}/compare`, `/documents`, `/documents/{id}`, `/documents/{id}/file`, `/review-queue`, `/plant`, `/db/tables`, `/db/tables/{name}`, `/search`; `POST /links/{id}/review` (chi tiết ở spec đợt 3 §4).
 
 Đợt 1–2: `/health` · `/claims` · `/claims/{id}` · `/trace/{serial}` · `/objects/{id}/events?start&end&type&limit` · `/objects/{id}/links?status=` · `/objects/{id}/docs?at` · `/metrics/{cpk|cycle_time}?objects=` · `/compare/{machine}?day=` · `/impact/{lot}` · `/reports/{claim_id}/draft` · `/agent/ask?q&claim&mode` (SSE) · `/agent/provider`.
 
@@ -141,7 +145,8 @@ Agent có 7 tool, dùng chung hàm query với API: `trace_serial`, `get_events`
 
 - **Claude chưa chạy thật** (chưa có `ANTHROPIC_API_KEY`); chỉ có test với mock. **DeepSeek flash đã chạy thật 5/5 lần** (~8 s/lượt): đều ra LOT-B, Cpk 0,92, loại trừ PM-0241 + nhiệt độ; số 1,000 / 42 thùng / ca NV-118 không phải lần nào cũng được nhắc đủ. Thỉnh thoảng model dẫn nhầm nguồn (ví dụ Cpk dẫn `[[D-12]]`) hoặc dẫn ID bản ghi chu kỳ (`PLC2-000001`, chip không bấm được). Chưa thử câu ngoài kịch bản ("Machine 02 bảo trì lần cuối khi nào?").
 - **Fixture replay là bản dựng tay** (Task 10), chưa quay lại từ LLM thật. Nên giữ bản dựng tay (đầy đủ ý, cite chuẩn) làm dự phòng; nếu muốn bản quay thật: `make record-agent`, đọc lại nội dung rồi mới commit.
-- **Task 14/15 chưa làm**: chưa có deep link `?step=1..4`, skeleton loading, `docs/demo/script.md`, `docs/demo/checklist.md`, video backup.
+- **DEMO-15 còn phần của người**: 2 lần dry-run có người ngoài đội xem, quay video backup và ghi đường dẫn vào `docs/demo/checklist.md`.
+- Tài liệu seed (D-03/07/09/12) không có file gốc; người duyệt cố định "QA engineer (demo)" (chưa có auth).
 - Dev server `uvicorn` (`make api`) có `--reload`; nếu bạn chạy nó bằng lệnh khác không có `--reload`, cần restart để thấy route mới.
 - Chưa chạy review toàn nhánh (final review của quy trình executing-plans).
 - File chưa track của riêng bạn (`main.py`, `pyproject.toml` gốc, `uv.lock`, `.python-version`, ảnh/PDF trong `docs/`) không bị động tới.

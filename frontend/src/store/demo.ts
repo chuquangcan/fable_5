@@ -1,14 +1,19 @@
 import { create } from 'zustand'
+import { DEMO_QUESTION, STORY_CLAIM, STORY_LOT } from '../lib/story'
 import { NODE_EVIDENCE } from '../thread/layout'
 
 export type MainTab = 'claim' | 'thread' | 'report'
-export type EvidenceTab = 'overview' | 'events' | 'm02' | 'lot' | 'impact'
+export type EvidenceTab = 'overview' | 'events' | 'machine' | 'lot' | 'impact'
 export type Mode = 'normal' | 'fault'
 /** product: one serial's thread (claim-driven) · plant: the plant's assets over time · data: document store + DB. */
 export type View = 'product' | 'plant' | 'data'
 export type DataTab = 'docs' | 'review' | 'tables'
 
 const isDoc = (id: string) => /^D-/.test(id)
+
+/** Deep-link steps of the demo script (spec §2): 1 inbox · 2 thread · 3 lot evidence · 4 agent RCA. */
+export type Step = 1 | 2 | 3 | 4
+export interface AgentCmd { kind: 'none' | 'ask' | 'clear'; question?: string; n: number }
 
 interface DemoState {
   claimId: string | null
@@ -36,6 +41,8 @@ interface DemoState {
   dataTable: string
   /** Node ids drawn on the current thread (so a jump can stay in the product view). */
   threadIds: string[]
+  /** Command for the agent panel; `n` changes on every command so the same one can repeat. */
+  agentCmd: AgentCmd
   openClaim: (id: string) => void
   setTab: (t: MainTab) => void
   setEvidence: (t: EvidenceTab) => void
@@ -59,6 +66,8 @@ interface DemoState {
   /** Open any id where it is best shown: a document in the drawer, a thread node on the thread, anything else in the plant view. */
   goTo: (id: string) => void
   closeTab: (t: MainTab) => void
+  /** Jump to a step of the demo script; `mode` overrides the step's default colouring. */
+  applyStep: (step: Step, mode?: Mode) => void
 }
 
 const initial = {
@@ -80,6 +89,7 @@ const initial = {
   dataTab: 'docs' as DataTab,
   dataTable: 'objects',
   threadIds: [] as string[],
+  agentCmd: { kind: 'none', n: 0 } as AgentCmd,
 }
 
 let flashTimer: ReturnType<typeof setTimeout> | undefined
@@ -107,7 +117,7 @@ export const useDemo = create<DemoState>((set, get) => ({
   closeAttach: () => set({ attachOpen: false }),
   reset: () => {
     clearTimeout(flashTimer)
-    set({ ...initial, openTabs: [], threadIds: [] })
+    set((s) => ({ ...initial, openTabs: [], threadIds: [], agentCmd: { kind: 'clear', n: s.agentCmd.n + 1 } }))
   },
   setView: (v) => set({ view: v }),
   toggleAgent: () => set((s) => ({ agentOpen: !s.agentOpen })),
@@ -124,6 +134,14 @@ export const useDemo = create<DemoState>((set, get) => ({
       return s.selectNode(id)
     }
     s.selectAsset(id)
+  },
+  applyStep: (step, mode) => {
+    const s = get()
+    s.reset()
+    if (step >= 2) s.openClaim(STORY_CLAIM)
+    if (step >= 3) set({ focusNodeId: STORY_LOT, evidenceTab: 'lot' })
+    if (step >= 4) set((st) => ({ agentCmd: { kind: 'ask', question: DEMO_QUESTION, n: st.agentCmd.n + 1 } }))
+    if (mode) set({ mode })
   },
   closeTab: (t) => set((s) => {
     const openTabs = s.openTabs.filter((x) => x !== t)

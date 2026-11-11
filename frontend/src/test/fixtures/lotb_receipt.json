@@ -1,1 +1,0 @@
-[{"event_id":"EV-RCV-2810","type":"goods_receipt","object_ids":["LOT-B","PO-4410"],"event_time":"2026-10-28T02:10:00Z","time_kind":"transaction","source":"WMS","source_record_id":"RCV-2810","payload":{"lot":"LOT-B","qty":5000}}]

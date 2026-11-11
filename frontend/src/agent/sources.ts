@@ -2,7 +2,7 @@ import { useDemo } from '../store/demo'
 import { useAgentMode } from './mode'
 import type { AgentEvent } from './reducer'
 
-export const DEMO_QUESTION = 'Vì sao MH20-0001 của CLM-0012 kêu to? Tìm nguyên nhân gốc và phạm vi ảnh hưởng.'
+export { DEMO_QUESTION } from '../lib/story'
 export const FIXTURE_URL = '/fixtures/agent_clm0012.json'
 
 export type AgentSource = (question: string, signal: AbortSignal) => AsyncIterable<AgentEvent>

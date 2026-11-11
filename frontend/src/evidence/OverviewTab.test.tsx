@@ -2,11 +2,9 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
-import type { TraceGraph } from '../api/types'
 import m01 from '../test/fixtures/summary_m01.json'
 import m02 from '../test/fixtures/summary_m02.json'
 import pm0241 from '../test/fixtures/summary_pm0241.json'
-import trace from '../test/fixtures/trace.json'
 import { useDemo } from '../store/demo'
 import { CiteChip } from '../agent/AgentPanel'
 import { EvidencePanel } from './EvidencePanel'
@@ -131,31 +129,31 @@ test('selectNode: normal mode always overview; fault mode keeps deep tabs', () =
   expect(useDemo.getState().focusNodeId).toBe('M02')
   useDemo.setState({ mode: 'fault' })
   useDemo.getState().selectNode('M02')
-  expect(useDemo.getState().evidenceTab).toBe('m02')
+  expect(useDemo.getState().evidenceTab).toBe('machine')
   useDemo.getState().selectNode('PO-4410')
   expect(useDemo.getState().evidenceTab).toBe('overview')
 })
 
 test('EvidencePanel offers the tabs of the node type, not a fixed set', async () => {
-  const { unmount } = render(<EvidencePanel nodeId="M02" trace={trace as unknown as TraceGraph} />)
+  const { unmount } = render(<EvidencePanel nodeId="M02" />)
   expect(await screen.findByText('Cycle TB · LOT-B')).toBeInTheDocument()
-  expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Tổng quan', 'Sự kiện · 1,684', 'Chu kỳ ép 11-03'])
+  expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Tổng quan', 'Sự kiện · 1,684', 'Chu kỳ ép'])
   unmount()
-  render(<EvidencePanel nodeId="M01" trace={trace as unknown as TraceGraph} />)
+  render(<EvidencePanel nodeId="M01" />)
   expect(await screen.findByText('Chưa có thông số')).toBeInTheDocument()
   expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Tổng quan'])
 })
 
 test('a stale deep tab falls back to the overview on a node without it', async () => {
   useDemo.getState().setEvidence('impact')
-  render(<EvidencePanel nodeId="M02" trace={trace as unknown as TraceGraph} />)
+  render(<EvidencePanel nodeId="M02" />)
   expect(await screen.findByText('Cycle TB · LOT-B')).toBeInTheDocument()
   expect(screen.getByRole('tab', { name: 'Tổng quan' })).toHaveAttribute('aria-selected', 'true')
 })
 
 function FocusedPanel() {
   const id = useDemo((s) => s.focusNodeId) ?? 'MH20-0001'
-  return <EvidencePanel nodeId={id} trace={trace as unknown as TraceGraph} />
+  return <EvidencePanel nodeId={id} />
 }
 
 test('a cite to an event record shows its summary, not the error panel', async () => {
