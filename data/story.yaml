@@ -1,0 +1,242 @@
+# One Thread demo — Story bible (nguồn sự thật: docs/superpowers/specs/2026-11-11-one-thread-demo-design.md, mục 3.1)
+#
+# Câu chuyện: bơm MH-20 serial MH20-0001, ép trên Machine 02 lúc 2026-11-03 14:05 (giờ nhà máy, UTC+7),
+# giao khách C3 ngày 2026-11-12 (SHP-1112), bị khiếu nại kêu to (CLM-0012) ngày 2027-02-10.
+# Nguyên nhân gốc: ổ bi Bearing 6203 LOT-B (nhập kho 2026-10-28 từ Supplier S1, IQC Cpk 0.92 < 1.33).
+# LOT-B được nạp vào Hopper 1 lúc 13:52 → cycle time Machine 02 từ 31 s lên 42 s, lực ép +6%.
+# Đã loại trừ: bảo trì PM-0241, vận hành NV-118, nhiệt độ ENV-L1.
+# 1,000 serial dùng LOT-B → 42 thùng → 3 lô giao (SHP-1112/1115 đã tới khách, SHP-1120 còn trong kho).
+#
+# File này chỉ chứa phần viết tay (~30 object). 1,000 serial, 42 thùng, event máy ép và event phụ
+# (bảo trì, ca, nhiệt độ, nhập kho RCV-2810, nạp lô ISS-1103) do seed/generate.py sinh.
+
+objects:
+  # --- Claim ---
+  - id: CLM-0012
+    type: claim
+    name: CLM-0012
+    attributes:
+      stage: hau_mai
+      status: open
+      symptom: "Bơm kêu to bất thường khi chạy"
+      customer: CUS-C3
+      serial: MH20-0001
+      received: "2027-02-10"
+  - id: CLM-0011
+    type: claim
+    name: CLM-0011
+    attributes:
+      stage: hau_mai
+      status: open
+      symptom: "Rò nước"
+      customer: CUS-C1
+      serial: MH20-2457
+      received: "2027-02-03"
+  - id: CLM-0009
+    type: claim
+    name: CLM-0009
+    attributes:
+      stage: hau_mai
+      status: closed
+      symptom: "Tiếng ồn ổ bi 6203"
+      period: "2026-09"
+      resolution: "Tăng lấy mẫu IQC từ n=5 lên n=20"
+
+  # --- Sản xuất ---
+  - {id: M01, type: machine, name: "Machine 01", attributes: {stage: san_xuat}}
+  - {id: M02, type: machine, name: "Machine 02", attributes: {stage: san_xuat, cycle_target_s: 30, line: LINE-1}}
+  - {id: M03, type: machine, name: "Machine 03", attributes: {stage: san_xuat}}
+  - {id: HOP-1, type: hopper, name: "Hopper 1", attributes: {stage: san_xuat}}
+  - {id: LINE-1, type: line, name: "Line 1", attributes: {stage: san_xuat}}
+
+  # --- Linh kiện / lô ---
+  - id: BRG-6203
+    type: part
+    name: "Bearing 6203"
+    attributes: {stage: dinh_kem}
+  - id: LOT-A
+    type: lot
+    name: LOT-A
+    attributes: {stage: kho, part: BRG-6203, role: "đối chứng"}
+  - id: LOT-B
+    type: lot
+    name: LOT-B
+    attributes: {stage: kho, part: BRG-6203, qty: 5000, role: "nghi vấn"}
+  - id: S1-6203-B
+    type: supplier_lot
+    name: S1-6203-B
+    attributes: {stage: dinh_kem, supplier: SUP-S1}
+
+  # --- Kho / mua hàng ---
+  - id: RCV-1410
+    type: receipt
+    name: RCV-1410
+    attributes: {stage: kho, lot: LOT-A}
+  - id: RCV-2810
+    type: receipt
+    name: RCV-2810
+    attributes: {stage: kho, lot: LOT-B, qty: 5000, received_at: "2026-10-28T09:10:00+07:00"}
+  - id: PO-4410
+    type: purchase_order
+    name: PO-4410
+    attributes: {stage: cung_ung, supplier: SUP-S1, qty: 5000}
+  - id: PO-4380
+    type: purchase_order
+    name: PO-4380
+    attributes: {stage: cung_ung, qty: 5000, supplier: SUP-S1}
+  - id: SUP-S1
+    type: supplier
+    name: "Supplier S1"
+    attributes: {stage: cung_ung, erp_code: NCC-S1}
+
+  # --- Chất lượng ---
+  - id: IQC-5507
+    type: inspection
+    name: IQC-5507
+    attributes: {stage: dinh_kem, lot: LOT-A, cpk: 1.45, verdict: "Đạt", spec_min: 1.33}
+  - id: IQC-5531
+    type: inspection
+    name: IQC-5531
+    attributes: {stage: dinh_kem, lot: LOT-B, cpk: 0.92, verdict: "Chấp nhận có điều kiện", spec_min: 1.33}
+
+  # --- Bán hàng / giao hàng ---
+  - {id: SO-7781, type: sales_order, name: SO-7781, attributes: {stage: khach_hang}}
+  - {id: SO-7790, type: sales_order, name: SO-7790, attributes: {stage: khach_hang}}
+  - {id: CUS-C1, type: customer, name: "Customer C1", attributes: {stage: khach_hang}}
+  - {id: CUS-C3, type: customer, name: "Customer C3", attributes: {stage: khach_hang}}
+  - {id: CUS-C5, type: customer, name: "Customer C5", attributes: {stage: khach_hang}}
+  - id: SHP-1112
+    type: shipment
+    name: SHP-1112
+    attributes: {stage: logistics, status: delivered, date: "2026-11-12", customer: CUS-C3, parts: 400, boxes: 17}
+  - id: SHP-1115
+    type: shipment
+    name: SHP-1115
+    attributes: {stage: logistics, status: delivered, date: "2026-11-15", customer: CUS-C5, parts: 240, boxes: 10}
+  - id: SHP-1120
+    type: shipment
+    name: SHP-1120
+    attributes: {stage: logistics, status: in_warehouse, parts: 360, boxes: 15}
+
+aliases:
+  - {object_id: M02, system: PLC, local_name: PLC2, approved_by: Quality}
+  - {object_id: M02, system: MES, local_name: MC-02, approved_by: Quality}
+  - {object_id: M02, system: CMMS, local_name: "Press 2", approved_by: Quality}
+  - {object_id: SUP-S1, system: ERP, local_name: NCC-S1, approved_by: Quality}
+  - {object_id: LOT-B, system: SUPPLIER, local_name: S1-6203-B, approved_by: Quality}
+
+# Link viết tay: from, to, relation, tier, status, score (mặc định 1.0), rule_version, evidence
+links:
+  - {from: CLM-0012, to: MH20-0001, relation: about, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  # MH20-2457 là serial viết tay thuộc lô khác, ngoài dải 0001–1000 của generator (không có object riêng).
+  - {from: CLM-0011, to: MH20-2457, relation: about, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - from: LOT-B
+    to: HOP-1
+    relation: fed_into
+    tier: 1
+    status: confirmed
+    score: 1.0
+    rule_version: T1-exact
+    evidence: {record: ISS-1103, at: "2026-11-03T13:52:00+07:00", valid_from: "2026-11-03T13:52:00+07:00"}
+  - from: LOT-A
+    to: HOP-1
+    relation: fed_into
+    tier: 1
+    status: confirmed
+    score: 1.0
+    rule_version: T1-exact
+    evidence: {valid_from: "2026-11-03T08:00:00+07:00", valid_to: "2026-11-03T13:52:00+07:00"}
+  - {from: HOP-1, to: M02, relation: fed_into, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: LOT-B, to: RCV-2810, relation: received_under, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: RCV-2810, to: PO-4410, relation: received_under, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: LOT-B, to: S1-6203-B, relation: same_as, tier: 2, status: confirmed, score: 0.97, rule_version: T2-alias}
+  - {from: S1-6203-B, to: SUP-S1, relation: supplied_by, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: PO-4410, to: SUP-S1, relation: supplied_by, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: IQC-5531, to: LOT-B, relation: inspected, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: IQC-5507, to: LOT-A, relation: inspected, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: LOT-B, to: BRG-6203, relation: part_of, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: CLM-0009, to: SUP-S1, relation: concerns, tier: 3, status: inferred, score: 0.81, rule_version: T3-rule}
+  - {from: IQC-5531, to: D-12, relation: specified_by, tier: 4, status: confirmed, score: 0.95, rule_version: T4-doc}
+  - {from: D-09, to: CLM-0009, relation: describes, tier: 4, status: confirmed, score: 0.93, rule_version: T4-doc}
+  - {from: D-07, to: LOT-B, relation: mentions, tier: 4, status: pending, score: 0.78, rule_version: T4-doc}
+  - {from: D-03, to: CLM-0009, relation: similar_to, tier: 5, status: suggested, score: 0.64, rule_version: T5-semantic}
+  - {from: SHP-1112, to: SO-7781, relation: ordered_in, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: SO-7781, to: CUS-C3, relation: delivered_to, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: SHP-1115, to: SO-7790, relation: ordered_in, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: SO-7790, to: CUS-C5, relation: delivered_to, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  # Flow bible (spec 3.3): claim nối khách, thượng nguồn LOT-A, M02 thuộc LINE-1
+  - {from: CLM-0012, to: CUS-C3, relation: raised_by, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: PO-4380, to: SUP-S1, relation: supplied_by, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: RCV-1410, to: PO-4380, relation: received_under, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: LOT-A, to: RCV-1410, relation: received_under, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: M02, to: LINE-1, relation: part_of, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+
+documents:
+  - doc_id: D-12
+    chunk_id: D-12-p7-c1
+    file_uri: "files/D-12_MH-20_ban_ve_o_bi.pdf"
+    type: drawing
+    source: PLM
+    page: 7
+    text: "Bản vẽ ổ bi MH-20, trang 7: ổ bi 6203 phải đạt chỉ số năng lực Cpk ≥ 1.33 khi kiểm tra đầu vào (IQC)."
+    extracted_codes: [BRG-6203, MH-20]
+    effective_from: "2026-01-01T00:00:00+07:00"
+  - doc_id: D-09
+    chunk_id: D-09-p1-c1
+    file_uri: "files/D-09_8D_CLM-0009.pdf"
+    type: 8d_report
+    source: QMS
+    page: 1
+    text: "Báo cáo 8D của CLM-0009: tiếng ồn do ổ bi 6203 của Supplier S1. Hành động khắc phục: tăng lấy mẫu IQC từ n=5 lên n=20."
+    extracted_codes: [CLM-0009, BRG-6203, SUP-S1]
+    effective_from: "2026-09-30T00:00:00+07:00"
+  - doc_id: D-07
+    chunk_id: D-07-p1-c1
+    file_uri: "files/D-07_bien_ban_hop_2026-10-29.pdf"
+    type: meeting_minutes
+    source: Meeting
+    page: 1
+    text: "Biên bản họp 29/10: lô B hơi rơ, theo dõi."
+    extracted_codes: []
+    effective_from: "2026-10-29T00:00:00+07:00"
+  - doc_id: D-03
+    chunk_id: D-03-p1-c1
+    file_uri: "files/D-03_bao_cao_loi_2025.pdf"
+    type: defect_report
+    source: QMS
+    page: 1
+    text: "Báo cáo lỗi năm 2025: tiếng ồn ổ bi ở một số bơm trả về. Báo cáo không ghi mã linh kiện."
+    extracted_codes: []
+    effective_from: "2025-06-30T00:00:00+07:00"
+
+# Event viết tay. Các event còn lại (press_cycle, maintenance, shift, env_temp, RCV-2810, ISS-1103) do generator sinh.
+events:
+  - event_id: EV-RCV-1410
+    type: goods_receipt
+    object_ids: [LOT-A, RCV-1410]
+    event_time: "2026-10-06T09:30:00+07:00"
+    time_kind: transaction
+    source: WMS
+    source_record_id: RCV-1410
+    payload: {lot: LOT-A}
+
+time_mappings:
+  - {source: PLC2, offset_s: 38, uncertainty_s: 1, valid_from: "2026-10-01T00:00:00+07:00"}
+
+# Tham số sinh dữ liệu khối lượng (seed/generate.py)
+volume:
+  n_parts: 1000
+  serial_prefix: "MH20-"
+  serial0001_cycle_index: 19
+  lot_b_start: "2026-11-03T13:52:00+07:00"
+  lot_b_cycle_s: 42
+  lot_a_start: "2026-11-03T08:00:00+07:00"
+  lot_a_cycle_s: 31
+  cycle_noise_s: 0.8
+  force_kn: {LOT-A: 12.4, LOT-B: 13.1}
+  force_noise_kn: 0.15
+  plc_offset_s: 38
+  shipments:
+    - {id: SHP-1112, parts: 400, boxes: 17, status: delivered, date: "2026-11-12"}
+    - {id: SHP-1115, parts: 240, boxes: 10, status: delivered, date: "2026-11-15"}
+    - {id: SHP-1120, parts: 360, boxes: 15, status: in_warehouse}

@@ -1,0 +1,1 @@
+[{"event_id":"EV-SHIFT-1103","type":"shift","object_ids":["M02"],"event_time":"2026-11-03T05:00:00Z","time_kind":"transaction","source":"HR","source_record_id":"HR-SHIFT-1103","payload":{"end":"20:00","shift":"Ca 2","start":"12:00","changed":false,"operator":"NV-118"}}]

@@ -1,0 +1,1 @@
+[{"event_id":"EV-ISS-1103","type":"lot_loaded","object_ids":["LOT-B","HOP-1"],"event_time":"2026-11-03T06:52:00Z","time_kind":"transaction","source":"WMS","source_record_id":"ISS-1103","payload":{"lot":"LOT-B"}}]

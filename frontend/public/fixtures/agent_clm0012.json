@@ -1,0 +1,300 @@
+{
+ "question": "Vì sao MH20-0001 của CLM-0012 kêu to? Tìm nguyên nhân gốc và phạm vi ảnh hưởng.",
+ "events": [
+  {
+   "delay_ms": 800,
+   "event": {
+    "type": "tool_call",
+    "name": "trace_serial",
+    "args": {
+     "serial": "MH20-0001"
+    }
+   }
+  },
+  {
+   "delay_ms": 1200,
+   "event": {
+    "type": "tool_call",
+    "name": "get_events",
+    "args": {
+     "object_id": "M02",
+     "window": "11-03 12:00–16:00"
+    }
+   }
+  },
+  {
+   "delay_ms": 1200,
+   "event": {
+    "type": "tool_call",
+    "name": "get_docs",
+    "args": {
+     "object_id": "BRG-6203",
+     "at": "11-03"
+    }
+   }
+  },
+  {
+   "delay_ms": 1200,
+   "event": {
+    "type": "tool_call",
+    "name": "get_links",
+    "args": {
+     "object_id": "LOT-B",
+     "status": "confirmed"
+    }
+   }
+  },
+  {
+   "delay_ms": 1200,
+   "event": {
+    "type": "tool_call",
+    "name": "metrics",
+    "args": {
+     "kpi": "cpk",
+     "objects": [
+      "LOT-A",
+      "LOT-B"
+     ]
+    }
+   }
+  },
+  {
+   "delay_ms": 1200,
+   "event": {
+    "type": "tool_call",
+    "name": "run_python",
+    "args": {
+     "analysis": "compare_by_lot"
+    }
+   }
+  },
+  {
+   "delay_ms": 1200,
+   "event": {
+    "type": "tool_call",
+    "name": "trace_forward",
+    "args": {
+     "lot_id": "LOT-B"
+    }
+   }
+  },
+  {
+   "delay_ms": 900,
+   "event": {
+    "type": "text",
+    "text": "Nguyên nhân khả dĩ: "
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": "ổ bi Bearing 6203 LOT-B, nhập kho 28/10 từ Supplier S1, "
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": "IQC Cpk 0.92 dưới chuẩn 1.33 "
+   }
+  },
+  {
+   "delay_ms": 300,
+   "event": {
+    "type": "cite",
+    "label": "IQC-5531",
+    "target_id": "IQC-5531"
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": " "
+   }
+  },
+  {
+   "delay_ms": 300,
+   "event": {
+    "type": "cite",
+    "label": "D-12 p.7",
+    "target_id": "D-12"
+   }
+  },
+  {
+   "delay_ms": 700,
+   "event": {
+    "type": "text",
+    "text": "\n\n"
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": "Sau khi nạp LOT-B lúc 13:52, cycle time Machine 02 tăng 31 → 42 s, "
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": "lực ép +6% "
+   }
+  },
+  {
+   "delay_ms": 300,
+   "event": {
+    "type": "cite",
+    "label": "PLC2",
+    "target_id": "M02"
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": ". MH20-0001 được ép lúc 14:05, cùng cửa sổ "
+   }
+  },
+  {
+   "delay_ms": 300,
+   "event": {
+    "type": "cite",
+    "label": "MES",
+    "target_id": "M02"
+   }
+  },
+  {
+   "delay_ms": 700,
+   "event": {
+    "type": "text",
+    "text": "\n\n"
+   }
+  },
+  {
+   "delay_ms": 300,
+   "event": {
+    "type": "text",
+    "text": "Đã loại trừ: "
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": "bảo trì "
+   }
+  },
+  {
+   "delay_ms": 300,
+   "event": {
+    "type": "cite",
+    "label": "PM-0241",
+    "target_id": "M02"
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": ", người vận hành "
+   }
+  },
+  {
+   "delay_ms": 300,
+   "event": {
+    "type": "cite",
+    "label": "HR ca 2",
+    "target_id": "M02"
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": ", nhiệt độ "
+   }
+  },
+  {
+   "delay_ms": 300,
+   "event": {
+    "type": "cite",
+    "label": "ENV-L1",
+    "target_id": "M02"
+   }
+  },
+  {
+   "delay_ms": 700,
+   "event": {
+    "type": "text",
+    "text": "\n\n"
+   }
+  },
+  {
+   "delay_ms": 300,
+   "event": {
+    "type": "text",
+    "text": "Khoanh vùng: "
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": "1,000 part · 42 thùng · 3 lô xuất, 2 lô đã tới khách "
+   }
+  },
+  {
+   "delay_ms": 300,
+   "event": {
+    "type": "cite",
+    "label": "trace_forward",
+    "target_id": null
+   }
+  },
+  {
+   "delay_ms": 700,
+   "event": {
+    "type": "text",
+    "text": "\n\n"
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": "Ca CLM-0009 đã xử lý bằng tăng lấy mẫu IQC. "
+   }
+  },
+  {
+   "delay_ms": 260,
+   "event": {
+    "type": "text",
+    "text": "D-03 chỉ là gợi ý bậc 5, không dùng làm bằng chứng."
+   }
+  },
+  {
+   "delay_ms": 400,
+   "event": {
+    "type": "action",
+    "action": "open_impact"
+   }
+  },
+  {
+   "delay_ms": 150,
+   "event": {
+    "type": "action",
+    "action": "open_report"
+   }
+  },
+  {
+   "delay_ms": 300,
+   "event": {
+    "type": "done",
+    "elapsed_s": 21
+   }
+  }
+ ]
+}
