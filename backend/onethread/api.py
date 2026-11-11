@@ -8,8 +8,9 @@ from fastapi import Depends, FastAPI, Query, Request
 from fastapi.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
 
-from onethread.agent.events import ErrorEv
 from onethread.agent.loop import ClaudeTurn, run_agent
+from onethread.agent.replay import default_fixture_path, load_fixture
+from onethread.agent.stream import agent_event_stream
 from onethread.config import settings
 from onethread.db import connect
 from onethread.queries import claims, docs, events, impact, links, metrics, trace
@@ -99,16 +100,18 @@ def get_turn_factory() -> Callable[[], Callable]:
 
 
 @app.get("/api/agent/ask")
-async def api_agent_ask(q: str, claim: str = "CLM-0012", mode: str | None = None,
+async def api_agent_ask(q: str, claim: str = "CLM-0012", mode: Literal["live", "replay", "auto"] | None = None,
                         conn=Conn, make_turn=Depends(get_turn_factory)) -> EventSourceResponse:
     claims.get_claim(conn, claim)  # 404 before the stream starts
-    # `mode` (live | replay | auto) is wired in Task 13; this route always runs live.
+    mode = mode or settings.demo_mode  # DEMO_MODE env: live | replay | auto
+    fixture = None if mode == "live" else load_fixture(default_fixture_path())
 
     async def stream():
-        try:
-            async for ev in run_agent(q, claim, conn=conn, turn=make_turn()):
-                yield {"data": ev.model_dump_json()}
-        except Exception as e:  # noqa: BLE001 — the client gets a terminal error event instead of a dropped stream
-            yield {"data": ErrorEv(message=f"{type(e).__name__}: {e}").model_dump_json()}
+        async for ev in agent_event_stream(
+            q, claim, mode,
+            live_factory=lambda: run_agent(q, claim, conn=conn, turn=make_turn()),
+            fixture=fixture, timeout_s=settings.agent_timeout_s,
+        ):
+            yield {"data": ev.model_dump_json()}
 
     return EventSourceResponse(stream())

@@ -1,6 +1,7 @@
-import { Fragment, type ReactNode, useState } from 'react'
+import { Fragment, type ReactNode, useEffect, useState } from 'react'
 import { useDemo } from '../store/demo'
 import { NODE_EVIDENCE } from '../thread/layout'
+import { useAgentMode } from './mode'
 import type { AgentState, Segment } from './reducer'
 import { DEMO_QUESTION } from './sources'
 import { useAgent } from './useAgent'
@@ -74,12 +75,21 @@ export function AgentPanel() {
   const setTab = useDemo((s) => s.setTab)
   const setEvidence = useDemo((s) => s.setEvidence)
   const [draft, setDraft] = useState('')
+  const replay = useAgentMode((s) => s.replay)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey && e.shiftKey && e.code === 'KeyD') { e.preventDefault(); useAgentMode.getState().toggle() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const send = () => { ask(draft.trim() || DEMO_QUESTION); setDraft('') }
 
   return (
     <>
       <div style={{ height: 32, flex: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px', borderBottom: '1px solid var(--line-soft)', background: '#ECEEF1' }}>
         <span style={{ fontWeight: 600 }}>Agent</span>
+        {replay && <span title="Replay (Alt+Shift+D)" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--amber)' }} />}
         <span className="chip thr">Context · {claimId ?? '—'}</span>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 9, lineHeight: 1.5 }}>

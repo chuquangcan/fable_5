@@ -103,7 +103,7 @@ def test_agent_ask_streams_events(client):
     turn = FakeTurn([tool_use_msg("trace_forward", {"lot_id": "LOT-B"}),
                      text_msg("Khoanh vùng: 1,000 part [[cite:LOT-B]]")])
     app.dependency_overrides[get_turn_factory] = lambda: (lambda: turn)
-    r = client.get("/api/agent/ask", params={"q": "Vì sao?", "claim": "CLM-0012"})
+    r = client.get("/api/agent/ask", params={"q": "Vì sao?", "claim": "CLM-0012", "mode": "live"})
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/event-stream")
     evs = _sse_events(r)
     assert [e["type"] for e in evs][0] == "tool_call" and evs[-1]["type"] == "done"
@@ -121,7 +121,7 @@ def test_agent_ask_turns_failures_into_error_event(client):
     def boom():
         raise RuntimeError("no credentials")
     app.dependency_overrides[get_turn_factory] = lambda: boom
-    evs = _sse_events(client.get("/api/agent/ask", params={"q": "x", "claim": "CLM-0012"}))
+    evs = _sse_events(client.get("/api/agent/ask", params={"q": "x", "claim": "CLM-0012", "mode": "live"}))
     assert [e["type"] for e in evs] == ["error"] and "no credentials" in evs[0]["message"]
 
 
@@ -148,3 +148,38 @@ def test_agent_ask_keeps_db_connection_open_while_streaming(seeded_conn):
     finally:
         app.dependency_overrides.clear()
     assert state["closed_during_turn"] is False
+
+
+# ---- DEMO_MODE on /api/agent/ask ----
+
+def _fixture_types():
+    from onethread.agent.replay import default_fixture_path, load_fixture
+    return [e.event.type for e in load_fixture(default_fixture_path()).events]
+
+
+def test_agent_ask_replay_mode_never_builds_a_turn(client, monkeypatch):
+    import onethread.agent.replay as replay
+    monkeypatch.setattr(replay, "MAX_DELAY_MS", 0)
+
+    def forbidden():
+        raise AssertionError("live must not run in replay mode")
+
+    app.dependency_overrides[get_turn_factory] = lambda: forbidden
+    evs = _sse_events(client.get("/api/agent/ask", params={"q": "x", "claim": "CLM-0012", "mode": "replay"}))
+    assert [e["type"] for e in evs] == _fixture_types()
+
+
+def test_agent_ask_auto_falls_back_to_replay_when_claude_fails(client, monkeypatch):
+    import onethread.agent.replay as replay
+    monkeypatch.setattr(replay, "MAX_DELAY_MS", 0)
+    def boom():
+        raise RuntimeError("offline")
+
+    app.dependency_overrides[get_turn_factory] = lambda: boom
+    evs = _sse_events(client.get("/api/agent/ask", params={"q": "x", "claim": "CLM-0012", "mode": "auto"}))
+    assert evs[0]["type"] == "reset" and [e["type"] for e in evs[1:]] == _fixture_types()
+
+
+def test_agent_ask_rejects_unknown_mode(client):
+    app.dependency_overrides[get_turn_factory] = lambda: (lambda: FakeTurn([]))
+    assert client.get("/api/agent/ask", params={"q": "x", "claim": "CLM-0012", "mode": "bogus"}).status_code == 422
