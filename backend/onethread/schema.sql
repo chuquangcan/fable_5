@@ -1,5 +1,5 @@
--- One Thread core schema (6 tables). Idempotent: drops and recreates everything.
-DROP TABLE IF EXISTS time_mappings, links, documents, events, aliases, objects CASCADE;
+-- One Thread core schema (6 tables) + the demo's review log. Idempotent: drops and recreates everything.
+DROP TABLE IF EXISTS link_reviews, time_mappings, links, documents, events, aliases, objects CASCADE;
 
 CREATE TABLE objects (
     object_id  text PRIMARY KEY,
@@ -62,4 +62,17 @@ CREATE TABLE time_mappings (
     offset_s    real,
     uncertainty_s real,
     valid_from  timestamptz
+);
+
+-- Demo review log (not one of the 6 core tables): every approve/reject of a link by a person.
+-- `snapshot` is the link row before the decision, so a rejected (deleted) link can be restored by reset.
+CREATE TABLE link_reviews (
+    review_id   bigserial PRIMARY KEY,
+    link_id     bigint NOT NULL,
+    decision    text NOT NULL CHECK (decision IN ('approve', 'reject')),
+    from_status text NOT NULL,
+    reviewer    text NOT NULL,
+    note        text,
+    reviewed_at timestamptz NOT NULL,
+    snapshot    jsonb NOT NULL
 );

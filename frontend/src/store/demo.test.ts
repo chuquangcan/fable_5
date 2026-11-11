@@ -4,7 +4,7 @@ beforeEach(() => useDemo.getState().reset())
 
 test('initial state', () => {
   const s = useDemo.getState()
-  expect([s.claimId, s.activeTab, s.openTabs, s.evidenceTab, s.focusNodeId, s.mode]).toEqual([null, 'claim', [], 'm02', null, 'normal'])
+  expect([s.claimId, s.activeTab, s.openTabs, s.evidenceTab, s.focusNodeId, s.mode]).toEqual([null, 'claim', [], 'overview', null, 'normal'])
 })
 
 test('openClaim switches to fault mode, reset back to normal', () => {
@@ -31,7 +31,7 @@ test('setTab opens the report tab on demand and reset restores the initial state
   useDemo.getState().focusNode('LOT-B')
   useDemo.getState().reset()
   expect(useDemo.getState().claimId).toBeNull()
-  expect(useDemo.getState().evidenceTab).toBe('m02')
+  expect(useDemo.getState().evidenceTab).toBe('overview')
 })
 
 test('setFaultOrigin sets fault mode; null only clears; reset clears', () => {

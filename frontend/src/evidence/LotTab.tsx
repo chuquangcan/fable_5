@@ -2,8 +2,10 @@ import { getDocs, getEvents, getMetric } from '../api/client'
 import type { DocView, TraceGraph, TraceNode } from '../api/types'
 import { formatPlantTime } from '../lib/time'
 import { useDemo } from '../store/demo'
-import { DocBadge, docTitle } from './DocBadge'
+import { DocList } from '../docs/DocList'
+import { docTitle } from './DocBadge'
 import { Pending, useAsync } from './useAsync'
+import { useTrace } from './useTrace'
 
 const AT = '2026-11-03T14:05:00+07:00'
 const LOTS = ['LOT-A', 'LOT-B']
@@ -22,10 +24,12 @@ async function load() {
 
 const attr = (n: TraceNode | undefined, k: string) => (n?.attributes[k] ?? null) as string | number | null
 
-export function LotTab({ trace }: { trace: TraceGraph }) {
+export function LotTab({ trace: given }: { trace?: TraceGraph }) {
   const dataVersion = useDemo((s) => s.dataVersion)
+  const trace = useTrace(given)
   const s = useAsync(load, [dataVersion])
   if (s.status !== 'ok') return <Pending state={s} />
+  if (!trace) return <Pending state={{ status: 'loading' }} />
   const { cpk, receipts, docs } = s.data
   const iqc = (lot: string) => trace.nodes.find((n) => n.type === 'inspection' && n.attributes.lot === lot)
   const similar = trace.nodes.find((n) => n.type === 'claim' && n.attributes.status === 'closed')
@@ -36,7 +40,7 @@ export function LotTab({ trace }: { trace: TraceGraph }) {
   const period = String(attr(similar, 'period') ?? '')
   const lc = (v: string | number | null) => (typeof v === 'string' ? v.charAt(0).toLowerCase() + v.slice(1) : '')
   return (
-    <div style={{ height: 376, display: 'flex' }}>
+    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex' }}>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line-faint)' }}>
         <div style={{ padding: '10px 14px 6px', display: 'flex', alignItems: 'baseline', gap: 8 }}>
           <span style={{ fontWeight: 600 }}>Kiểm tra đầu vào · Bearing 6203</span>
@@ -74,22 +78,9 @@ export function LotTab({ trace }: { trace: TraceGraph }) {
           </div>
         )}
       </div>
-      <div style={{ width: 330, flex: 'none', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <div style={{ width: 340, flex: 'none', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <div style={{ padding: '10px 14px 6px', fontWeight: 600 }}>Tài liệu gắn với LOT-B / 6203</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 10px' }}>
-          {docs.map((d) => (
-            <div key={d.doc_id} className="it" style={{
-              margin: 0,
-              ...(d.status === 'pending' ? { borderColor: 'var(--teal)' } : {}),
-              ...(d.status === 'suggested' ? { borderStyle: 'dotted', background: '#F7F8F9' } : {}),
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span className="mono">{docTitle(d)}</span><DocBadge d={d} />
-              </div>
-              <span className="mut" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{d.text}</span>
-            </div>
-          ))}
-        </div>
+        <DocList docs={docs} />
       </div>
     </div>
   )

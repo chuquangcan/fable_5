@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getClaims, getTrace } from '../api/client'
 import type { Claim, EdgeStatus, TraceGraph } from '../api/types'
+import { ReviewQueueList } from '../review/ReviewQueueList'
 import { useDemo } from '../store/demo'
 
 /** Only this claim has a traceable serial in the demo dataset; the others render as static rows. */
@@ -12,15 +13,6 @@ const LEVELS: { status: EdgeStatus; label: string; line: string; color: string }
   { status: 'pending', label: 'Chờ duyệt · bậc 4', line: 'dotted', color: '#0E7C86' },
   { status: 'suggested', label: 'Chỉ gợi ý · bậc 5', line: 'dotted', color: '#8E959F' },
 ]
-
-const ALIASES: [string, string][] = [
-  ['MC-02 · PLC2 · Press 2', 'Machine 02'],
-  ['S1-6203-B', 'LOT-B'],
-  ['NCC-S1', 'Supplier S1'],
-]
-
-const DOC_LABEL: Record<string, string> = { meeting_minutes: 'Biên bản họp' }
-const docLabel = (name: string) => name.replace(/^[a-z_]+/, (t) => DOC_LABEL[t] ?? t).replace(/ p\.(\d+)/, ' · tr.$1')
 
 const shortDate = (d: string | null) => (d ? d.slice(5) : '')
 
@@ -62,8 +54,6 @@ export function ClaimsSidebar() {
 
   const open = claims.filter((c) => c.status !== 'closed')
   const closed = claims.filter((c) => c.status === 'closed')
-  const pending = trace?.edges.filter((e) => e.status === 'pending') ?? []
-  const nodeName = (id: string) => trace?.nodes.find((n) => n.id === id)?.name
 
   return (
     <>
@@ -102,7 +92,7 @@ export function ClaimsSidebar() {
 
         {trace && (
           <>
-            <div className="sec"><span>Liên kết theo độ tin cậy</span></div>
+            <div className="sec"><span>Liên kết trên thread · độ tin cậy</span></div>
             <div style={{ padding: '0 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
               {LEVELS.map((l) => (
                 <div key={l.status} style={{ display: 'flex', alignItems: 'center' }}>
@@ -113,25 +103,10 @@ export function ClaimsSidebar() {
               ))}
             </div>
 
-            <div className="sec"><span>Hàng đợi duyệt</span><span className="mut">{pending.length}</span></div>
-            {pending.map((e) => (
-              <div key={`${e.from_id}-${e.to_id}`} className="it" style={{ borderColor: '#0E7C86', boxShadow: 'inset 3px 0 0 #0E7C86' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span className="mono" style={{ fontWeight: 500 }}>{e.from_id} → {e.to_id}</span>
-                  <span className="chip" style={{ borderStyle: 'dotted' }}>{e.score?.toFixed(2)}</span>
-                </div>
-                {nodeName(e.from_id) && <div className="mut">{docLabel(nodeName(e.from_id)!)}</div>}
-              </div>
-            ))}
           </>
         )}
 
-        <div className="sec"><span>Alias đã hợp nhất</span></div>
-        <div style={{ padding: '0 10px', display: 'flex', flexDirection: 'column', gap: 4, lineHeight: 1.4 }}>
-          {ALIASES.map(([a, b]) => (
-            <span key={a}><span className="mono">{a}</span> <span className="mut">→ {b}</span></span>
-          ))}
-        </div>
+        <ReviewQueueList compact />
       </div>
     </>
   )

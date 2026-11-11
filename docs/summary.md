@@ -1,6 +1,6 @@
 # One Thread demo — tóm tắt trạng thái hiện tại
 
-Cập nhật: 2026-11-11 · nhánh `feat/one-thread-demo` · plan: `docs/superpowers/plans/2026-11-11-one-thread-demo.md`
+Cập nhật: 2026-11-11 · plan: `docs/superpowers/plans/2026-11-11-one-thread-demo.md` · đợt 3: `docs/superpowers/specs/2026-11-11-one-thread-phase3.md`
 
 ## 1. Tiến độ
 
@@ -13,10 +13,12 @@ Cập nhật: 2026-11-11 · nhánh `feat/one-thread-demo` · plan: `docs/superpo
 | 12 | Agent live qua tool (backend) | Xong — đã chạy thật với DeepSeek flash; **chưa thử với Claude** (chưa có key) |
 | 13 | `DEMO_MODE` fallback + record/replay | Xong |
 | 12b | Chọn provider theo key (Claude hoặc DeepSeek flash) + đọc `.env` | Xong |
-| 14 | Deep link `?step=`, nút Reset, skeleton loading | **Chưa làm** |
+| 16–24 | Đợt 2: flow bible, thread thẳng, dò lỗi, overview, gắn tài liệu | Xong |
+| Đợt 3 | Dọn UI, drawer tài liệu, duyệt liên kết, view Nhà máy, view Kho dữ liệu, tìm kiếm, nút Reset demo | Xong |
+| 14 | Deep link `?step=`, skeleton loading (nút Reset đã có ở header) | **Chưa làm** |
 | 15 | Kịch bản thuyết trình + checklist (`docs/demo/`) | **Chưa làm** |
 
-Test: backend 101 pytest, frontend 35 vitest, `tsc -b` sạch.
+Test: backend 156 pytest, frontend 103 vitest, `tsc -b` sạch.
 
 ## 2. Kiến trúc pipeline
 
@@ -38,7 +40,8 @@ data/story.yaml ──► seed (generator, seed cố định) ──► PostgreS
                        Claims inbox → Thread lanes → Evidence panel → Agent panel → Report
 ```
 
-- **Chỉ đọc**: API không có endpoint ghi; nút Duyệt/Export/Send chỉ hiện toast.
+- **Ghi có giới hạn**: chỉ gắn tài liệu (`POST /api/documents`) và duyệt liên kết (`POST /api/links/{id}/review`); `POST /api/demo/reset` hoàn tác cả hai. Mọi thứ khác chỉ đọc.
+- **3 view** (activity bar trái): Truy vết sản phẩm · Nhà máy · Kho dữ liệu, dùng chung panel chi tiết node và drawer tài liệu.
 - **Đồng hồ demo cố định** `2027-02-12 09:00`, giờ hiển thị luôn UTC+7, không phụ thuộc múi giờ máy.
 - **Câu chuyện**: claim `CLM-0012` (bơm MH-20 kêu to) → serial `MH20-0001` → Machine 02 → `LOT-B` (Bearing 6203, Cpk 0.92) → PO-4410 / Supplier S1; 1,000 part, 42 thùng, 3 shipment (640 đã giao, 360 còn trong kho).
 
@@ -52,7 +55,7 @@ data/story.yaml ──► seed (generator, seed cố định) ──► PostgreS
 | Lệnh | Việc làm |
 |------|----------|
 | `make db` | `docker compose up -d --wait db` — Postgres cổng **5433** (user/pass/db `onethread`; init script tạo thêm DB `onethread_test`) |
-| `make seed` | Bật DB rồi nạp dữ liệu: `uv run python -m onethread.seed` (xoá và tạo lại schema, idempotent, < 10 s) |
+| `make seed` | Bật DB rồi nạp dữ liệu: `uv run python -m onethread.seed` (xoá và tạo lại schema, idempotent, < 10 s). **Chạy lại sau khi kéo đợt 3** (schema thêm bảng `link_reviews`) |
 | `make api` | `uvicorn onethread.api:app --port 8000 --reload` |
 | `make web` | Vite dev server cổng **5173** (`--strictPort`), proxy `/api` → `http://localhost:8000` |
 | `make demo` | `db` → `seed` → chạy `api` và `web` song song (Ctrl-C dừng cả hai). Mở http://localhost:5173 |
@@ -122,9 +125,11 @@ Ví dụ: `DEMO_MODE=replay make api`, hoặc `curl -N "localhost:8000/api/agent
 - Hỏi lại khi đang stream ⇒ stream cũ bị huỷ, không xen kẽ câu trả lời.
 - Chip cite có ID tồn tại trong DB bấm được (focus node + đổi tab bằng chứng); ID không có ⇒ chip tĩnh.
 
-## 7. API (tiền tố `/api`, chỉ GET)
+## 7. API (tiền tố `/api`)
 
-`/health` · `/claims` · `/claims/{id}` · `/trace/{serial}` · `/objects/{id}/events?start&end&type&limit` · `/objects/{id}/links?status=` · `/objects/{id}/docs?at` · `/metrics/{cpk|cycle_time}?objects=` · `/compare/{machine}?day=` · `/impact/{lot}` · `/reports/{claim_id}/draft` · `/agent/ask?q&claim&mode` (SSE) · `/agent/provider`.
+Đợt 3 thêm: `GET /documents`, `/documents/{id}`, `/documents/{id}/file`, `/review-queue`, `/plant`, `/db/tables`, `/db/tables/{name}`, `/search`; `POST /links/{id}/review` (chi tiết ở spec đợt 3 §4).
+
+Đợt 1–2: `/health` · `/claims` · `/claims/{id}` · `/trace/{serial}` · `/objects/{id}/events?start&end&type&limit` · `/objects/{id}/links?status=` · `/objects/{id}/docs?at` · `/metrics/{cpk|cycle_time}?objects=` · `/compare/{machine}?day=` · `/impact/{lot}` · `/reports/{claim_id}/draft` · `/agent/ask?q&claim&mode` (SSE) · `/agent/provider`.
 
 ID không tồn tại ⇒ 404 `{"detail": "<kind> <id> not found"}`.
 
@@ -136,7 +141,7 @@ Agent có 7 tool, dùng chung hàm query với API: `trace_serial`, `get_events`
 
 - **Claude chưa chạy thật** (chưa có `ANTHROPIC_API_KEY`); chỉ có test với mock. **DeepSeek flash đã chạy thật 5/5 lần** (~8 s/lượt): đều ra LOT-B, Cpk 0,92, loại trừ PM-0241 + nhiệt độ; số 1,000 / 42 thùng / ca NV-118 không phải lần nào cũng được nhắc đủ. Thỉnh thoảng model dẫn nhầm nguồn (ví dụ Cpk dẫn `[[D-12]]`) hoặc dẫn ID bản ghi chu kỳ (`PLC2-000001`, chip không bấm được). Chưa thử câu ngoài kịch bản ("Machine 02 bảo trì lần cuối khi nào?").
 - **Fixture replay là bản dựng tay** (Task 10), chưa quay lại từ LLM thật. Nên giữ bản dựng tay (đầy đủ ý, cite chuẩn) làm dự phòng; nếu muốn bản quay thật: `make record-agent`, đọc lại nội dung rồi mới commit.
-- **Task 14/15 chưa làm**: chưa có deep link `?step=1..4`, nút Reset demo, skeleton loading, `docs/demo/script.md`, `docs/demo/checklist.md`, video backup.
+- **Task 14/15 chưa làm**: chưa có deep link `?step=1..4`, skeleton loading, `docs/demo/script.md`, `docs/demo/checklist.md`, video backup.
 - Dev server `uvicorn` (`make api`) có `--reload`; nếu bạn chạy nó bằng lệnh khác không có `--reload`, cần restart để thấy route mới.
 - Chưa chạy review toàn nhánh (final review của quy trình executing-plans).
 - File chưa track của riêng bạn (`main.py`, `pyproject.toml` gốc, `uv.lock`, `.python-version`, ảnh/PDF trong `docs/`) không bị động tới.

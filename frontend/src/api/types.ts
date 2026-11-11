@@ -205,3 +205,121 @@ export interface AttachResult {
   reason: string
   duplicate: boolean
 }
+
+// ---- review, document store, plant, raw tables, search (backend: review.py, queries/repository.py, queries/plant.py)
+
+export type ReviewDecision = 'approve' | 'reject'
+/** Statuses a person can still approve or reject. */
+export const REVIEWABLE: readonly string[] = ['inferred', 'pending', 'suggested']
+
+export interface ReviewItem {
+  link_id: number
+  from_id: string
+  from_name: string
+  from_type: string
+  to_id: string
+  to_name: string
+  to_type: string
+  relation: string
+  tier: number
+  status: EdgeStatus
+  score: number | null
+  method: string | null
+  reason: string | null
+  doc_id: string | null
+}
+
+export interface ReviewRecord {
+  review_id: number
+  link_id: number
+  decision: ReviewDecision
+  from_status: EdgeStatus
+  reviewer: string
+  note: string | null
+  reviewed_at: string
+  from_id: string
+  to_id: string
+  relation: string
+}
+
+export interface ReviewQueue {
+  pending: ReviewItem[]
+  decided: ReviewRecord[]
+}
+
+export interface DocLinkRef {
+  link_id: number
+  other_id: string
+  relation: string
+  tier: number
+  status: EdgeStatus
+  score: number | null
+}
+
+export type DocStatus = EdgeStatus | 'unlinked'
+
+export interface DocRow {
+  doc_id: string
+  type: string
+  source: string | null
+  pages: number[]
+  file_uri: string | null
+  has_file: boolean
+  uploaded: boolean
+  effective_from: string | null
+  excerpt: string
+  codes: string[]
+  status: DocStatus
+  links: DocLinkRef[]
+}
+
+export interface DocDetail extends DocRow {
+  chunks: { chunk_id: string; page: number | null; text: string; extracted_codes: string[] }[]
+  review_links: ReviewItem[]
+  history: ReviewRecord[]
+}
+
+export interface Asset {
+  id: string
+  type: string
+  name: string
+  sub: string
+  events: number
+  docs: number
+  to_review: number
+}
+
+export interface PlantArea {
+  id: string
+  label: string
+  groups: { type: string; label: string; items: Asset[] }[]
+  volume: string | null
+}
+
+export interface TableInfo {
+  name: string
+  rows: number
+  columns: string[]
+}
+
+export interface TablePage {
+  name: string
+  columns: string[]
+  total: number
+  offset: number
+  limit: number
+  rows: Record<string, unknown>[]
+}
+
+export interface SearchHit {
+  id: string
+  kind: 'object' | 'document'
+  type: string
+  name: string
+}
+
+export interface ProviderInfo {
+  provider: string | null
+  model: string | null
+  mode: string
+}

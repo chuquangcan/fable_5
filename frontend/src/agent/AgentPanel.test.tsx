@@ -22,10 +22,17 @@ test('known cite focuses its node and opens the matching evidence tab', async ()
   expect(useDemo.getState().evidenceTab).toBe('lot')
 })
 
-test('cite without a deep evidence tab opens the overview', async () => {
-  useDemo.getState().setEvidence('impact')
+test('a document cite opens the document drawer, not a graph node', async () => {
   render(<CiteChip label="D-12 p.7" target_id="D-12" />)
   await userEvent.click(screen.getByRole('button'))
-  expect(useDemo.getState().focusNodeId).toBe('D-12')
+  expect(useDemo.getState().docId).toBe('D-12')
+  expect(useDemo.getState().focusNodeId).toBeNull()
+})
+
+test('a node cite without a deep evidence tab opens the overview', async () => {
+  useDemo.getState().setEvidence('impact')
+  render(<CiteChip label="PO-4410" target_id="PO-4410" />)
+  await userEvent.click(screen.getByRole('button'))
+  expect(useDemo.getState().focusNodeId).toBe('PO-4410')
   expect(useDemo.getState().evidenceTab).toBe('overview')
 })

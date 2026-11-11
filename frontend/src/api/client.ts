@@ -1,4 +1,7 @@
-import type { AttachResult, Claim, DocView, FaultTrace, FlowGraph, Impact, LinkView, LotStat, MetricValue, NodeSummary, PlantEvent, ReportDraft, TraceGraph } from './types'
+import type {
+  AttachResult, Claim, DocDetail, DocRow, DocView, FaultTrace, FlowGraph, Impact, LinkView, LotStat, MetricValue, NodeSummary,
+  PlantArea, PlantEvent, ProviderInfo, ReportDraft, ReviewDecision, ReviewQueue, ReviewRecord, SearchHit, TableInfo, TablePage, TraceGraph,
+} from './types'
 
 export async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(path)
@@ -57,4 +60,21 @@ export function uploadDocument(file: File, targetHint?: string): Promise<AttachR
 }
 export const listSamples = () => getJSON<string[]>('/api/documents/samples')
 export const attachSample = (name: string) => sendJSON<AttachResult>(`/api/documents/samples/${enc(name)}`, { method: 'POST' })
-export const resetDemoData = () => sendJSON<{ removed: number }>('/api/demo/reset', { method: 'POST' })
+export const resetDemoData = () => sendJSON<{ removed: number; reviews: number }>('/api/demo/reset', { method: 'POST' })
+
+export const listDocuments = (f: { q?: string; type?: string; status?: string; source?: string } = {}) =>
+  getJSON<DocRow[]>(`/api/documents${qs(f)}`)
+export const getDocument = (id: string) => getJSON<DocDetail>(`/api/documents/${enc(id)}`)
+/** Original bytes of an uploaded document (seeded docs have none: their originals live in the source system). */
+export const documentFileUrl = (id: string) => `/api/documents/${enc(id)}/file`
+export const getReviewQueue = () => getJSON<ReviewQueue>('/api/review-queue')
+export const reviewLink = (linkId: number, decision: ReviewDecision, note?: string) =>
+  sendJSON<ReviewRecord>(`/api/links/${linkId}/review`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision, note: note || null }),
+  })
+export const getPlant = () => getJSON<PlantArea[]>('/api/plant')
+export const getTables = () => getJSON<TableInfo[]>('/api/db/tables')
+export const getTable = (name: string, q?: string, limit = 50, offset = 0) =>
+  getJSON<TablePage>(`/api/db/tables/${enc(name)}${qs({ q: q || undefined, limit, offset })}`)
+export const search = (q: string) => getJSON<SearchHit[]>(`/api/search${qs({ q })}`)
+export const getProvider = () => getJSON<ProviderInfo>('/api/agent/provider')

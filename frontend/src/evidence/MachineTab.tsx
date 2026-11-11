@@ -35,7 +35,7 @@ export function MachineTab() {
   const delta = before && after ? Math.round((after.force_mean_kn / before.force_mean_kn - 1) * 100) : 0
   const cut = loaded ? formatPlantTime(loaded.event_time, 'HH:mm') : ''
   return (
-    <div style={{ height: 376, display: 'flex' }}>
+    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex' }}>
       <div style={{ width: 476, flex: 'none', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6, borderRight: '1px solid var(--line-faint)' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
           <span style={{ fontWeight: 600 }}>Cycle time · Machine 02</span>

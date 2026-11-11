@@ -7,12 +7,19 @@ import { useAgent } from './useAgent'
 
 export function CiteChip({ label, target_id }: { label: string; target_id: string | null }) {
   const selectNode = useDemo((s) => s.selectNode)
+  const openDoc = useDemo((s) => s.openDoc)
   if (target_id === null) return <span className="cite">{label}</span>
+  // documents open in the detail drawer; everything else focuses the thread node
+  const open = () => {
+    if (/^D-/.test(target_id)) return openDoc(target_id)
+    if (useDemo.getState().claimId) useDemo.getState().setTab('thread')
+    selectNode(target_id)
+  }
   return (
     <button
       className="cite"
       style={{ cursor: 'pointer' }}
-      onClick={() => selectNode(target_id)}
+      onClick={open}
     >
       {label}
     </button>

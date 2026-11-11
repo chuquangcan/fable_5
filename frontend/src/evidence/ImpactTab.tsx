@@ -2,6 +2,7 @@ import { getImpact } from '../api/client'
 import type { TraceGraph } from '../api/types'
 import { formatPlantTime } from '../lib/time'
 import { Pending, useAsync } from './useAsync'
+import { useTrace } from './useTrace'
 
 const fmt = (n: number) => n.toLocaleString('en-US')
 const Tile = ({ label, value, bg, ink }: { label: string; value: string; bg: string; ink?: string }) => (
@@ -11,16 +12,18 @@ const Tile = ({ label, value, bg, ink }: { label: string; value: string; bg: str
   </div>
 )
 
-export function ImpactTab({ trace }: { trace: TraceGraph }) {
-  const s = useAsync(() => getImpact('LOT-B'), [])
+export function ImpactTab({ trace: given, lot = 'LOT-B' }: { trace?: TraceGraph; lot?: string }) {
+  const trace = useTrace(given)
+  const s = useAsync(() => getImpact(lot), [lot])
   if (s.status !== 'ok') return <Pending state={s} />
+  if (!trace) return <Pending state={{ status: 'loading' }} />
   const imp = s.data
   const held = imp.shipments.filter((x) => x.status !== 'delivered')
   const claimByCustomer = new Map(
     trace.nodes.filter((n) => n.type === 'claim' && n.attributes.customer).map((n) => [String(n.attributes.customer), n.id]),
   )
   return (
-    <div style={{ height: 376, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
         <span style={{ fontWeight: 600 }}>Truy xuôi {imp.lot}</span>
         <span className="mut">lô → processed_on → packed_in → shipped_in · knowledge graph</span>

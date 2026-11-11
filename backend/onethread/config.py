@@ -30,3 +30,6 @@ class Settings:
 
 
 settings = Settings()
+
+# Fixed demo clock (spec 2): every write the demo makes (attach, review) is stamped with it.
+DEMO_NOW = "2027-02-12T09:00:00+07:00"

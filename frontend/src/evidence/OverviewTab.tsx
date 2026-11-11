@@ -1,12 +1,15 @@
 import { getSummary } from '../api/client'
 import type { FlowStage, NodeSummary, Param } from '../api/types'
+import { DocList } from '../docs/DocList'
+import { objectTypeLabel } from '../lib/labels'
 import { useDemo } from '../store/demo'
 import { STAGES } from '../thread/flowLayout'
-import { DocBadge, docTitle } from './DocBadge'
 import { Pending, useAsync } from './useAsync'
 
 /** Summary types that /api/fault-trace cannot take as an origin (not objects in the flow). */
 const NOT_FAULT_ORIGIN = new Set(['aggregate', 'event', 'source'])
+/** Summary types a document cannot be attached to (the backend rejects them as a target). */
+export const NOT_ATTACHABLE = new Set(['aggregate', 'document', 'event', 'source'])
 
 const fmt = (p: Param) => (p.unit ? `${p.value} ${p.unit}` : String(p.value))
 
@@ -28,60 +31,46 @@ function Params({ params }: { params: Param[] }) {
   )
 }
 
-function Docs({ docs }: { docs: NodeSummary['docs'] }) {
+/** Overview of one node: cited params on the left, its documents on the right. */
+export function OverviewBody({ d }: { d: NodeSummary }) {
+  const setFaultOrigin = useDemo((s) => s.setFaultOrigin)
   const openAttach = useDemo((s) => s.openAttach)
-  if (docs.length === 0)
-    return (
-      <div className="mut" style={{ padding: '8px 10px' }}>
-        Chưa có tài liệu · <button className="btn" onClick={openAttach}>Gắn tài liệu</button>
-      </div>
-    )
+  const canFault = useDemo((s) => s.view === 'product' && !!s.claimId) && !NOT_FAULT_ORIGIN.has(d.type)
+  const canAttach = !NOT_ATTACHABLE.has(d.type)
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 10px' }}>
-      {docs.map((d, i) => (
-        <div key={`${d.doc_id}-${d.page}-${i}`} className="it" style={{
-          margin: 0,
-          ...(d.status === 'pending' ? { borderColor: 'var(--teal)' } : {}),
-          ...(d.status === 'suggested' ? { borderStyle: 'dotted', background: '#F7F8F9' } : {}),
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span className="mono">{docTitle(d)}</span><span style={{ display: 'flex', gap: 4 }}>
-              {d.doc_id.startsWith('D-U') && <span className="chip" style={{ borderColor: 'var(--teal)', color: 'var(--teal-ink)' }}>mới</span>}
-              <DocBadge d={d} />
-            </span>
-          </div>
-          <span className="mut" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{d.text}</span>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line-faint)', overflowY: 'auto' }}>
+        <div style={{ padding: '10px 14px 6px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 600 }}>{`${d.name} · ${objectTypeLabel(d.type)}`}</span>
+          <span className="mut">{STAGES[d.stage as FlowStage] ?? d.stage}</span>
+          {d.aliases.map((a) => <span key={a} className="chip" title="Alias đã hợp nhất">{`≡ ${a}`}</span>)}
+          <span style={{ flex: 1 }} />
+          {canFault && <button className="btn" onClick={() => setFaultOrigin(d.id)}>Đặt làm điểm lỗi</button>}
         </div>
-      ))}
+        <Params params={d.params} />
+      </div>
+      <div style={{ width: 340, flex: 'none', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <div style={{ padding: '8px 10px 6px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontWeight: 600 }}>Tài liệu</span>
+          <span className="mut">{d.docs.length}</span>
+          <span style={{ flex: 1 }} />
+          {canAttach && <button className="btn" onClick={openAttach}>Gắn tài liệu</button>}
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          {d.docs.length === 0
+            ? <div className="mut" style={{ padding: '4px 14px' }}>Chưa có tài liệu</div>
+            : <DocList docs={d.docs} />}
+        </div>
+      </div>
     </div>
   )
 }
 
 export function OverviewTab({ id }: { id: string }) {
   const dataVersion = useDemo((s) => s.dataVersion)
-  const setFaultOrigin = useDemo((s) => s.setFaultOrigin)
-  const openAttach = useDemo((s) => s.openAttach)
   const s = useAsync(() => getSummary(id), [id, dataVersion])
   // Not every citable id has a summary: a 404 is "nothing to show", not a failure.
   if (s.status === 'error' && s.message.startsWith('404')) return <div className="mut" style={{ padding: 14 }}>{`Không có tổng hợp cho ${id}`}</div>
   if (s.status !== 'ok') return <Pending state={s} />
-  const d = s.data
-  return (
-    <div style={{ height: 376, display: 'flex' }}>
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line-faint)', overflowY: 'auto' }}>
-        <div style={{ padding: '10px 14px 6px', display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontWeight: 600 }}>{`${d.name} · ${d.type}`}</span>
-          <span className="mut">{STAGES[d.stage as FlowStage] ?? d.stage}</span>
-          <span style={{ flex: 1 }} />
-          {!NOT_FAULT_ORIGIN.has(d.type) && <button className="btn" onClick={() => setFaultOrigin(id)}>Đặt làm điểm lỗi</button>}
-          <button className="btn" onClick={openAttach}>Gắn tài liệu</button>
-        </div>
-        <Params params={d.params} />
-      </div>
-      <div style={{ width: 330, flex: 'none', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <div style={{ padding: '10px 14px 6px', fontWeight: 600 }}>Tài liệu</div>
-        <Docs docs={d.docs} />
-      </div>
-    </div>
-  )
+  return <OverviewBody d={s.data} />
 }

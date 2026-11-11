@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { attachSample, getSummary, listSamples, uploadDocument } from '../api/client'
 import type { AttachMethod, AttachResult } from '../api/types'
+import { NOT_ATTACHABLE } from '../evidence/OverviewTab'
+import { DEFAULT_ASSET } from '../plant/PlantView'
 import { useDemo } from '../store/demo'
-
-/** Summary types that are not objects, so the backend would reject them as a target hint (422). */
-const NOT_ATTACHABLE = new Set(['aggregate', 'document', 'event', 'source'])
 
 const METHOD_LABEL: Record<AttachMethod, string> = { code: 'Mã', rule: 'Quy tắc', llm: 'LLM', manual: 'Thủ công' }
 
@@ -29,14 +28,19 @@ function ResultCard({ r }: { r: AttachResult }) {
       )}
       <span className="mut">{r.reason}</span>
       {r.duplicate && <span style={{ color: 'var(--amber-ink)' }}>Tài liệu đã gắn trước đó</span>}
+      <div>
+        <button className="btn" onClick={() => { useDemo.getState().closeAttach(); useDemo.getState().openDoc(r.doc_id) }}>
+          {r.links.some((l) => l.status !== 'confirmed') ? 'Xem chi tiết & duyệt' : 'Xem chi tiết'}
+        </button>
+      </div>
     </div>
   )
 }
 
 function Dialog() {
   const closeAttach = useDemo((s) => s.closeAttach)
-  // Same default as the overview: the focused node, else the thread's root serial.
-  const target = useDemo((s) => s.focusNodeId ?? s.threadRoot)
+  // The node on screen: the plant view's asset, else the focused thread node, else the thread's root serial.
+  const target = useDemo((s) => (s.view === 'plant' ? s.plantAsset ?? DEFAULT_ASSET : s.view === 'data' ? null : s.focusNodeId ?? s.threadRoot))
   const [checked, setChecked] = useState<{ id: string; ok: boolean } | null>(null)
   const [samples, setSamples] = useState<string[]>([])
   const [busy, setBusy] = useState(false)

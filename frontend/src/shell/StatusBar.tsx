@@ -1,4 +1,8 @@
+import { getProvider } from '../api/client'
+import { useAsync } from '../evidence/useAsync'
 import { formatPlantTime } from '../lib/time'
+import { useDemo } from '../store/demo'
+import { useReviewCount } from './useReviewCount'
 
 const CURSOR = '2026-11-03T14:05:00+07:00'
 const ticks: { label: string; style: React.CSSProperties }[] = [
@@ -12,44 +16,55 @@ const ticks: { label: string; style: React.CSSProperties }[] = [
 const abs = (style: React.CSSProperties): React.CSSProperties => ({ position: 'absolute', ...style })
 const diamond = (style: React.CSSProperties): React.CSSProperties => abs({ background: 'var(--teal)', transform: 'rotate(45deg)', ...style })
 
-export function StatusBar() {
+const VIEW_LABEL = { product: 'Truy vết sản phẩm', plant: 'Nhà máy', data: 'Kho dữ liệu' } as const
+
+/** The claim's journey (story timeline); only meaningful next to its thread. */
+function Journey() {
   return (
-    <div style={{ height: 78, flex: 'none', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ height: 56, display: 'flex', background: 'var(--panel)', borderTop: '1px solid #A9AEB6' }}>
-        <div style={{ width: 312, flex: 'none', display: 'flex', alignItems: 'center', gap: 6, padding: '0 10px', borderRight: '1px solid var(--line)' }}>
-          <span className="mut" style={{ fontSize: 11 }}>Hành trình serial</span>
-          <span style={{ marginLeft: 'auto', fontFamily: "'IBM Plex Mono', monospace", fontSize: 16, fontWeight: 500 }}>
-            {formatPlantTime(CURSOR)}
-          </span>
-        </div>
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-          <div className="mono" style={abs({ left: 0, right: 0, top: 2, height: 12, fontSize: 11, color: 'var(--muted)' })}>
-            {ticks.map((t) => <span key={t.label} style={abs(t.style)}>{t.label}</span>)}
-          </div>
-          <div style={abs({ left: 6, top: 20, width: 9, height: 9, background: 'var(--amber)', transform: 'rotate(45deg)' })} />
-          <span style={abs({ left: 18, top: 17, fontSize: 11, color: 'var(--amber-ink)' })}>LOT-B nhập kho</span>
-          <div style={diamond({ left: '14%', top: 34, width: 9, height: 9 })} />
-          <span style={abs({ left: '15.2%', top: 31, fontSize: 11, color: 'var(--teal-ink)' })}>giao C3 11-12</span>
-          <div style={abs({ left: '14%', width: '83%', top: 46, height: 4, background: 'var(--line-faint)' })} />
-          <span style={abs({ left: '45%', top: 31, fontSize: 11, color: 'var(--muted)' })}>khách dùng 3 tháng</span>
-          <div style={abs({ left: '97.4%', top: 16, width: 10, height: 10, background: 'var(--red)', transform: 'rotate(45deg)' })} />
-          <span style={abs({ right: 22, top: 30, fontSize: 11, color: 'var(--red-ink)', fontWeight: 600 })}>CLM-0012 02-10</span>
-          <div style={abs({ left: '5.6%', top: 0, bottom: 0, width: 2, background: 'var(--header)' })} />
-          <div style={abs({ left: '5.6%', top: 0, width: 8, height: 8, marginLeft: -3, background: 'var(--header)' })} />
-        </div>
-        <div style={{ width: 200, flex: 'none', borderLeft: '1px solid var(--line)', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 4, justifyContent: 'center' }}>
-          <span className="mut" style={{ fontSize: 11 }}>Kịch bản demo</span>
-          <span style={{ fontSize: 11 }}>Bước 2–4 / 4 · trace → bằng chứng → RCA</span>
-        </div>
+    <div style={{ height: 50, display: 'flex', background: 'var(--panel)', borderTop: '1px solid #A9AEB6' }}>
+      <div style={{ width: 264, flex: 'none', display: 'flex', alignItems: 'center', gap: 6, padding: '0 10px', borderRight: '1px solid var(--line)' }}>
+        <span className="mut" style={{ fontSize: 11 }}>Hành trình serial · ép lúc</span>
+        <span style={{ marginLeft: 'auto', fontFamily: "'IBM Plex Mono', monospace", fontSize: 15, fontWeight: 500 }}>
+          {formatPlantTime(CURSOR)}
+        </span>
       </div>
-      <div style={{ height: 22, background: 'var(--header)', color: '#C9CFD6', display: 'flex', alignItems: 'center', gap: 18, padding: '0 10px', fontSize: 11 }}>
-        <span style={{ background: 'var(--amber)', color: '#FFFFFF', padding: '0 6px', fontWeight: 600 }}>DEMO · scripted data</span>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        <div className="mono" style={abs({ left: 0, right: 0, top: 2, height: 12, fontSize: 11, color: 'var(--muted)' })}>
+          {ticks.map((t) => <span key={t.label} style={abs(t.style)}>{t.label}</span>)}
+        </div>
+        <div style={abs({ left: 6, top: 19, width: 9, height: 9, background: 'var(--amber)', transform: 'rotate(45deg)' })} />
+        <span style={abs({ left: 18, top: 16, fontSize: 11, color: 'var(--amber-ink)' })}>LOT-B nhập kho</span>
+        <div style={diamond({ left: '14%', top: 31, width: 9, height: 9 })} />
+        <span style={abs({ left: '15.2%', top: 28, fontSize: 11, color: 'var(--teal-ink)' })}>giao C3 11-12</span>
+        <div style={abs({ left: '14%', width: '83%', top: 42, height: 4, background: 'var(--line-faint)' })} />
+        <span style={abs({ left: '45%', top: 28, fontSize: 11, color: 'var(--muted)' })}>khách dùng 3 tháng</span>
+        <div style={abs({ left: '97.4%', top: 16, width: 10, height: 10, background: 'var(--red)', transform: 'rotate(45deg)' })} />
+        <span style={abs({ right: 22, top: 28, fontSize: 11, color: 'var(--red-ink)', fontWeight: 600 })}>CLM-0012 02-10</span>
+        <div style={abs({ left: '5.6%', top: 0, bottom: 0, width: 2, background: 'var(--header)' })} />
+        <div style={abs({ left: '5.6%', top: 0, width: 8, height: 8, marginLeft: -3, background: 'var(--header)' })} />
+      </div>
+    </div>
+  )
+}
+
+export function StatusBar() {
+  const view = useDemo((s) => s.view)
+  const journey = useDemo((s) => s.view === 'product' && s.claimId === 'CLM-0012' && s.activeTab === 'thread')
+  const setDataTab = useDemo((s) => s.setDataTab)
+  const reviews = useReviewCount()
+  const p = useAsync(getProvider, [])
+  const agent = p.status !== 'ok' ? 'Agent: …'
+    : p.data.provider ? `Agent: ${p.data.provider} · ${p.data.mode}` : `Agent: phát lại (chưa có API key) · ${p.data.mode}`
+  return (
+    <div style={{ flex: 'none', display: 'flex', flexDirection: 'column' }}>
+      {journey && <Journey />}
+      <div className="statusline">
+        <span>{VIEW_LABEL[view]}</span>
         <span>Line 1 · MH-20 · Bearing 6203</span>
-        <span>Sources 7/7 · read-only</span>
-        <span>Review queue 1</span>
-        <span style={{ marginLeft: 'auto' }}>Agent: Claude · live, có fallback DEMO_MODE</span>
+        <button className="sbtn" onClick={() => setDataTab('review')}>{`Hàng đợi duyệt ${reviews ?? '…'}`}</button>
+        <span style={{ marginLeft: 'auto' }}>{agent}</span>
         <span>UTC+7</span>
-        <span>One Thread demo v0.1</span>
+        <span>One Thread demo v0.2</span>
       </div>
     </div>
   )

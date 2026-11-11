@@ -15,6 +15,7 @@ import cycles from '../test/fixtures/m02_cycles.json'
 import maintenance from '../test/fixtures/m02_maintenance.json'
 import shift from '../test/fixtures/m02_shift.json'
 import serialEvents from '../test/fixtures/serial_events.json'
+import summaryM02 from '../test/fixtures/summary_m02.json'
 import trace from '../test/fixtures/trace.json'
 import { type EvidenceTab, useDemo } from '../store/demo'
 import { EvidencePanel } from './EvidencePanel'
@@ -38,11 +39,14 @@ beforeEach(() => {
   vi.mocked(api.getMetric).mockResolvedValue(cpk as never)
   vi.mocked(api.getDocs).mockImplementation(async (id) => (id === 'CLM-0009' ? docsClm9 : docsLotB) as never)
   vi.mocked(api.getImpact).mockResolvedValue(impact as never)
+  vi.mocked(api.getSummary).mockImplementation(async (id) => (id === 'M02' ? summaryM02
+    : { ...summaryM02, id, type: 'lot', name: id, params: [], counts: { links: 3, events: 2 } }) as never)
 })
 
+const NODE: Partial<Record<EvidenceTab, string>> = { m02: 'M02', lot: 'LOT-B', impact: 'LOT-B' }
 const show = (tab: EvidenceTab) => {
   useDemo.getState().setEvidence(tab)
-  render(<EvidencePanel trace={trace as unknown as TraceGraph} />)
+  render(<EvidencePanel nodeId={NODE[tab] ?? 'M02'} trace={trace as unknown as TraceGraph} />)
 }
 
 test('m02 tab shows cycle jump, force delta and exclusions', async () => {
@@ -82,9 +86,11 @@ test('impact tab shows blast radius', async () => {
   expect(screen.getByText('SHP-1115')).toBeInTheDocument()
 })
 
-test('tab strip switches the evidence tab', async () => {
-  show('m02')
-  await screen.findByText('31 s')
-  screen.getByRole('button', { name: /Khoanh vùng LOT-B/ }).click()
+test('tab strip switches the evidence tab; a lot offers IQC and impact', async () => {
+  show('lot')
+  await screen.findByText('0.92')
+  expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Tổng quan', 'Sự kiện · 2', 'IQC · so sánh lô', 'Khoanh vùng'])
+  act(() => screen.getByRole('tab', { name: 'Khoanh vùng' }).click())
   expect(useDemo.getState().evidenceTab).toBe('impact')
+  expect(await screen.findByText('1,000')).toBeInTheDocument()
 })

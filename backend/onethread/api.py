@@ -3,18 +3,19 @@ from datetime import date, datetime
 from typing import Literal
 
 import psycopg
-from fastapi import Depends, FastAPI, File, Form, Query, Request, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi import Body, Depends, FastAPI, File, Form, Query, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 from sse_starlette.sse import EventSourceResponse
 
-from onethread import attach
+from onethread import attach, review
 from onethread.agent.loop import run_agent
 from onethread.agent.providers import active_provider, make_turn
 from onethread.agent.replay import default_fixture_path, load_fixture
 from onethread.agent.stream import agent_event_stream
 from onethread.config import settings
 from onethread.db import connect
-from onethread.queries import claims, docs, events, fault, impact, links, metrics, summary, thread_flow, trace
+from onethread.queries import (claims, docs, events, fault, impact, links, metrics, plant, repository, summary,
+                               thread_flow, trace)
 from onethread.queries.common import NotFound
 from onethread.report import ReportDraft, build_report_draft
 
@@ -133,9 +134,66 @@ def api_attach_sample(name: str, conn=Conn) -> attach.AttachResult:
     return attach.attach_document(conn, name, attach.sample_content(name), None)
 
 
+@app.get("/api/documents")
+def api_documents(q: str | None = None, type: str | None = None, status: str | None = None,
+                  source: str | None = None, conn=Conn) -> list[repository.DocRow]:
+    return repository.list_documents(conn, q, type, status, source)
+
+
+@app.get("/api/documents/{doc_id}")
+def api_document(doc_id: str, conn=Conn) -> repository.DocDetail:
+    return repository.get_document(conn, doc_id)
+
+
+@app.get("/api/documents/{doc_id}/file")
+def api_document_file(doc_id: str, conn=Conn) -> FileResponse:
+    path, media, inline = repository.document_file(conn, doc_id)
+    return FileResponse(
+        path, media_type=media, filename=path.name.split("_", 1)[-1],
+        content_disposition_type="inline" if inline else "attachment",
+        # no sniffing into HTML, and an uploaded file never runs scripts in the app's origin
+        headers={"X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src 'self'"}
+        if media != "application/pdf" else {"X-Content-Type-Options": "nosniff"},
+    )
+
+
+@app.get("/api/review-queue")
+def api_review_queue(conn=Conn) -> review.ReviewQueue:
+    return review.review_queue(conn)
+
+
+@app.post("/api/links/{link_id}/review")
+def api_review_link(link_id: int, decision: review.Decision = Body(..., embed=True),
+                    note: str | None = Body(None, embed=True), conn=Conn) -> review.ReviewRecord:
+    return review.review_link(conn, link_id, decision, note)
+
+
+@app.get("/api/plant")
+def api_plant(conn=Conn) -> list[plant.Area]:
+    return plant.plant_tree(conn)
+
+
+@app.get("/api/db/tables")
+def api_db_tables(conn=Conn) -> list[repository.TableInfo]:
+    return repository.list_tables(conn)
+
+
+@app.get("/api/db/tables/{name}")
+def api_db_table(name: str, q: str | None = None, limit: int = Query(50, ge=1, le=repository.MAX_LIMIT),
+                 offset: int = Query(0, ge=0), conn=Conn) -> repository.TablePage:
+    return repository.table_rows(conn, name, q, limit, offset)
+
+
+@app.get("/api/search")
+def api_search(q: str, conn=Conn) -> list[repository.SearchHit]:
+    return repository.search(conn, q)
+
+
 @app.post("/api/demo/reset")
 def api_demo_reset(conn=Conn) -> dict[str, int]:
-    return {"removed": attach.reset_uploads(conn)}
+    """Undo every demo write: reviews first (a rejected upload link comes back), then the uploads."""
+    reviews = review.reset_reviews(conn)
+    return {"removed": attach.reset_uploads(conn), "reviews": reviews}
 
 
 def get_turn_factory() -> Callable[[], Callable]:
