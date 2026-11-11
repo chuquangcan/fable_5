@@ -24,6 +24,9 @@ class Settings:
     agent_effort: str = field(default_factory=lambda: _env("AGENT_EFFORT", "low"))
     agent_timeout_s: int = field(default_factory=lambda: int(_env("AGENT_TIMEOUT_S", "30")))
     replay_fixture: str = "../frontend/public/fixtures/agent_clm0012.json"
+    uploads_dir: str = field(
+        default_factory=lambda: _env("UPLOADS_DIR", str(Path(__file__).resolve().parents[1] / "var" / "uploads"))
+    )
 
 
 settings = Settings()

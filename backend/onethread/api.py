@@ -3,10 +3,11 @@ from datetime import date, datetime
 from typing import Literal
 
 import psycopg
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Depends, FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
 
+from onethread import attach
 from onethread.agent.loop import run_agent
 from onethread.agent.providers import active_provider, make_turn
 from onethread.agent.replay import default_fixture_path, load_fixture
@@ -112,6 +113,28 @@ def api_impact(lot: str, conn=Conn) -> impact.Impact:
 @app.get("/api/reports/{claim_id}/draft")
 def api_report_draft(claim_id: str, conn=Conn) -> ReportDraft:
     return build_report_draft(conn, claim_id)
+
+
+@app.post("/api/documents")
+def api_attach_document(file: UploadFile = File(...), target_hint: str | None = Form(None),
+                        conn=Conn) -> attach.AttachResult:
+    content = file.file.read(attach.MAX_BYTES + 1)  # never buffer more than the limit
+    return attach.attach_document(conn, file.filename or "", content, target_hint or None)
+
+
+@app.get("/api/documents/samples")
+def api_document_samples() -> list[str]:
+    return attach.list_samples()
+
+
+@app.post("/api/documents/samples/{name}")
+def api_attach_sample(name: str, conn=Conn) -> attach.AttachResult:
+    return attach.attach_document(conn, name, attach.sample_content(name), None)
+
+
+@app.post("/api/demo/reset")
+def api_demo_reset(conn=Conn) -> dict[str, int]:
+    return {"removed": attach.reset_uploads(conn)}
 
 
 def get_turn_factory() -> Callable[[], Callable]:
