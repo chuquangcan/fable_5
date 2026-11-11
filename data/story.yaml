@@ -16,6 +16,7 @@ objects:
     type: claim
     name: CLM-0012
     attributes:
+      stage: hau_mai
       status: open
       symptom: "Bơm kêu to bất thường khi chạy"
       customer: CUS-C3
@@ -25,6 +26,7 @@ objects:
     type: claim
     name: CLM-0011
     attributes:
+      stage: hau_mai
       status: open
       symptom: "Rò nước"
       customer: CUS-C1
@@ -34,81 +36,87 @@ objects:
     type: claim
     name: CLM-0009
     attributes:
+      stage: hau_mai
       status: closed
       symptom: "Tiếng ồn ổ bi 6203"
       period: "2026-09"
       resolution: "Tăng lấy mẫu IQC từ n=5 lên n=20"
 
   # --- Sản xuất ---
-  - {id: M01, type: machine, name: "Machine 01"}
-  - {id: M02, type: machine, name: "Machine 02"}
-  - {id: M03, type: machine, name: "Machine 03"}
-  - {id: HOP-1, type: hopper, name: "Hopper 1"}
-  - {id: LINE-1, type: line, name: "Line 1"}
+  - {id: M01, type: machine, name: "Machine 01", attributes: {stage: san_xuat}}
+  - {id: M02, type: machine, name: "Machine 02", attributes: {stage: san_xuat, cycle_target_s: 30, line: LINE-1}}
+  - {id: M03, type: machine, name: "Machine 03", attributes: {stage: san_xuat}}
+  - {id: HOP-1, type: hopper, name: "Hopper 1", attributes: {stage: san_xuat}}
+  - {id: LINE-1, type: line, name: "Line 1", attributes: {stage: san_xuat}}
 
   # --- Linh kiện / lô ---
   - id: BRG-6203
     type: part
     name: "Bearing 6203"
+    attributes: {stage: dinh_kem}
   - id: LOT-A
     type: lot
     name: LOT-A
-    attributes: {part: BRG-6203, role: "đối chứng"}
+    attributes: {stage: kho, part: BRG-6203, role: "đối chứng"}
   - id: LOT-B
     type: lot
     name: LOT-B
-    attributes: {part: BRG-6203, qty: 5000, role: "nghi vấn"}
+    attributes: {stage: kho, part: BRG-6203, qty: 5000, role: "nghi vấn"}
   - id: S1-6203-B
     type: supplier_lot
     name: S1-6203-B
-    attributes: {supplier: SUP-S1}
+    attributes: {stage: dinh_kem, supplier: SUP-S1}
 
   # --- Kho / mua hàng ---
   - id: RCV-1410
     type: receipt
     name: RCV-1410
-    attributes: {lot: LOT-A}
+    attributes: {stage: kho, lot: LOT-A}
   - id: RCV-2810
     type: receipt
     name: RCV-2810
-    attributes: {lot: LOT-B, qty: 5000, received_at: "2026-10-28T09:10:00+07:00"}
+    attributes: {stage: kho, lot: LOT-B, qty: 5000, received_at: "2026-10-28T09:10:00+07:00"}
   - id: PO-4410
     type: purchase_order
     name: PO-4410
-    attributes: {supplier: SUP-S1, qty: 5000}
+    attributes: {stage: cung_ung, supplier: SUP-S1, qty: 5000}
+  - id: PO-4380
+    type: purchase_order
+    name: PO-4380
+    attributes: {stage: cung_ung, qty: 5000, supplier: SUP-S1}
   - id: SUP-S1
     type: supplier
     name: "Supplier S1"
-    attributes: {erp_code: NCC-S1}
+    attributes: {stage: cung_ung, erp_code: NCC-S1}
 
   # --- Chất lượng ---
   - id: IQC-5507
     type: inspection
     name: IQC-5507
-    attributes: {lot: LOT-A, cpk: 1.45, verdict: "Đạt", spec_min: 1.33}
+    attributes: {stage: dinh_kem, lot: LOT-A, cpk: 1.45, verdict: "Đạt", spec_min: 1.33}
   - id: IQC-5531
     type: inspection
     name: IQC-5531
-    attributes: {lot: LOT-B, cpk: 0.92, verdict: "Chấp nhận có điều kiện", spec_min: 1.33}
+    attributes: {stage: dinh_kem, lot: LOT-B, cpk: 0.92, verdict: "Chấp nhận có điều kiện", spec_min: 1.33}
 
   # --- Bán hàng / giao hàng ---
-  - {id: SO-7781, type: sales_order, name: SO-7781}
-  - {id: SO-7790, type: sales_order, name: SO-7790}
-  - {id: CUS-C1, type: customer, name: "Customer C1"}
-  - {id: CUS-C3, type: customer, name: "Customer C3"}
-  - {id: CUS-C5, type: customer, name: "Customer C5"}
+  - {id: SO-7781, type: sales_order, name: SO-7781, attributes: {stage: khach_hang}}
+  - {id: SO-7790, type: sales_order, name: SO-7790, attributes: {stage: khach_hang}}
+  - {id: CUS-C1, type: customer, name: "Customer C1", attributes: {stage: khach_hang}}
+  - {id: CUS-C3, type: customer, name: "Customer C3", attributes: {stage: khach_hang}}
+  - {id: CUS-C5, type: customer, name: "Customer C5", attributes: {stage: khach_hang}}
   - id: SHP-1112
     type: shipment
     name: SHP-1112
-    attributes: {status: delivered, date: "2026-11-12", customer: CUS-C3, parts: 400, boxes: 17}
+    attributes: {stage: logistics, status: delivered, date: "2026-11-12", customer: CUS-C3, parts: 400, boxes: 17}
   - id: SHP-1115
     type: shipment
     name: SHP-1115
-    attributes: {status: delivered, date: "2026-11-15", customer: CUS-C5, parts: 240, boxes: 10}
+    attributes: {stage: logistics, status: delivered, date: "2026-11-15", customer: CUS-C5, parts: 240, boxes: 10}
   - id: SHP-1120
     type: shipment
     name: SHP-1120
-    attributes: {status: in_warehouse, parts: 360, boxes: 15}
+    attributes: {stage: logistics, status: in_warehouse, parts: 360, boxes: 15}
 
 aliases:
   - {object_id: M02, system: PLC, local_name: PLC2, approved_by: Quality}
@@ -129,8 +137,15 @@ links:
     status: confirmed
     score: 1.0
     rule_version: T1-exact
-    evidence: {record: ISS-1103, at: "2026-11-03T13:52:00+07:00"}
-  - {from: LOT-A, to: HOP-1, relation: fed_into, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+    evidence: {record: ISS-1103, at: "2026-11-03T13:52:00+07:00", valid_from: "2026-11-03T13:52:00+07:00"}
+  - from: LOT-A
+    to: HOP-1
+    relation: fed_into
+    tier: 1
+    status: confirmed
+    score: 1.0
+    rule_version: T1-exact
+    evidence: {valid_from: "2026-11-03T08:00:00+07:00", valid_to: "2026-11-03T13:52:00+07:00"}
   - {from: HOP-1, to: M02, relation: fed_into, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
   - {from: LOT-B, to: RCV-2810, relation: received_under, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
   - {from: RCV-2810, to: PO-4410, relation: received_under, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
@@ -149,6 +164,12 @@ links:
   - {from: SO-7781, to: CUS-C3, relation: delivered_to, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
   - {from: SHP-1115, to: SO-7790, relation: ordered_in, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
   - {from: SO-7790, to: CUS-C5, relation: delivered_to, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  # Flow bible (spec 3.3): claim nối khách, thượng nguồn LOT-A, M02 thuộc LINE-1
+  - {from: CLM-0012, to: CUS-C3, relation: raised_by, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: PO-4380, to: SUP-S1, relation: supplied_by, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: RCV-1410, to: PO-4380, relation: received_under, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: LOT-A, to: RCV-1410, relation: received_under, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: M02, to: LINE-1, relation: part_of, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
 
 documents:
   - doc_id: D-12

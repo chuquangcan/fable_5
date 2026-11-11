@@ -103,6 +103,11 @@ def test_exclusions_normal(seeded_conn):
     assert temps and all(26 <= x <= 27 for x in temps)
 
 
+def test_every_object_has_stage(seeded_conn):
+    n = seeded_conn.execute("select count(*) as n from objects where attributes->>'stage' is null").fetchone()["n"]
+    assert n == 0
+
+
 def test_delivery_three_months_before_claim(seeded_conn):
     delivered = date.fromisoformat(_attrs(seeded_conn, "SHP-1112")["date"])
     received = date.fromisoformat(_attrs(seeded_conn, "CLM-0012")["received"])

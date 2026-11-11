@@ -122,7 +122,8 @@ def generate_volume(story: dict, seed: int = 42) -> Volume:
             n, lot_b_start + timedelta(seconds=i * vol["lot_b_cycle_s"]), ["M02", serial], "LOT-B",
             vol["lot_b_cycle_s"] + rng.uniform(-noise_c, noise_c),
             vol["force_kn"]["LOT-B"] + rng.uniform(-noise_f, noise_f), plc_offset))
-        v.objects.append({"object_id": serial, "type": "serial", "name": serial, "attributes": {}})
+        v.objects.append({"object_id": serial, "type": "serial", "name": serial,
+                          "attributes": {"stage": "san_xuat"}})
 
     # --- boxes and shipments, assigned in serial label order ---
     labels = [f"{prefix}{k:04d}" for k in range(1, n_parts + 1)]
@@ -135,7 +136,7 @@ def generate_volume(story: dict, seed: int = 42) -> Volume:
             box_id = f"BOX-{box_no:03d}"
             size = per_box + (extra if b == 0 else 0)
             v.objects.append({"object_id": box_id, "type": "box", "name": box_id,
-                              "attributes": {"shipment": shp["id"], "parts": size}})
+                              "attributes": {"shipment": shp["id"], "parts": size, "stage": "logistics"}})
             v.links.append(_link(box_id, shp["id"], "shipped_in"))
             for serial in labels[pos:pos + size]:
                 v.links.append(_link(serial, "LOT-B", "uses_lot"))
