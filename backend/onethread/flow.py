@@ -16,16 +16,6 @@ UP_IS_FROM = {"fed_into", "packed_in", "shipped_in", "ordered_in", "delivered_to
 
 FLOW_STATUSES = ("confirmed", "inferred")
 
-# Display labels of the flow stages, left -> right. `dinh_kem` (attachments) is not a stage column.
-STAGES: dict[str, str] = {
-    "cung_ung": "Cung ứng",
-    "kho": "Kho",
-    "san_xuat": "Sản xuất",
-    "logistics": "Logistics",
-    "khach_hang": "Khách hàng",
-    "hau_mai": "Hậu mãi",
-}
-
 
 @dataclass(frozen=True)
 class DirectedEdge:
