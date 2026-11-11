@@ -17,6 +17,7 @@ export function ThreadView() {
   const dataVersion = useDemo((s) => s.dataVersion)
   const openAttach = useDemo((s) => s.openAttach)
   const setFaultOrigin = useDemo((s) => s.setFaultOrigin)
+  const setThreadRoot = useDemo((s) => s.setThreadRoot)
   const [faultData, setFaultData] = useState<{ claimId: string; origin: string | null; trace: FaultTrace } | null>(null)
   const [faultError, setFaultError] = useState(false)
   const [data, setData] = useState<{ claim: Claim; trace: TraceGraph; flow: FlowGraph } | null>(null)
@@ -36,6 +37,9 @@ export function ThreadView() {
       .catch((e: Error) => { if (!stale) setError(e.message) })
     return () => { stale = true }
   }, [claimId])
+
+  const root = data?.flow.root ?? null
+  useEffect(() => { setThreadRoot(root) }, [root, setThreadRoot])
 
   // A write (e.g. an attachment) refetches just the flow; the initial load above already covers version 0 / claim changes.
   const seenVersion = useRef(dataVersion)

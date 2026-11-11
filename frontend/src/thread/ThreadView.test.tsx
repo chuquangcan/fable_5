@@ -41,6 +41,7 @@ test('fetches the flow by claim and toggles fault mode from the toolbar', async 
   const toggle = await screen.findByRole('button', { name: 'Truy lỗi' })
   expect(api.getFlow).toHaveBeenCalledWith('CLM-0012')
   expect(screen.getByTestId('att-SUP-S1')).toBeInTheDocument()
+  expect(useDemo.getState().threadRoot).toBe('MH20-0001')
   expect(screen.queryByRole('button', { name: 'Lanes' })).toBeNull()
   expect(screen.queryByText('nạp LOT-B 13:52')).toBeNull()
   expect(toggle).toHaveAttribute('aria-pressed', 'true')

@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
-import { attachSample, listSamples, uploadDocument } from '../api/client'
+import { attachSample, getSummary, listSamples, uploadDocument } from '../api/client'
 import type { AttachMethod, AttachResult } from '../api/types'
 import { useDemo } from '../store/demo'
+
+/** Summary types that are not objects, so the backend would reject them as a target hint (422). */
+const NOT_ATTACHABLE = new Set(['aggregate', 'document', 'event', 'source'])
 
 const METHOD_LABEL: Record<AttachMethod, string> = { code: 'Mã', rule: 'Quy tắc', llm: 'LLM', manual: 'Thủ công' }
 
@@ -32,7 +35,9 @@ function ResultCard({ r }: { r: AttachResult }) {
 
 function Dialog() {
   const closeAttach = useDemo((s) => s.closeAttach)
-  const focusNodeId = useDemo((s) => s.focusNodeId)
+  // Same default as the overview: the focused node, else the thread's root serial.
+  const target = useDemo((s) => s.focusNodeId ?? s.threadRoot)
+  const [checked, setChecked] = useState<{ id: string; ok: boolean } | null>(null)
   const [samples, setSamples] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<AttachResult | null>(null)
@@ -45,6 +50,18 @@ function Dialog() {
     listSamples().then((s) => { if (!stale) setSamples(s) }).catch(() => {})
     return () => { stale = true }
   }, [])
+
+  useEffect(() => {
+    if (!target) return
+    let stale = false
+    getSummary(target).then(
+      (s) => { if (!stale) setChecked({ id: target, ok: !NOT_ATTACHABLE.has(s.type) }) },
+      () => { if (!stale) setChecked({ id: target, ok: false }) },
+    )
+    return () => { stale = true }
+  }, [target])
+  const hint = checked && checked.id === target ? checked : null
+  const hintId = hint?.ok ? hint.id : undefined
 
   useEffect(() => {
     ref.current?.focus()
@@ -68,10 +85,11 @@ function Dialog() {
       setBusy(false)
     }
   }
-  const upload = (file: File | undefined) => { if (file) void run(() => uploadDocument(file, focusNodeId ?? undefined)) }
+  const upload = (file: File | undefined) => { if (file) void run(() => uploadDocument(file, hintId)) }
   const onDrop = (e: DragEvent) => {
     e.preventDefault()
     setOver(false)
+    if (busy) return
     upload(e.dataTransfer.files[0])
   }
 
@@ -98,7 +116,10 @@ function Dialog() {
             <span>Kéo thả tệp vào đây hoặc chọn tệp</span>
             <input type="file" aria-label="Chọn tệp" disabled={busy} onChange={(e) => { upload(e.target.files?.[0]); e.target.value = '' }} />
             <span className="mut" style={{ fontSize: 11 }}>
-              {focusNodeId ? `Đích gợi ý khi không nhận ra mã: ${focusNodeId}` : 'Chưa chọn node — tài liệu không có mã sẽ bị từ chối'}
+              {!target ? 'Chưa chọn node — tài liệu không có mã sẽ bị từ chối'
+                : !hint ? `Đang kiểm tra ${target}…`
+                : hint.ok ? `Đích gợi ý khi không nhận ra mã: ${target}`
+                : `${target} không phải đối tượng — tài liệu không có mã sẽ bị từ chối`}
             </span>
           </div>
           {samples.length > 0 && (

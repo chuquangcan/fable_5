@@ -11,6 +11,8 @@ interface DemoState {
   openTabs: MainTab[]
   evidenceTab: EvidenceTab
   focusNodeId: string | null
+  /** Root serial of the thread on screen (flow.root); the overview's default target when no node is focused. */
+  threadRoot: string | null
   mode: Mode
   /** Explicit fault origin picked by the user; null = the claim's own fault point. */
   faultOrigin: string | null
@@ -23,6 +25,7 @@ interface DemoState {
   setTab: (t: MainTab) => void
   setEvidence: (t: EvidenceTab) => void
   focusNode: (id: string | null) => void
+  setThreadRoot: (id: string | null) => void
   setMode: (m: Mode) => void
   setFaultOrigin: (id: string | null) => void
   selectNode: (id: string) => void
@@ -39,6 +42,7 @@ const initial = {
   openTabs: [] as MainTab[],
   evidenceTab: 'm02' as EvidenceTab,
   focusNodeId: null,
+  threadRoot: null as string | null,
   mode: 'normal' as Mode,
   faultOrigin: null as string | null,
   dataVersion: 0,
@@ -50,10 +54,11 @@ let flashTimer: ReturnType<typeof setTimeout> | undefined
 
 export const useDemo = create<DemoState>((set, get) => ({
   ...initial,
-  openClaim: (id) => set({ claimId: id, openTabs: ['claim', 'thread'], activeTab: 'thread', mode: 'fault', faultOrigin: null }),
+  openClaim: (id) => set({ claimId: id, openTabs: ['claim', 'thread'], activeTab: 'thread', mode: 'fault', faultOrigin: null, threadRoot: null }),
   setTab: (t) => set((s) => ({ activeTab: t, openTabs: s.openTabs.includes(t) ? s.openTabs : [...s.openTabs, t] })),
   setEvidence: (t) => set({ evidenceTab: t }),
   focusNode: (id) => set({ focusNodeId: id }),
+  setThreadRoot: (id) => set({ threadRoot: id }),
   setMode: (m) => set({ mode: m }),
   setFaultOrigin: (id) => set(id === null ? { faultOrigin: null } : { faultOrigin: id, mode: 'fault' }),
   selectNode: (id) => {
