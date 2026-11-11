@@ -7,7 +7,7 @@
   status: inferred
   score: 0.90
   reason: "Khớp mã S1-6203-B ≡ LOT-B (alias NCC)"
-  text: "Giấy chứng nhận chất lượng (CoA) của Supplier S1 cho lô S1-6203-B, ổ bi 6203: kích thước và độ rơ nằm trong dung sai."
+  text: "Giấy chứng nhận chất lượng (CoA) của Supplier S1 cho lô S1-6203-B, ổ bi 6203. Hạng mục đo: đường kính trong, đường kính ngoài, bề rộng, độ rơ hướng kính."
 - file: BienBan_BaoTri_Press2_2026-11-05.pdf
   type: maintenance_report
   method: rule
