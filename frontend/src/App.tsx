@@ -1,3 +1,5 @@
+import { AppShell } from './shell/AppShell'
+
 export default function App() {
-  return <div>One Thread</div>
+  return <AppShell left={null} main={<div>One Thread</div>} right={null} />
 }
