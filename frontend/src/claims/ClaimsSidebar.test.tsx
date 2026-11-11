@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
@@ -55,4 +55,14 @@ test('confidence counts and review queue appear only after a claim is opened', a
 test('alias block is always shown', async () => {
   render(<ClaimsSidebar />)
   expect(await screen.findByText('S1-6203-B')).toBeInTheDocument()
+})
+
+test('a data write refetches the claims and the open claim trace', async () => {
+  render(<ClaimsSidebar />)
+  await userEvent.click(await screen.findByRole('button', { name: /CLM-0012/ }))
+  await waitFor(() => expect(api.getTrace).toHaveBeenCalledTimes(1))
+  expect(api.getClaims).toHaveBeenCalledTimes(1)
+  act(() => useDemo.getState().bumpData())
+  await waitFor(() => expect(api.getTrace).toHaveBeenCalledTimes(2))
+  expect(api.getClaims).toHaveBeenCalledTimes(2)
 })

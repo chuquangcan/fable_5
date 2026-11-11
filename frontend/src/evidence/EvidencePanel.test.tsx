@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
 import type { PlantEvent, TraceGraph } from '../api/types'
@@ -63,6 +63,14 @@ test('lot tab shows IQC, similar claim and doc badges', async () => {
   expect(screen.getByText('chờ duyệt · 0.78')).toBeInTheDocument()
   expect(screen.getByText('chỉ gợi ý · bậc 5')).toBeInTheDocument()
   expect(screen.getAllByText('bậc 4 · duyệt')).toHaveLength(2)
+})
+
+test('lot tab refetches when dataVersion changes', async () => {
+  show('lot')
+  await screen.findByText('0.92')
+  expect(api.getDocs).toHaveBeenCalledTimes(2)
+  act(() => useDemo.getState().bumpData())
+  await vi.waitFor(() => expect(api.getDocs).toHaveBeenCalledTimes(4))
 })
 
 test('impact tab shows blast radius', async () => {

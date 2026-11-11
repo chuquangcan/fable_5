@@ -43,10 +43,13 @@ export function ClaimsSidebar() {
   const [trace, setTrace] = useState<TraceGraph | null>(null)
   const claimId = useDemo((s) => s.claimId)
   const openClaim = useDemo((s) => s.openClaim)
+  const dataVersion = useDemo((s) => s.dataVersion)
 
   useEffect(() => {
-    getClaims().then(setClaims).catch(() => setClaims([]))
-  }, [])
+    let stale = false
+    getClaims().then((c) => { if (!stale) setClaims(c) }).catch(() => {})  // a failed refetch keeps the list
+    return () => { stale = true }
+  }, [dataVersion])
 
   const active = claims.find((c) => c.id === claimId)
   const serial = active?.serial ?? null
@@ -55,7 +58,7 @@ export function ClaimsSidebar() {
     let stale = false
     getTrace(serial).then((t) => { if (!stale) setTrace(t) }).catch(() => { if (!stale) setTrace(null) })
     return () => { stale = true }
-  }, [serial])
+  }, [serial, dataVersion])
 
   const open = claims.filter((c) => c.status !== 'closed')
   const closed = claims.filter((c) => c.status === 'closed')

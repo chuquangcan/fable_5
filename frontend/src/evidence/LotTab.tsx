@@ -1,6 +1,7 @@
 import { getDocs, getEvents, getMetric } from '../api/client'
 import type { DocView, TraceGraph, TraceNode } from '../api/types'
 import { formatPlantTime } from '../lib/time'
+import { useDemo } from '../store/demo'
 import { DocBadge, docTitle } from './DocBadge'
 import { Pending, useAsync } from './useAsync'
 
@@ -22,7 +23,8 @@ async function load() {
 const attr = (n: TraceNode | undefined, k: string) => (n?.attributes[k] ?? null) as string | number | null
 
 export function LotTab({ trace }: { trace: TraceGraph }) {
-  const s = useAsync(load, [])
+  const dataVersion = useDemo((s) => s.dataVersion)
+  const s = useAsync(load, [dataVersion])
   if (s.status !== 'ok') return <Pending state={s} />
   const { cpk, receipts, docs } = s.data
   const iqc = (lot: string) => trace.nodes.find((n) => n.type === 'inspection' && n.attributes.lot === lot)
