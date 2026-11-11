@@ -1,11 +1,16 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import date, datetime
 from typing import Literal
 
+import anthropic
 import psycopg
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.responses import JSONResponse
+from sse_starlette.sse import EventSourceResponse
 
+from onethread.agent.events import ErrorEv
+from onethread.agent.loop import ClaudeTurn, run_agent
+from onethread.config import settings
 from onethread.db import connect
 from onethread.queries import claims, docs, events, impact, links, metrics, trace
 from onethread.queries.common import NotFound
@@ -86,3 +91,24 @@ def api_impact(lot: str, conn=Conn) -> impact.Impact:
 @app.get("/api/reports/{claim_id}/draft")
 def api_report_draft(claim_id: str, conn=Conn) -> ReportDraft:
     return build_report_draft(conn, claim_id)
+
+
+def get_turn_factory() -> Callable[[], Callable]:
+    """Builds the Claude turn lazily so missing credentials surface as an SSE `error` event."""
+    return lambda: ClaudeTurn(anthropic.AsyncAnthropic(), settings.agent_model, settings.agent_effort)
+
+
+@app.get("/api/agent/ask")
+async def api_agent_ask(q: str, claim: str = "CLM-0012", mode: str | None = None,
+                        conn=Conn, make_turn=Depends(get_turn_factory)) -> EventSourceResponse:
+    claims.get_claim(conn, claim)  # 404 before the stream starts
+    # `mode` (live | replay | auto) is wired in Task 13; this route always runs live.
+
+    async def stream():
+        try:
+            async for ev in run_agent(q, claim, conn=conn, turn=make_turn()):
+                yield {"data": ev.model_dump_json()}
+        except Exception as e:  # noqa: BLE001 — the client gets a terminal error event instead of a dropped stream
+            yield {"data": ErrorEv(message=f"{type(e).__name__}: {e}").model_dump_json()}
+
+    return EventSourceResponse(stream())

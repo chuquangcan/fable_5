@@ -86,3 +86,65 @@ def test_links_status_filter(client):
     links = client.get("/api/objects/LOT-B/links?status=pending").json()
     assert [(l["other_id"], l["status"]) for l in links] == [("D-07", "pending")]
     assert client.get("/api/objects/LOT-B/links?status=confirmed,inferred").json()
+
+
+# ---- GET /api/agent/ask (scripted turns, no network) ----
+import json as _json  # noqa: E402
+
+from onethread.api import get_turn_factory  # noqa: E402
+from tests.conftest import FakeTurn, text_msg, tool_use_msg  # noqa: E402
+
+
+def _sse_events(resp) -> list[dict]:
+    return [_json.loads(line[len("data:"):].strip()) for line in resp.text.splitlines() if line.startswith("data:")]
+
+
+def test_agent_ask_streams_events(client):
+    turn = FakeTurn([tool_use_msg("trace_forward", {"lot_id": "LOT-B"}),
+                     text_msg("Khoanh vùng: 1,000 part [[cite:LOT-B]]")])
+    app.dependency_overrides[get_turn_factory] = lambda: (lambda: turn)
+    r = client.get("/api/agent/ask", params={"q": "Vì sao?", "claim": "CLM-0012"})
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/event-stream")
+    evs = _sse_events(r)
+    assert [e["type"] for e in evs][0] == "tool_call" and evs[-1]["type"] == "done"
+    assert {"type": "cite", "label": "LOT-B", "target_id": "LOT-B"} in evs
+    assert "Vì sao?" in turn.requests[0][0]["content"]
+
+
+def test_agent_ask_unknown_claim_is_404(client):
+    app.dependency_overrides[get_turn_factory] = lambda: (lambda: FakeTurn([]))
+    r = client.get("/api/agent/ask", params={"q": "x", "claim": "CLM-9999"})
+    assert r.status_code == 404 and "not found" in r.json()["detail"]
+
+
+def test_agent_ask_turns_failures_into_error_event(client):
+    def boom():
+        raise RuntimeError("no credentials")
+    app.dependency_overrides[get_turn_factory] = lambda: boom
+    evs = _sse_events(client.get("/api/agent/ask", params={"q": "x", "claim": "CLM-0012"}))
+    assert [e["type"] for e in evs] == ["error"] and "no credentials" in evs[0]["message"]
+
+
+def test_agent_ask_keeps_db_connection_open_while_streaming(seeded_conn):
+    state = {"closed": False, "closed_during_turn": None}
+
+    def conn_dep():
+        try:
+            yield seeded_conn
+        finally:
+            state["closed"] = True
+
+    class Turn(FakeTurn):
+        async def __call__(self, messages):
+            state["closed_during_turn"] = state["closed"]
+            async for x in super().__call__(messages):
+                yield x
+
+    turn = Turn([text_msg("ok")])
+    app.dependency_overrides[get_conn] = conn_dep
+    app.dependency_overrides[get_turn_factory] = lambda: (lambda: turn)
+    try:
+        TestClient(app).get("/api/agent/ask", params={"q": "x", "claim": "CLM-0012"})
+    finally:
+        app.dependency_overrides.clear()
+    assert state["closed_during_turn"] is False

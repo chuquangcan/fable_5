@@ -44,3 +44,37 @@ def seeded_conn(conn, story_path):
         seed(conn, story_path)
         _seeded_this_session = True
     return conn
+
+
+# ---- agent test helpers: scripted Claude turns, no network ----
+from types import SimpleNamespace  # noqa: E402
+
+
+def tool_use_msg(name: str, args: dict, tool_id: str = "toolu_1"):
+    block = SimpleNamespace(type="tool_use", id=tool_id, name=name, input=args)
+    return SimpleNamespace(content=[block], stop_reason="tool_use")
+
+
+def text_msg(text: str, stop_reason: str = "end_turn"):
+    return SimpleNamespace(content=[SimpleNamespace(type="text", text=text)], stop_reason=stop_reason)
+
+
+def refusal_msg():
+    return SimpleNamespace(content=[], stop_reason="refusal")
+
+
+class FakeTurn:
+    """Replays scripted final messages; text blocks are streamed in small chunks. Records each request."""
+
+    def __init__(self, messages: list):
+        self._script = list(messages)
+        self.requests: list[list] = []
+
+    async def __call__(self, messages):
+        self.requests.append(list(messages))
+        msg = self._script.pop(0)
+        for block in msg.content:
+            if block.type == "text":
+                for i in range(0, len(block.text), 7):
+                    yield ("text", block.text[i : i + 7])
+        yield ("message", msg)
