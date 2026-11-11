@@ -4,7 +4,17 @@ beforeEach(() => useDemo.getState().reset())
 
 test('initial state', () => {
   const s = useDemo.getState()
-  expect([s.claimId, s.activeTab, s.openTabs, s.evidenceTab, s.focusNodeId]).toEqual([null, 'claim', [], 'm02', null])
+  expect([s.claimId, s.activeTab, s.openTabs, s.evidenceTab, s.focusNodeId, s.mode]).toEqual([null, 'claim', [], 'm02', null, 'normal'])
+})
+
+test('openClaim switches to fault mode, reset back to normal', () => {
+  useDemo.getState().openClaim('CLM-0012'); expect(useDemo.getState().mode).toBe('fault')
+  useDemo.getState().reset(); expect(useDemo.getState().mode).toBe('normal')
+})
+
+test('setMode toggles the mode', () => {
+  useDemo.getState().setMode('fault'); expect(useDemo.getState().mode).toBe('fault')
+  useDemo.getState().setMode('normal'); expect(useDemo.getState().mode).toBe('normal')
 })
 
 test('openClaim opens claim+thread tabs and activates thread', () => {

@@ -35,7 +35,10 @@ body{margin:0}
 .amb{background:#FFF4E5;border-color:#E3BC72;color:#7A4300}
 .thr{background:#E8F4F5;border-color:#7FC0C6;color:#0B6770}
 .mut{color:#5F6670}
-.gn{position:absolute;width:112px;height:34px;border:1px solid #8E959F;background:#FFFFFF;padding:2px 6px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;font:inherit;font-size:11px;line-height:1.25;color:#1B1F24;text-align:left;cursor:pointer;border-radius:0}
+.gn{position:absolute;width:104px;height:34px;border:1px solid #8E959F;background:#FFFFFF;padding:2px 6px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;font:inherit;font-size:11px;line-height:1.25;color:#1B1F24;text-align:left;cursor:pointer;border-radius:0}
+/* Fault-trace node tones (applied by Task 23): upstream cause red, downstream impact orange */
+.gn.gn-red{border:2px solid var(--red);background:var(--red-bg);color:var(--red-ink)}
+.gn.gn-orange{border:2px solid var(--amber);background:var(--amber-bg);color:var(--amber-ink)}
 .ln{display:inline-block;width:22px;vertical-align:middle;margin-right:5px}
 table.g{border-collapse:collapse;width:100%}
 table.g th{font-size:11px;font-weight:600;color:#4A515B;text-align:left;padding:5px 8px;border-bottom:1px solid #C9CDD3;background:#F3F4F6;white-space:nowrap}

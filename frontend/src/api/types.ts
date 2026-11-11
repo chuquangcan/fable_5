@@ -109,3 +109,48 @@ export interface ReportDraft {
   cause: ReportSegment[]
   actions: string[]
 }
+
+/** Raw stage codes sent by /api/flow; display labels live in thread/flowLayout.ts (STAGES). */
+export type FlowStage = 'cung_ung' | 'kho' | 'san_xuat' | 'logistics' | 'khach_hang' | 'hau_mai' | 'dinh_kem'
+
+export interface FlowNode {
+  id: string
+  type: string
+  name: string
+  stage: string
+  sub: string
+  /** Spine column index; for branch nodes, the spine column they sit under. */
+  order: number | null
+  row: number
+  parent_id: string | null
+  members: Record<string, number> | null
+}
+
+export interface FlowEdge {
+  up: string
+  down: string
+  relation: string
+  tier: number
+  status: EdgeStatus
+  kind: 'spine' | 'branch'
+  active: boolean
+}
+
+export interface Attachment {
+  id: string
+  kind: 'document' | 'inspection' | 'claim' | 'event' | 'alias' | 'part'
+  label: string
+  status: EdgeStatus | null
+  tier: number | null
+  via: string | null
+}
+
+export interface FlowGraph {
+  root: string
+  at: string
+  spine: FlowNode[]
+  branches: FlowNode[]
+  edges: FlowEdge[]
+  /** Keyed per node; the same attachment id may appear under several nodes. */
+  attachments: Record<string, Attachment[]>
+}

@@ -1,103 +1,112 @@
 import '@xyflow/react/dist/style.css'
 import { Handle, type Node, type NodeProps, Position, ReactFlow, type Edge as RFEdge } from '@xyflow/react'
 import { useMemo } from 'react'
-import type { TraceGraph, TraceNode } from '../api/types'
+import type { FlowGraph, FlowNode } from '../api/types'
 import { useDemo } from '../store/demo'
-import { edgeStyle, LANES, LAYOUT, NODE_EVIDENCE, NODE_H, NODE_W, pickSides, type Side, type Tone } from './layout'
-
-const TONES: Record<Tone, { border: string; bg?: string; ink?: string }> = {
-  focus: { border: '2px solid #1C2026' },
-  bad: { border: '2px solid #C62828', bg: '#FDECEC', ink: '#A61B1B' },
-  suspect: { border: '2px solid #E3BC72', bg: '#FFF4E5', ink: '#7A4300' },
-  pending: { border: '2px dotted #0E7C86' },
-  suggested: { border: '1px dotted #8E959F', bg: '#F7F8F9' },
-}
+import { flowLayout } from './flowLayout'
+import { edgeStyle, NODE_EVIDENCE, NODE_H, NODE_W, neutralEdgeStyle, pickSides, type Side } from './layout'
 
 const POS: Record<Side, Position> = { l: Position.Left, r: Position.Right, t: Position.Top, b: Position.Bottom }
-const NAMED_TYPES = new Set(['machine', 'hopper', 'supplier', 'customer'])
+const NAMED_TYPES = new Set(['machine', 'hopper', 'supplier', 'customer', 'aggregate'])
 
-function title(n: TraceNode): string {
-  if (NAMED_TYPES.has(n.type)) return n.name
-  const page = n.type === 'document' ? Number(/p\.(\d+)/.exec(n.name)?.[1]) : 0
-  return page > 1 ? `${n.id} · p.${page}` : n.id
-}
+const title = (n: FlowNode) => (NAMED_TYPES.has(n.type) ? n.name : n.id)
 
-interface GraphNodeData extends Record<string, unknown> { node: TraceNode; sub: string; tone?: Tone }
+interface GraphNodeData extends Record<string, unknown> { node: FlowNode; attachments: number }
 
 function GraphNode({ data }: NodeProps<Node<GraphNodeData>>) {
-  const { node, sub, tone } = data
+  const { node, attachments } = data
   const focused = useDemo((s) => s.focusNodeId === node.id)
-  const t = tone ? TONES[tone] : undefined
+  const head = title(node)
   return (
-    <button
-      className="gn"
-      style={{
-        position: 'relative', padding: '2px 4px', whiteSpace: 'nowrap', overflow: 'hidden', ...(t ? { border: t.border, background: t.bg } : {}),
-        ...(focused ? { outline: '2px solid #0E7C86', outlineOffset: 1 } : {}),
-      }}
-    >
-      {(['l', 'r', 't', 'b'] as Side[]).map((s) => (
-        <span key={s}>
-          <Handle id={`s-${s}`} type="source" position={POS[s]} style={{ opacity: 0, pointerEvents: 'none' }} isConnectable={false} />
-          <Handle id={`t-${s}`} type="target" position={POS[s]} style={{ opacity: 0, pointerEvents: 'none' }} isConnectable={false} />
+    <>
+      <button
+        className="gn"
+        style={{
+          position: 'relative', padding: '2px 4px', whiteSpace: 'nowrap', overflow: 'hidden',
+          ...(focused ? { outline: '2px solid #0E7C86', outlineOffset: 1 } : {}),
+        }}
+      >
+        {(['l', 'r', 't', 'b'] as Side[]).map((s) => (
+          <span key={s}>
+            <Handle id={`s-${s}`} type="source" position={POS[s]} style={{ opacity: 0, pointerEvents: 'none' }} isConnectable={false} />
+            <Handle id={`t-${s}`} type="target" position={POS[s]} style={{ opacity: 0, pointerEvents: 'none' }} isConnectable={false} />
+          </span>
+        ))}
+        <span className="mono" style={{ fontWeight: 500, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>{head}</span>
+        {node.sub && node.sub !== head && (
+          <span className="mut" style={{ fontSize: 10.5, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>{node.sub}</span>
+        )}
+      </button>
+      {attachments > 0 && (
+        <span data-testid={`att-${node.id}`} className="chip mut" style={{ position: 'absolute', left: 0, top: NODE_H + 3, height: 16, fontSize: 10.5 }}>
+          {attachments} đính kèm
         </span>
-      ))}
-      <span className="mono" style={{ fontWeight: tone ? 600 : 500, color: t?.ink }}>{title(node)}</span>
-      <span className={t?.ink ? undefined : 'mut'} style={{ color: t?.ink, fontSize: 10.5 }}>{sub}</span>
-    </button>
+      )}
+    </>
   )
 }
 
 const nodeTypes = { thread: GraphNode }
 
-export function ThreadGraph({ trace }: { trace: TraceGraph }) {
+export function ThreadGraph({ flow }: { flow: FlowGraph }) {
+  const mode = useDemo((s) => s.mode)
   const setEvidence = useDemo((s) => s.setEvidence)
   const focusNode = useDemo((s) => s.focusNode)
   const onNodeClick = (_: unknown, n: Node) => {
     focusNode(n.id)
+    // Deep evidence tabs only matter while tracing a fault (Task 22 replaces this with selectNode).
     const ev = NODE_EVIDENCE[n.id]
-    if (ev) setEvidence(ev)
+    if (ev && useDemo.getState().mode === 'fault') setEvidence(ev)
   }
+
+  const layout = useMemo(() => flowLayout(flow), [flow])
   const { nodes, edges } = useMemo(() => {
-    const nodes: Node<GraphNodeData>[] = trace.nodes
-      .filter((n) => LAYOUT[n.id])
-      .map((n) => ({
-        id: n.id, type: 'thread', position: { x: LAYOUT[n.id].x, y: LAYOUT[n.id].y },
+    const pos = new Map(layout.nodes.map((p) => [p.id, p]))
+    const nodes: Node<GraphNodeData>[] = [...flow.spine, ...flow.branches].map((n) => {
+      const p = pos.get(n.id)!
+      return {
+        id: n.id, type: 'thread', position: { x: p.x, y: p.y },
         width: NODE_W, height: NODE_H, initialWidth: NODE_W, initialHeight: NODE_H,
-        data: { node: n, sub: LAYOUT[n.id].sub, tone: LAYOUT[n.id].tone },
-      }))
-    const edges: RFEdge[] = trace.edges
-      .filter((e) => LAYOUT[e.from_id] && LAYOUT[e.to_id] && nodes.some((n) => n.id === e.from_id) && nodes.some((n) => n.id === e.to_id))
+        data: { node: n, attachments: flow.attachments[n.id]?.length ?? 0 },
+      }
+    })
+    const style = mode === 'fault' ? edgeStyle : neutralEdgeStyle
+    const edges: RFEdge[] = flow.edges
+      .filter((e) => pos.has(e.up) && pos.has(e.down))
       .map((e) => {
-        const [a, b] = pickSides(LAYOUT[e.from_id], LAYOUT[e.to_id])
+        const [a, b] = pickSides(pos.get(e.up)!, pos.get(e.down)!)
         return {
-          id: `${e.from_id}>${e.relation}>${e.to_id}`, source: e.from_id, target: e.to_id,
+          id: `${e.up}>${e.relation}>${e.down}`, source: e.up, target: e.down,
           sourceHandle: `s-${a}`, targetHandle: `t-${b}`, type: 'smoothstep',
-          style: { strokeWidth: 2, ...edgeStyle(e.status) },
+          style: { strokeWidth: 2, ...style(e.status), ...(e.active ? {} : { opacity: 0.45 }) },
         }
       })
     return { nodes, edges }
-  }, [trace])
+  }, [flow, layout, mode])
 
+  const { width, height, bands } = layout
+  const ink = mode === 'fault' ? '#0E7C86' : '#8E959F'
   return (
-    <div style={{ position: 'relative', width: 788, height: 260, flex: 'none', background: '#FCFCFD' }}>
-      {LANES.map((l, i) => (
-        <span key={l.label}>
-          <span className="mut" style={{ position: 'absolute', left: l.x, top: 8 }}>{l.label}</span>
-          {i > 0 && <span style={{ position: 'absolute', left: l.x - 8, top: 0, height: 260, borderLeft: '1px solid #E3E5E8' }} />}
-        </span>
+    <div style={{ position: 'relative', width, height, flex: 'none', background: '#FCFCFD' }}>
+      {bands.map((b, i) => (
+        <div
+          key={`${b.stage}-${b.x}`}
+          data-testid={`band-${b.stage}`}
+          style={{ position: 'absolute', left: b.x, top: 0, width: b.w, height, background: i % 2 ? '#F5F6F8' : 'transparent', borderLeft: i > 0 ? '1px solid #E3E5E8' : undefined }}
+        >
+          <span className="mut" style={{ position: 'absolute', left: 10, top: 10, fontSize: 11, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase' }}>{b.label}</span>
+        </div>
       ))}
       <ReactFlow
-        nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodeClick={onNodeClick} width={788} height={260}
+        nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodeClick={onNodeClick} width={width} height={height}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }} nodesDraggable={false} nodesConnectable={false}
         panOnDrag={false} zoomOnScroll={false} zoomOnPinch={false} zoomOnDoubleClick={false} preventScrolling={false}
         elementsSelectable={false} proOptions={{ hideAttribution: true }} style={{ background: 'transparent' }}
       />
-      <span className="chip thr mono" style={{ position: 'absolute', left: 146, top: 194 }}>nạp LOT-B 13:52</span>
-      <div className="mut" style={{ position: 'absolute', left: 18, top: 232, display: 'flex', gap: 12, fontSize: 11 }}>
-        <span><span className="ln" style={{ borderTop: '2px solid #0E7C86' }} />confirmed</span>
-        <span><span className="ln" style={{ borderTop: '2px dashed #0E7C86' }} />inferred</span>
-        <span><span className="ln" style={{ borderTop: '2px dotted #0E7C86' }} />chờ duyệt</span>
+      <div className="mut" style={{ position: 'absolute', left: 16, top: height - 22, display: 'flex', gap: 12, fontSize: 11 }}>
+        <span><span className="ln" style={{ borderTop: `2px solid ${ink}` }} />confirmed</span>
+        <span><span className="ln" style={{ borderTop: `2px dashed ${ink}` }} />inferred</span>
+        <span><span className="ln" style={{ borderTop: `2px dotted ${ink}` }} />chờ duyệt</span>
         <span><span className="ln" style={{ borderTop: '2px dotted #8E959F' }} />gợi ý</span>
       </div>
     </div>
