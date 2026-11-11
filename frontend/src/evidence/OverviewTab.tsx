@@ -5,6 +5,9 @@ import { STAGES } from '../thread/flowLayout'
 import { DocBadge, docTitle } from './DocBadge'
 import { Pending, useAsync } from './useAsync'
 
+/** Summary types that /api/fault-trace cannot take as an origin (not objects in the flow). */
+const NOT_FAULT_ORIGIN = new Set(['aggregate', 'event', 'source'])
+
 const fmt = (p: Param) => (p.unit ? `${p.value} ${p.unit}` : String(p.value))
 
 function Params({ params }: { params: Param[] }) {
@@ -13,8 +16,8 @@ function Params({ params }: { params: Param[] }) {
     <table className="g">
       <thead><tr><th>Thông số</th><th>Giá trị</th><th>Nguồn</th></tr></thead>
       <tbody>
-        {params.map((p) => (
-          <tr key={p.label}>
+        {params.map((p, i) => (
+          <tr key={`${p.label}-${i}`}>
             <td>{p.label}</td>
             <td className="mono">{fmt(p)}</td>
             <td><span className="cite" title={p.source_record_id ?? undefined}>{p.source}</span></td>
@@ -35,8 +38,8 @@ function Docs({ docs }: { docs: NodeSummary['docs'] }) {
     )
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 10px' }}>
-      {docs.map((d) => (
-        <div key={`${d.doc_id}-${d.page}`} className="it" style={{
+      {docs.map((d, i) => (
+        <div key={`${d.doc_id}-${d.page}-${i}`} className="it" style={{
           margin: 0,
           ...(d.status === 'pending' ? { borderColor: 'var(--teal)' } : {}),
           ...(d.status === 'suggested' ? { borderStyle: 'dotted', background: '#F7F8F9' } : {}),
@@ -59,6 +62,8 @@ export function OverviewTab({ id }: { id: string }) {
   const setFaultOrigin = useDemo((s) => s.setFaultOrigin)
   const openAttach = useDemo((s) => s.openAttach)
   const s = useAsync(() => getSummary(id), [id, dataVersion])
+  // Not every citable id has a summary: a 404 is "nothing to show", not a failure.
+  if (s.status === 'error' && s.message.startsWith('404')) return <div className="mut" style={{ padding: 14 }}>{`Không có tổng hợp cho ${id}`}</div>
   if (s.status !== 'ok') return <Pending state={s} />
   const d = s.data
   return (
@@ -68,7 +73,7 @@ export function OverviewTab({ id }: { id: string }) {
           <span style={{ fontWeight: 600 }}>{`${d.name} · ${d.type}`}</span>
           <span className="mut">{STAGES[d.stage as FlowStage] ?? d.stage}</span>
           <span style={{ flex: 1 }} />
-          {d.type !== 'aggregate' && <button className="btn" onClick={() => setFaultOrigin(id)}>Đặt làm điểm lỗi</button>}
+          {!NOT_FAULT_ORIGIN.has(d.type) && <button className="btn" onClick={() => setFaultOrigin(id)}>Đặt làm điểm lỗi</button>}
           <button className="btn" onClick={openAttach}>Gắn tài liệu</button>
         </div>
         <Params params={d.params} />

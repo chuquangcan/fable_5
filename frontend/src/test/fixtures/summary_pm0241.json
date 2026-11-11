@@ -1,0 +1,35 @@
+{
+  "id": "PM-0241",
+  "type": "event",
+  "name": "maintenance · 2026-10-20 09:00",
+  "stage": "dinh_kem",
+  "aliases": [],
+  "params": [
+    {
+      "label": "Thời điểm",
+      "value": "2026-10-20 09:00",
+      "unit": null,
+      "source": "CMMS",
+      "source_record_id": "PM-0241"
+    },
+    {
+      "label": "Đối tượng",
+      "value": "M02",
+      "unit": null,
+      "source": "CMMS",
+      "source_record_id": "PM-0241"
+    },
+    {
+      "label": "result",
+      "value": "normal",
+      "unit": null,
+      "source": "CMMS",
+      "source_record_id": "PM-0241"
+    }
+  ],
+  "docs": [],
+  "counts": {
+    "links": 0,
+    "events": 1
+  }
+}

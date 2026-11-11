@@ -5,8 +5,10 @@ import * as api from '../api/client'
 import type { TraceGraph } from '../api/types'
 import m01 from '../test/fixtures/summary_m01.json'
 import m02 from '../test/fixtures/summary_m02.json'
+import pm0241 from '../test/fixtures/summary_pm0241.json'
 import trace from '../test/fixtures/trace.json'
 import { useDemo } from '../store/demo'
+import { CiteChip } from '../agent/AgentPanel'
 import { EvidencePanel } from './EvidencePanel'
 import { OverviewTab } from './OverviewTab'
 
@@ -112,4 +114,35 @@ test('EvidencePanel in normal mode has only the overview tab', async () => {
   expect(screen.getByRole('button', { name: 'Tổng quan · M02' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Khoanh vùng LOT-B/ })).toBeNull()
   expect(await screen.findByText('Cycle TB · LOT-B')).toBeInTheDocument()
+})
+
+test('a cite to an event record shows its summary, not the error panel', async () => {
+  vi.mocked(api.getSummary).mockImplementation(async (id) => {
+    if (id === 'PM-0241') return pm0241 as never
+    if (id === 'GHOST-1') throw new Error('404 object GHOST-1 not found')
+    return m02 as never
+  })
+  render(<><CiteChip label="PM-0241" target_id="PM-0241" /><CiteChip label="GHOST-1" target_id="GHOST-1" /><EvidencePanel trace={trace as unknown as TraceGraph} /></>)
+  await userEvent.click(screen.getByRole('button', { name: 'PM-0241' }))
+  expect(await screen.findByText('maintenance · 2026-10-20 09:00 · event')).toBeInTheDocument()
+  expect(screen.getByText('normal')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Đặt làm điểm lỗi' })).toBeNull()
+  await userEvent.click(screen.getByRole('button', { name: 'GHOST-1' }))
+  expect(await screen.findByText('Không có tổng hợp cho GHOST-1')).toBeInTheDocument()
+  expect(screen.queryByText(/Không tải được dữ liệu/)).toBeNull()
+})
+
+test('param rows with the same label keep distinct keys', async () => {
+  const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+  vi.mocked(api.getSummary).mockResolvedValue({
+    ...m01,
+    params: [
+      { label: 'Lô xuất', value: 'SHP-1', unit: null, source: 'WMS', source_record_id: null },
+      { label: 'Lô xuất', value: 'SHP-2', unit: null, source: 'WMS', source_record_id: null },
+    ],
+  } as never)
+  render(<OverviewTab id="M01" />)
+  expect(await screen.findByText('SHP-2')).toBeInTheDocument()
+  expect(err.mock.calls.some((c) => String(c[0]).includes('same key'))).toBe(false)
+  err.mockRestore()
 })
