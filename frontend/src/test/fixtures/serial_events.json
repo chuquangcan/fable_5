@@ -1,0 +1,1 @@
+[{"event_id":"EV-PLC2-000702","type":"press_cycle","object_ids":["M02","MH20-0001"],"event_time":"2026-11-03T07:05:18Z","time_kind":"sensor","source":"PLC2","source_record_id":"PLC2-000702","payload":{"lot":"LOT-B","cycle_s":41.872,"plc_time":"2026-11-03T14:05:56+07:00","peak_force_kn":13.188}}]

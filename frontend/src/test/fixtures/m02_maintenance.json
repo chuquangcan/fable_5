@@ -1,0 +1,1 @@
+[{"event_id":"EV-PM-0241","type":"maintenance","object_ids":["M02"],"event_time":"2026-10-20T02:00:00Z","time_kind":"transaction","source":"CMMS","source_record_id":"PM-0241","payload":{"result":"normal"}}]

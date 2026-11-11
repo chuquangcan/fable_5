@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getClaim, getTrace } from '../api/client'
 import type { Claim, TraceGraph } from '../api/types'
 import { useDemo } from '../store/demo'
+import { EvidencePanel } from '../evidence/EvidencePanel'
 import { EntityHeader } from './EntityHeader'
 import { ThreadGraph } from './ThreadGraph'
 
@@ -44,7 +45,7 @@ export function ThreadView() {
       </div>
       <EntityHeader serial={trace.root} claim={claim} trace={trace} />
       <div style={{ flex: 'none', overflowX: 'auto', borderBottom: '1px solid var(--line)' }}><ThreadGraph trace={trace} /></div>
-      <div id="evidence-slot" style={{ flex: 1, minHeight: 0 }} />
+      <EvidencePanel trace={trace} />
     </div>
   )
 }
