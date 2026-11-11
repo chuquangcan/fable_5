@@ -51,3 +51,27 @@ def test_stage_is_raw_code(client):
     assert client.get("/api/objects/M02/summary").json()["stage"] == "san_xuat"
     assert client.get("/api/objects/IQC-5531/summary").json()["stage"] == "dinh_kem"
     assert client.get("/api/objects/AGG-LOT-B/summary").json()["stage"] == "san_xuat"
+
+
+def test_event_record_summary(client):                    # agent cites a side-event record ID
+    r = client.get("/api/objects/PM-0241/summary")
+    assert r.status_code == 200
+    s = r.json()
+    assert s["type"] == "event" and s["id"] == "PM-0241" and s["name"].startswith("maintenance")
+    assert p(s, "Thời điểm")["source"] == "CMMS" and p(s, "Thời điểm")["source_record_id"] == "PM-0241"
+    assert p(s, "Đối tượng")["value"] == "M02" and p(s, "result")["value"] == "normal"
+    shift = client.get("/api/objects/HR-SHIFT-1103/summary").json()
+    assert p(shift, "changed")["value"] == "False" and p(shift, "operator")["value"] == "NV-118"
+
+
+@pytest.mark.parametrize("id,n", [("PLC2", 1682), ("CMMS", 1), ("ENV-L1", 5)])
+def test_event_source_summary(client, id, n):
+    r = client.get(f"/api/objects/{id}/summary")
+    assert r.status_code == 200
+    s = r.json()
+    assert s["type"] == "source" and s["name"] == id and p(s, "Số sự kiện")["value"] == n
+    assert s["counts"]["events"] == n
+
+
+def test_object_wins_over_event_record(client):          # RCV-2810 is a receipt object and a WMS record
+    assert client.get("/api/objects/RCV-2810/summary").json()["type"] == "receipt"

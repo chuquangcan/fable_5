@@ -16,6 +16,7 @@ from onethread.queries.links import get_links
 from onethread.queries.thread_flow import DEFAULT_STAGE
 
 AGG_PREFIX = "AGG-"
+ATTACHMENT_STAGE = "dinh_kem"  # events and sources sit with the attachments, not in a flow stage column
 TIME = "%Y-%m-%d %H:%M"
 
 
@@ -273,11 +274,50 @@ def _aggregate_summary(conn: psycopg.Connection, lot: str) -> NodeSummary:
                        counts={"links": 0, "events": 0})
 
 
+def _param_value(v: Any) -> str | float | int:
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return v
+    return v if isinstance(v, str) else str(v)
+
+
+def _event_summary(conn: psycopg.Connection, record_id: str) -> NodeSummary | None:
+    """A side-event record the agent may cite (PM-0241, HR-SHIFT-1103, ...): its time, objects and payload."""
+    e = conn.execute(
+        "SELECT type, object_ids, event_time, source, payload FROM events WHERE source_record_id = %s"
+        " ORDER BY event_time, event_id LIMIT 1", (record_id,)).fetchone()
+    if e is None:
+        return None
+    cite = {"source": e["source"] or "", "source_record_id": record_id}
+    params = [Param(label="Thời điểm", value=_fmt(e["event_time"]), **cite)]
+    if e["object_ids"]:
+        params.append(Param(label="Đối tượng", value=", ".join(e["object_ids"]), **cite))
+    params += [Param(label=k, value=_param_value(v), **cite) for k, v in (e["payload"] or {}).items()]
+    return NodeSummary(id=record_id, type="event", name=f"{e['type']} · {_fmt(e['event_time'])}",
+                       stage=ATTACHMENT_STAGE, aliases=[], params=params, docs=[],
+                       counts={"links": 0, "events": 1})
+
+
+def _source_summary(conn: psycopg.Connection, source: str) -> NodeSummary | None:
+    """An event source system (PLC2, CMMS, ENV-L1, ...): how many events of which types it holds."""
+    rows = conn.execute("SELECT type, count(*) AS n FROM events WHERE source = %s GROUP BY type ORDER BY type",
+                        (source,)).fetchall()
+    if not rows:
+        return None
+    n = sum(r["n"] for r in rows)
+    params = [Param(label="Số sự kiện", value=n, source=source),
+              Param(label="Loại sự kiện", value=", ".join(r["type"] for r in rows), source=source)]
+    return NodeSummary(id=source, type="source", name=source, stage=ATTACHMENT_STAGE, aliases=[],
+                       params=params, docs=[], counts={"links": 0, "events": n})
+
+
 def node_summary(conn: psycopg.Connection, id: str) -> NodeSummary:
+    """Objects and documents first; else an event record ID or an event source (both citable by the agent)."""
     if id.startswith(AGG_PREFIX):
         return _aggregate_summary(conn, id.removeprefix(AGG_PREFIX))
     info = node_info(conn, [id]).get(id)
     if info is None:
+        if (other := _event_summary(conn, id) or _source_summary(conn, id)) is not None:
+            return other
         raise NotFound("object", id)
     attrs = info["attributes"] or {}
     build = PARAMS_BY_TYPE.get(info["type"])
