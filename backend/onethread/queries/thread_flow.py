@@ -61,7 +61,7 @@ class FlowGraph(BaseModel):
     attachments: dict[str, list[Attachment]]
 
 
-def _resolve_serial(conn: psycopg.Connection, id: str) -> str:
+def resolve_serial(conn: psycopg.Connection, id: str) -> str:
     info = node_info(conn, [id]).get(id)
     if info is not None and info["type"] == "claim":
         id = (info["attributes"] or {}).get("serial") or ""
@@ -239,7 +239,7 @@ def _attachments(conn: psycopg.Connection, nodes: list[str], shown: set[str],
 
 
 def build_flow(conn: psycopg.Connection, id: str) -> FlowGraph:
-    root = _resolve_serial(conn, id)
+    root = resolve_serial(conn, id)
     at = press_time(conn, root)
 
     spine = _spine(conn, root, [e for e in flow_edges(conn, at) if not e.shortcut])

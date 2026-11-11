@@ -91,11 +91,11 @@ test('normal mode does not fetch fault data', async () => {
   expect(api.getFault).not.toHaveBeenCalled()
 })
 
-test('a selected fault origin is fetched at the claim time and can be cleared', async () => {
+test('a selected fault origin is fetched at the claim time on this thread and can be cleared', async () => {
   useDemo.getState().openClaim('CLM-0012')
   useDemo.getState().setFaultOrigin('LOT-B')
   const { container } = render(<ThreadView />)
-  await vi.waitFor(() => expect(api.getFault).toHaveBeenCalledWith('LOT-B', fault.at))
+  await vi.waitFor(() => expect(api.getFault).toHaveBeenCalledWith('LOT-B', fault.at, 'CLM-0012'))
   expect(await screen.findByText('Điểm lỗi: LOT-B')).toBeInTheDocument()
   await vi.waitFor(() => expect(container.querySelectorAll('.gn-red')).toHaveLength(1))
   await userEvent.click(screen.getByRole('button', { name: 'Về điểm lỗi của claim' }))

@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from onethread.flow import DirectedEdge, collapse_map, flow_edges
 from onethread.queries.common import PLANT_TZ, ensure_exists, node_info, press_time
+from onethread.queries.thread_flow import resolve_serial
 
 DEFAULT_AT = datetime.fromisoformat("2027-02-12T09:00:00+07:00")
 
@@ -37,17 +38,24 @@ def _resolve_origin(conn: psycopg.Connection, origin: str) -> tuple[str, bool]:
     return origin, info["type"] == "serial"
 
 
-def fault_trace(conn: psycopg.Connection, origin: str, at: datetime | None = None) -> FaultTrace:
+def _with_boxes(conn: psycopg.Connection, serial: str) -> set[str]:
+    return {serial} | {r["to_id"] for r in conn.execute(
+        "SELECT to_id FROM links WHERE relation = 'packed_in' AND from_id = %s", (serial,))}
+
+
+def fault_trace(conn: psycopg.Connection, origin: str, at: datetime | None = None,
+                thread: str | None = None) -> FaultTrace:
+    """`thread` (a serial or claim) keeps that serial and its boxes uncollapsed, as the flow graph does,
+    so the marks line up with the nodes drawn on that thread's spine."""
     origin, is_serial = _resolve_origin(conn, origin)
     if at is None:
         at = press_time(conn, origin) if is_serial else DEFAULT_AT
     elif at.tzinfo is None:
         at = at.replace(tzinfo=PLANT_TZ)
 
-    keep = {origin}
-    if is_serial:
-        keep |= {r["to_id"] for r in conn.execute(
-            "SELECT to_id FROM links WHERE relation = 'packed_in' AND from_id = %s", (origin,))}
+    keep = _with_boxes(conn, origin) if is_serial else {origin}
+    if thread is not None:
+        keep |= _with_boxes(conn, resolve_serial(conn, thread))
     cmap = collapse_map(conn, keep)
 
     pairs: list[tuple[str, str, DirectedEdge]] = []

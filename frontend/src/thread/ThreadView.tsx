@@ -50,14 +50,16 @@ export function ThreadView() {
     return () => { stale = true }
   }, [claimId, dataVersion])
 
-  // Fault colouring: the claim's own fault gives the reference time; an explicit origin is traced at that time.
+  // Fault colouring: the claim's own fault gives the reference time; an explicit origin is traced at that time
+  // on this claim's thread (the backend resolves the claim to the same root serial as /api/flow), so the
+  // thread's own serial/box are kept rather than collapsed into the lot aggregate.
   useEffect(() => {
     if (!claimId || mode !== 'fault') { setFaultError(false); return }
     let stale = false
     setFaultError(false)
     setFaultData(null)
     getClaimFault(claimId)
-      .then((cf) => (faultOrigin ? getFault(faultOrigin, cf.at) : cf))
+      .then((cf) => (faultOrigin ? getFault(faultOrigin, cf.at, claimId) : cf))
       .then((trace) => { if (!stale) setFaultData({ claimId, origin: faultOrigin, trace }) })
       .catch(() => { if (!stale) setFaultError(true) })
     return () => { stale = true }

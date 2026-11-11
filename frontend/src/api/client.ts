@@ -45,7 +45,9 @@ export const getImpact = (lot: string) => getJSON<Impact>(`/api/impact/${enc(lot
 export const getReportDraft = (claimId: string) => getJSON<ReportDraft>(`/api/reports/${enc(claimId)}/draft`)
 export const getSummary = (id: string) => getJSON<NodeSummary>(`/api/objects/${enc(id)}/summary`)
 export const getClaimFault = (claimId: string) => getJSON<FaultTrace>(`/api/claims/${enc(claimId)}/fault-trace`)
-export const getFault = (origin: string, at?: string) => getJSON<FaultTrace>(`/api/fault-trace${qs({ origin, at })}`)
+/** `thread` (serial or claim id) keeps that thread's serial/boxes uncollapsed so marks match the drawn spine. */
+export const getFault = (origin: string, at?: string, thread?: string) =>
+  getJSON<FaultTrace>(`/api/fault-trace${qs({ origin, at, thread })}`)
 
 export function uploadDocument(file: File, targetHint?: string): Promise<AttachResult> {
   const form = new FormData()

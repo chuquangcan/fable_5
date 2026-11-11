@@ -63,8 +63,9 @@ def api_flow(id: str, conn=Conn) -> thread_flow.FlowGraph:
 
 
 @app.get("/api/fault-trace")
-def api_fault_trace(origin: str, at: datetime | None = None, conn=Conn) -> fault.FaultTrace:
-    return fault.fault_trace(conn, origin, at)
+def api_fault_trace(origin: str, at: datetime | None = None, thread: str | None = None,
+                    conn=Conn) -> fault.FaultTrace:
+    return fault.fault_trace(conn, origin, at, thread)
 
 
 @app.get("/api/claims/{claim_id}/fault-trace")
