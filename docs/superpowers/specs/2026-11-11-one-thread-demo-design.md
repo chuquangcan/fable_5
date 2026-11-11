@@ -118,7 +118,7 @@ Tag: `[Infra]` · `[Dummy Data]` · `[Integration]` (API, agent) · `[UI/Fronten
 > **Mốc M1 · Dry-run #1** sau DEMO-01 → 11: chạy trọn kịch bản 4 màn với AI scripted.
 
 ### DEMO-12 `[Integration]` Agent Claude live qua tool
-- **Việc:** endpoint `POST /agent/ask` (SSE): vòng tool-use Claude với 7 tool map vào DEMO-05; system prompt bắt buộc dẫn nguồn, chỉ dùng link confirmed/inferred làm bằng chứng, gợi ý bậc 5 chỉ là hướng kiểm tra; stream sự kiện `tool_call`/`text`/`cite` đúng format fixture của DEMO-10. Model: `claude-sonnet-5-5` cho tốc độ (đổi `claude-opus-5-5` nếu chất lượng chưa đạt).
+- **Việc:** endpoint `POST /agent/ask` (SSE): vòng tool-use Claude với 7 tool map vào DEMO-05; system prompt bắt buộc dẫn nguồn, chỉ dùng link confirmed/inferred làm bằng chứng, gợi ý bậc 5 chỉ là hướng kiểm tra; stream sự kiện `tool_call`/`text`/`cite` đúng format fixture của DEMO-10. Model: `claude-opus-5-5`, effort `low` cho tốc độ (env `AGENT_EFFORT`, nâng `medium` nếu chất lượng chưa đạt), bật server-side fallback khi bị refusal.
 - **Hardcode:** context luôn là CLM-0012; giới hạn 10 tool call; không lưu lịch sử chat.
 - **DoD:** câu hỏi chuẩn cho kết luận LOT-B + loại trừ 3 yếu tố + khoanh vùng đúng số trong 5/5 lần chạy; một câu hỏi ngoài kịch bản (vd "Machine 02 bảo trì lần cuối khi nào?") trả lời đúng có nguồn.
 

@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Thread trace CLM-0012</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.app *{box-sizing:border-box}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.sec{display:flex;align-items:center;justify-content:space-between;padding:10px 10px 6px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#4A515B}
+.it{margin:0 6px 3px;padding:6px 8px;background:#FFFFFF;border:1px solid #D5D8DD;display:flex;flex-direction:column;gap:3px}
+.tab{display:flex;align-items:center;gap:6px;padding:0 12px;height:32px;border-right:1px solid #D5D8DD;color:#5A616B;white-space:nowrap}
+.tab.on{background:#FFFFFF;color:#1B1F24;box-shadow:inset 0 2px 0 #0E7C86}
+.btn{height:24px;padding:0 8px;border:1px solid #B9BEC6;background:#FFFFFF;border-radius:2px;font:inherit;font-size:12px;color:#1B1F24;display:inline-flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:#1C2026;border-color:#1C2026;color:#FFFFFF}
+.chip{display:inline-flex;align-items:center;gap:3px;height:18px;padding:0 5px;border:1px solid #C9CDD3;border-radius:2px;font-size:11px;color:#3A4049;background:#FFFFFF;white-space:nowrap;font-family:inherit}
+.cite{display:inline-flex;align-items:center;height:16px;padding:0 4px;border:1px solid #9FCDD2;background:#EEF7F8;color:#0B6770;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:2px;white-space:nowrap;vertical-align:1px}
+.red{background:#FDECEC;border-color:#E9A5A5;color:#A61B1B}
+.amb{background:#FFF4E5;border-color:#E3BC72;color:#7A4300}
+.thr{background:#E8F4F5;border-color:#7FC0C6;color:#0B6770}
+.mut{color:#5F6670}
+.gn{position:absolute;width:112px;height:34px;border:1px solid #8E959F;background:#FFFFFF;padding:2px 6px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;font:inherit;font-size:11px;line-height:1.25;color:#1B1F24;text-align:left;cursor:pointer;border-radius:0}
+.ln{display:inline-block;width:22px;vertical-align:middle;margin-right:5px}
+table.g{border-collapse:collapse;width:100%}
+table.g th{font-size:11px;font-weight:600;color:#4A515B;text-align:left;padding:5px 8px;border-bottom:1px solid #C9CDD3;background:#F3F4F6;white-space:nowrap}
+table.g td{padding:4px 8px;border-bottom:1px solid #E3E5E8;vertical-align:middle;white-space:nowrap}
+.ab{position:relative;width:48px;height:46px;border:0;padding:0;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#8E97A4}
+.etab{height:30px;padding:0 12px;border:0;border-right:1px solid #D5D8DD;font:inherit;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px}
+</style>
+</helmet>
+<div class="app" style="width: 1440px; height: 900px; display: flex; flex-direction: column; background: #E6E8EB; color: #1B1F24; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 12px; overflow: hidden">
+
+<header style="height: 32px; flex: none; background: #1C2026; color: #E6E9ED; display: flex; align-items: center; gap: 14px; padding: 0 12px">
+<div style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="width: 12px; height: 12px; border: 2px solid #3FB6C0"></span>One Thread</div>
+<span style="color: #9AA3AF">Plant 1 · Line 1 · Bơm nước MH-20</span>
+<span style="flex: 1"></span>
+<label style="display: flex; align-items: center; gap: 6px; width: 380px; height: 22px; background: #2B3038; border: 1px solid #3A414B; padding: 0 8px; color: #9AA3AF"><span style="position: absolute; left: -9999px">Search</span><input placeholder="Tìm serial, lô, máy, tài liệu, claim" style="flex: 1; min-width: 0; background: transparent; border: 0; color: #E6E9ED; font: inherit; font-size: 12px; outline: none"><span class="mono" style="font-size: 11px">Ctrl K</span></label>
+<span style="flex: 1"></span>
+<span class="mono" style="color: #FFFFFF">2027-02-12 09:00</span>
+<span style="background: #B45309; color: #FFFFFF; padding: 1px 6px; font-size: 11px; font-weight: 600; letter-spacing: .06em">DEMO · DỮ LIỆU MẪU</span>
+<span style="color: #C9CFD6">Quality · QA engineer</span>
+</header>
+
+<div style="display: flex; height: 790px">
+
+<nav aria-label="Views" style="width: 48px; flex: none; background: #23272E; display: flex; flex-direction: column; align-items: center; padding-top: 4px">
+<button class="ab" title="Plant view" aria-label="Plant view"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 20V10l5 3v-3l5 3v-3l5 3V4h3v16z"></path></svg></button>
+<button class="ab" title="Thread explorer" aria-label="Thread explorer" style="color: #FFFFFF; box-shadow: inset 2px 0 0 #3FB6C0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="6" cy="6" r="2.2"></circle><circle cx="18" cy="8" r="2.2"></circle><circle cx="9" cy="18" r="2.2"></circle><path d="M8.2 6.3l7.6 1.3M6.6 8.2l1.8 7.6M16.6 9.8l-6.2 6.6"></path></svg><span style="position: absolute; right: 6px; top: 6px; min-width: 14px; height: 14px; padding: 0 3px; background: #0E7C86; color: #FFFFFF; font-size: 10px; line-height: 14px; font-weight: 600">1</span></button>
+<button class="ab" title="Claims" aria-label="Claims"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 4 3 20h18z"></path><path d="M12 10v5M12 17.5v.6"></path></svg><span style="position: absolute; right: 6px; top: 6px; min-width: 14px; height: 14px; padding: 0 3px; background: #C62828; color: #FFFFFF; font-size: 10px; line-height: 14px; font-weight: 600">2</span></button>
+<button class="ab" title="Assistant" aria-label="Assistant"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg></button>
+<button class="ab" title="Reports" aria-label="Reports"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 3h14v18H5z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg></button>
+<div style="flex: 1"></div>
+<button class="ab" title="Data sources" aria-label="Data sources"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.6"></ellipse><path d="M5 6v12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6"></path></svg></button>
+</nav>
+
+<aside aria-label="Claims" style="width: 264px; flex: none; background: #F3F4F6; border-right: 1px solid #C9CDD3; display: flex; flex-direction: column; overflow: hidden">
+<div style="height: 32px; display: flex; align-items: center; padding: 0 10px; font-weight: 600; border-bottom: 1px solid #D5D8DD">Claims khách hàng</div>
+<label style="margin: 8px 8px 0; display: flex; flex-direction: column; gap: 3px"><span class="mut" style="font-size: 11px">Tìm claim / serial</span><input value="CLM-0012" style="height: 26px; border: 1px solid #B9BEC6; border-radius: 2px; padding: 0 6px; font: inherit; font-family: 'IBM Plex Mono', monospace; background: #FFFFFF"></label>
+<div class="sec"><span>Đang mở</span><span class="mut">2</span></div>
+<div class="it" style="border-color: #1C2026; box-shadow: inset 3px 0 0 #1C2026"><div style="display: flex; justify-content: space-between"><span class="mono" style="font-weight: 500">CLM-0012</span><span class="chip red">tiếng ồn</span></div><div>Bơm kêu to bất thường khi chạy</div><div class="mut">Customer C3 · MH20-0001 · 02-10</div></div>
+<div class="it"><div style="display: flex; justify-content: space-between"><span class="mono">CLM-0011</span><span class="chip">rò nước</span></div><div class="mut">Customer C1 · MH20-0457 · 02-03</div></div>
+<div class="sec"><span>Đã đóng · cùng họ linh kiện</span></div>
+<div class="it"><div style="display: flex; justify-content: space-between"><span class="mono">CLM-0009</span><span class="chip">closed</span></div><div class="mut">Tiếng ồn ổ bi 6203 · 09/2026 · xử lý: tăng lấy mẫu IQC</div></div>
+<div class="sec"><span>Liên kết theo độ tin cậy</span></div>
+<div style="padding: 0 10px; display: flex; flex-direction: column; gap: 5px">
+<div style="display: flex; align-items: center"><span class="ln" style="border-top: 2px solid #0E7C86"></span>Confirmed · bậc 1–2<span class="mono" style="margin-left: auto">14</span></div>
+<div style="display: flex; align-items: center"><span class="ln" style="border-top: 2px dashed #0E7C86"></span>Inferred · bậc 3<span class="mono" style="margin-left: auto">2</span></div>
+<div style="display: flex; align-items: center"><span class="ln" style="border-top: 2px dotted #0E7C86"></span>Chờ duyệt · bậc 4<span class="mono" style="margin-left: auto">1</span></div>
+<div style="display: flex; align-items: center"><span class="ln" style="border-top: 2px dotted #8E959F"></span>Chỉ gợi ý · bậc 5<span class="mono" style="margin-left: auto">1</span></div>
+</div>
+<div class="sec"><span>Hàng đợi duyệt</span><span class="mut">1</span></div>
+<div class="it" style="border-color: #0E7C86; box-shadow: inset 3px 0 0 #0E7C86"><div style="display: flex; justify-content: space-between"><span class="mono" style="font-weight: 500">D-07 → LOT-B</span><span class="chip" style="border-style: dotted">0.78</span></div><div class="mut">Biên bản họp 29/10 nhắc “lô B”</div></div>
+<div class="sec"><span>Alias đã hợp nhất</span></div>
+<div style="padding: 0 10px; display: flex; flex-direction: column; gap: 4px; line-height: 1.4">
+<span><span class="mono">MC-02 · PLC2 · Press 2</span> <span class="mut">→ Machine 02</span></span>
+<span><span class="mono">S1-6203-B</span> <span class="mut">→ LOT-B</span></span>
+<span><span class="mono">NCC-S1</span> <span class="mut">→ Supplier S1</span></span>
+</div>
+</aside>
+
+<main style="flex: 1; min-width: 0; display: flex; flex-direction: column; background: #FFFFFF">
+<div style="height: 32px; flex: none; display: flex; background: #ECEEF1; border-bottom: 1px solid #C9CDD3">
+<div class="tab"><span style="width: 6px; height: 6px; background: #C62828"></span>CLM-0012 · claim<span class="mut">×</span></div>
+<div class="tab on">Thread · MH20-0001<span class="mut">×</span></div>
+<div class="tab">Report · nháp<span class="mut">×</span></div>
+</div>
+<div style="height: 36px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 10px; border-bottom: 1px solid #D5D8DD">
+<label style="display: flex; align-items: center; gap: 6px"><span class="mut" style="font-size: 11px">As of</span><input value="2026-11-03 14:05" class="mono" style="width: 132px; height: 24px; border: 1px solid #0E7C86; border-radius: 2px; padding: 0 6px; font-size: 12px; background: #E8F4F5; color: #0B6770"></label>
+<span class="mut" style="font-size: 11px">thời điểm MH20-0001 được ép trên Machine 02</span>
+<span style="width: 1px; height: 18px; background: #D5D8DD; margin: 0 4px"></span>
+<div role="group" aria-label="Lens" style="display: flex"><button class="btn" style="background: #1C2026; color: #FFFFFF; border-color: #1C2026">Lanes</button><button class="btn">Table</button><button class="btn">Timeline</button></div>
+<span style="flex: 1"></span>
+<span class="mut" style="font-size: 11px">Depth</span><button class="btn">3 hops ▾</button>
+</div>
+<div style="height: 56px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 14px; border-bottom: 1px solid #E3E5E8">
+<div style="display: flex; flex-direction: column"><span class="mono" style="font-size: 18px; font-weight: 600">MH20-0001</span><span class="mut">Bơm nước MH-20 · giao Customer C3 ngày 2026-11-12 · đã dùng 3 tháng</span></div>
+<span class="chip red">CLM-0012 · tiếng ồn bất thường</span>
+<span class="chip">7 hệ thống · 16 bản ghi</span>
+<span style="flex: 1"></span>
+<button class="btn">Copy thread link</button><button class="btn" onClick="{{ pickImpact }}">Khoanh vùng</button>
+</div>
+
+<div style="position: relative; height: 260px; flex: none; background: #FCFCFD; border-bottom: 1px solid #C9CDD3">
+<div style="position: absolute; left: 18px; top: 8px" class="mut">Khách hàng · Logistics</div>
+<div style="position: absolute; left: 146px; top: 8px" class="mut">Sản xuất</div>
+<div style="position: absolute; left: 274px; top: 8px" class="mut">Kho</div>
+<div style="position: absolute; left: 402px; top: 8px" class="mut">Mua hàng</div>
+<div style="position: absolute; left: 530px; top: 8px" class="mut">Chất lượng</div>
+<div style="position: absolute; left: 658px; top: 8px" class="mut">Tài liệu</div>
+<svg width="788" height="260" style="position: absolute; left: 0; top: 0" aria-hidden="true">
+<g stroke="#E3E5E8"><line x1="138" y1="0" x2="138" y2="260"></line><line x1="266" y1="0" x2="266" y2="260"></line><line x1="394" y1="0" x2="394" y2="260"></line><line x1="522" y1="0" x2="522" y2="260"></line><line x1="650" y1="0" x2="650" y2="260"></line></g>
+<g fill="none" stroke="#0E7C86" stroke-width="2">
+<path d="M130 47H146"></path>
+<path d="M130 109H138V58H146"></path>
+<path d="M74 154V126"></path>
+<path d="M202 64V92"></path>
+<path d="M202 154V126"></path>
+<path d="M274 115H266V171H258"></path>
+<path d="M330 64V92"></path>
+<path d="M386 47H402"></path>
+<path d="M386 109H402"></path>
+<path d="M458 126V154"></path>
+<path d="M530 56H522V80H350V92"></path>
+<path d="M530 115H522V171H514" stroke-dasharray="5 4"></path>
+<path d="M658 47H642"></path>
+<path d="M658 109H642"></path>
+<path d="M714 188V245H360V126" stroke-dasharray="2 3" stroke-width="2.5"></path>
+</g>
+<path d="M586 154V126" fill="none" stroke="#8E959F" stroke-width="2" stroke-dasharray="1 4" stroke-linecap="round"></path>
+</svg>
+
+<button class="gn" style="left: 18px; top: 30px; border: 2px solid #C62828; background: #FDECEC"><span class="mono" style="font-weight: 600; color: #A61B1B">CLM-0012</span><span style="color: #A61B1B">claim · 02-10</span></button>
+<button class="gn" style="left: 18px; top: 92px"><span class="mono" style="font-weight: 500">SHP-1112</span><span class="mut">giao C3 · 11-12</span></button>
+<button class="gn" style="left: 18px; top: 154px"><span class="mono" style="font-weight: 500">SO-7781</span><span class="mut">Customer C3</span></button>
+
+<button class="gn" style="left: 146px; top: 30px; border: 2px solid #1C2026"><span class="mono" style="font-weight: 600">MH20-0001</span><span class="mut">serial · ép 14:05</span></button>
+<button class="gn" style="left: 146px; top: 92px; border: 2px solid #C62828; background: #FDECEC" onClick="{{ pickM02 }}"><span class="mono" style="font-weight: 600; color: #A61B1B">Machine 02</span><span style="color: #A61B1B">cycle 31 → 42 s</span></button>
+<button class="gn" style="left: 146px; top: 154px"><span class="mono" style="font-weight: 500">Hopper 1</span><span class="mut">cấp ổ bi · Line 1</span></button>
+<span class="chip thr mono" style="position: absolute; left: 146px; top: 194px">nạp LOT-B 13:52</span>
+
+<button class="gn" style="left: 274px; top: 30px"><span class="mono" style="font-weight: 500">RCV-2810</span><span class="mut">nhập kho 10-28 09:10</span></button>
+<button class="gn" style="left: 274px; top: 92px; border: 2px solid #E3BC72; background: #FFF4E5" onClick="{{ pickLot }}"><span class="mono" style="font-weight: 600; color: #7A4300">LOT-B</span><span class="mut">Bearing 6203 · 5,000</span></button>
+
+<button class="gn" style="left: 402px; top: 30px"><span class="mono" style="font-weight: 500">PO-4410</span><span class="mut">S1 · 5,000 pcs</span></button>
+<button class="gn" style="left: 402px; top: 92px"><span class="mono" style="font-weight: 500">S1-6203-B</span><span class="mut">≡ LOT-B · alias</span></button>
+<button class="gn" style="left: 402px; top: 154px"><span class="mono" style="font-weight: 500">Supplier S1</span><span class="mut">ERP: NCC-S1</span></button>
+
+<button class="gn" style="left: 530px; top: 30px; border: 2px solid #C62828; background: #FDECEC" onClick="{{ pickLot }}"><span class="mono" style="font-weight: 600; color: #A61B1B">IQC-5531</span><span style="color: #A61B1B">Cpk 0.92 &lt; 1.33</span></button>
+<button class="gn" style="left: 530px; top: 92px"><span class="mono" style="font-weight: 500">CLM-0009</span><span class="mut">ca tương tự · 09/26</span></button>
+<button class="gn" style="left: 530px; top: 154px; border: 1px dotted #8E959F; background: #F7F8F9"><span class="mono" style="font-weight: 500">D-03</span><span class="mut">BC lỗi cũ · gợi ý</span></button>
+
+<button class="gn" style="left: 658px; top: 30px"><span class="mono" style="font-weight: 500">D-12 · p.7</span><span class="mut">bản vẽ ổ bi MH-20</span></button>
+<button class="gn" style="left: 658px; top: 92px"><span class="mono" style="font-weight: 500">D-09</span><span class="mut">8D của CLM-0009</span></button>
+<button class="gn" style="left: 658px; top: 154px; border: 2px dotted #0E7C86"><span class="mono" style="font-weight: 500">D-07</span><span class="mut">biên bản 10-29</span></button>
+
+<div style="position: absolute; left: 18px; top: 232px; display: flex; gap: 12px; font-size: 11px" class="mut">
+<span><span class="ln" style="border-top: 2px solid #0E7C86"></span>confirmed</span>
+<span><span class="ln" style="border-top: 2px dashed #0E7C86"></span>inferred</span>
+<span><span class="ln" style="border-top: 2px dotted #0E7C86"></span>chờ duyệt</span>
+<span><span class="ln" style="border-top: 2px dotted #8E959F"></span>gợi ý</span>
+</div>
+</div>
+
+<div style="height: 406px; flex: none; display: flex; flex-direction: column">
+<div style="height: 30px; flex: none; display: flex; background: #F3F4F6; border-bottom: 1px solid #D5D8DD">
+<button class="etab" style="{{ tabM02 }}" onClick="{{ pickM02 }}">Machine 02 · event 11-03</button>
+<button class="etab" style="{{ tabLot }}" onClick="{{ pickLot }}">LOT-B · IQC &amp; tài liệu</button>
+<button class="etab" style="{{ tabImpact }}" onClick="{{ pickImpact }}">Khoanh vùng LOT-B</button>
+<span style="flex: 1"></span>
+<span class="mut" style="font-size: 11px; align-self: center; padding-right: 10px">Bấm node trên graph để đổi bằng chứng</span>
+</div>
+
+<sc-if value="{{ isM02 }}" hint-placeholder-val="{{ true }}">
+<div style="height: 376px; display: flex">
+<div style="width: 476px; flex: none; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; border-right: 1px solid #E3E5E8">
+<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-weight: 600">Cycle time · Machine 02</span><span class="mut">2026-11-03 12:00–16:00 · giờ nhà máy</span></div>
+<svg width="448" height="210" role="img" aria-label="Cycle time Machine 02 tăng từ 31 giây lên 42 giây sau khi nạp LOT-B lúc 13:52">
+<g stroke="#E3E5E8"><line x1="36" y1="16" x2="446" y2="16"></line><line x1="36" y1="56" x2="446" y2="56"></line><line x1="36" y1="96" x2="446" y2="96"></line><line x1="36" y1="136" x2="446" y2="136"></line><line x1="36" y1="176" x2="446" y2="176"></line></g>
+<g font-family="IBM Plex Mono, monospace" font-size="10" fill="#5F6670"><text x="4" y="20">45 s</text><text x="4" y="60">40 s</text><text x="4" y="100">35 s</text><text x="4" y="140">30 s</text><text x="4" y="180">25 s</text><text x="30" y="194">12:00</text><text x="132" y="194">13:00</text><text x="234" y="194">14:00</text><text x="336" y="194">15:00</text><text x="420" y="194">16:00</text></g>
+<line x1="36" y1="136" x2="446" y2="136" stroke="#5F6670" stroke-dasharray="3 3"></line>
+<text x="400" y="132" font-size="10" fill="#5F6670" font-family="IBM Plex Sans, sans-serif">mục tiêu 30 s</text>
+<rect x="227" y="16" width="219" height="160" fill="#FFF4E5" opacity="0.7"></rect>
+<line x1="227" y1="10" x2="227" y2="176" stroke="#B45309" stroke-width="1.5"></line>
+<text x="231" y="26" font-size="10" fill="#7A4300" font-family="IBM Plex Sans, sans-serif">13:52 nạp LOT-B vào Hopper 1</text>
+<line x1="249" y1="36" x2="249" y2="176" stroke="#1C2026" stroke-dasharray="2 2"></line>
+<text x="253" y="172" font-size="10" fill="#1B1F24" font-family="IBM Plex Mono, monospace">14:05 MH20-0001</text>
+<polyline points="{{ pts }}" fill="none" stroke="#0E7C86" stroke-width="2"></polyline>
+</svg>
+<div style="display: flex; gap: 6px; flex-wrap: wrap"><span class="cite">PLC2 cycle log</span><span class="cite">MES MC-02</span><span class="cite">WMS ISS-1103</span><span class="mut" style="font-size: 11px">mốc 13:52 khớp nhờ bù lệch PLC2 +38 s</span></div>
+</div>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<table class="g">
+<thead><tr><th>Yếu tố</th><th>Trước 13:52</th><th>Sau 13:52</th><th>Nguồn</th></tr></thead>
+<tbody>
+<tr style="background: #FDECEC"><td>Cycle time</td><td class="mono">31 s</td><td class="mono" style="color: #A61B1B; font-weight: 600">42 s</td><td><span class="cite">PLC2</span></td></tr>
+<tr style="background: #FDECEC"><td>Lực ép đỉnh</td><td class="mono">12.4 kN</td><td class="mono" style="color: #A61B1B; font-weight: 600">13.1 kN · +6%</td><td><span class="cite">PLC2</span></td></tr>
+<tr><td>Lô ổ bi</td><td class="mono">LOT-A</td><td class="mono" style="color: #7A4300; font-weight: 600">LOT-B</td><td><span class="cite">WMS</span></td></tr>
+<tr><td>Bảo trì</td><td colspan="2">PM-0241 ngày 10-20 · bình thường</td><td><span class="cite">CMMS</span></td></tr>
+<tr><td>Vận hành</td><td colspan="2">NV-118 · ca 2 · không đổi người</td><td><span class="cite">HR</span></td></tr>
+<tr><td>Nhiệt độ khu vực</td><td colspan="2">26–27 °C · ổn định</td><td><span class="cite">ENV-L1</span></td></tr>
+</tbody>
+</table>
+<div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; line-height: 1.45">
+<div style="font-size: 11px; font-weight: 600; letter-spacing: .06em; color: #4A515B">ĐỌC NHANH</div>
+<div>Chỉ <b style="font-weight: 600">lô ổ bi</b> thay đổi tại 13:52; bảo trì, người vận hành và nhiệt độ giữ nguyên → ba yếu tố này được loại trừ.</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLot }}" hint-placeholder-val="{{ false }}">
+<div style="height: 376px; display: flex">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid #E3E5E8">
+<div style="padding: 10px 14px 6px; display: flex; align-items: baseline; gap: 8px"><span style="font-weight: 600">Kiểm tra đầu vào · Bearing 6203</span><span class="mut">spec Cpk ≥ 1.33 theo D-12 p.7</span></div>
+<table class="g">
+<thead><tr><th>Lô</th><th>Nhập kho</th><th>NCC</th><th>Cpk khe hở</th><th>Kết luận IQC</th><th>Nguồn</th></tr></thead>
+<tbody>
+<tr><td class="mono">LOT-A</td><td class="mono">2026-10-14</td><td>S1</td><td class="mono">1.45</td><td>Đạt</td><td><span class="cite">IQC-5507</span></td></tr>
+<tr style="background: #FDECEC"><td class="mono" style="font-weight: 600; color: #7A4300">LOT-B</td><td class="mono" style="font-weight: 600">2026-10-28</td><td>S1</td><td class="mono" style="color: #A61B1B; font-weight: 600">0.92</td><td style="color: #A61B1B">Chấp nhận có điều kiện</td><td><span class="cite">IQC-5531</span></td></tr>
+</tbody>
+</table>
+<div style="padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; line-height: 1.45">
+<div style="font-size: 11px; font-weight: 600; letter-spacing: .06em; color: #4A515B">CA TƯƠNG TỰ</div>
+<div><span class="mono" style="font-weight: 600">CLM-0009</span> · 09/2026 · tiếng ồn ổ bi 6203 cũng từ Supplier S1. Đã xử lý bằng tăng lấy mẫu IQC từ n=5 lên n=20 <span class="cite">D-09</span></div>
+<div class="mut">Nối bằng khoá chính xác (bậc 1) qua mã linh kiện 6203 và NCC S1.</div>
+</div>
+</div>
+<div style="width: 330px; flex: none; display: flex; flex-direction: column">
+<div style="padding: 10px 14px 6px; font-weight: 600">Tài liệu gắn với LOT-B / 6203</div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 0 10px">
+<div class="it" style="margin: 0"><div style="display: flex; justify-content: space-between"><span class="mono">D-12 · p.7</span><span class="chip"><span class="ln" style="width: 14px; border-top: 2px solid #0E7C86"></span>bậc 4 · duyệt</span></div><span class="mut">Bản vẽ ổ bi MH-20 · dung sai khe hở</span></div>
+<div class="it" style="margin: 0"><div style="display: flex; justify-content: space-between"><span class="mono">D-09</span><span class="chip"><span class="ln" style="width: 14px; border-top: 2px solid #0E7C86"></span>bậc 4 · duyệt</span></div><span class="mut">8D report CLM-0009 · nhắc LOT-6203</span></div>
+<div class="it" style="margin: 0; border-color: #0E7C86"><div style="display: flex; justify-content: space-between"><span class="mono">D-07</span><span class="chip" style="border-style: dotted; color: #0B6770">chờ duyệt · 0.78</span></div><span class="mut">Biên bản họp 10-29: “lô B hơi rơ, theo dõi”</span></div>
+<div class="it" style="margin: 0; border-style: dotted; background: #F7F8F9"><div style="display: flex; justify-content: space-between"><span class="mono">D-03</span><span class="chip" style="border-style: dotted">chỉ gợi ý · bậc 5</span></div><span class="mut">BC lỗi 2025 “tiếng ồn ổ bi”, không ghi mã</span></div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isImpact }}" hint-placeholder-val="{{ false }}">
+<div style="height: 376px; padding: 12px 14px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-weight: 600">Truy xuôi LOT-B</span><span class="mut">lô → processed_on → packed_in → shipped_in · knowledge graph</span></div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+<div style="background: #F3F4F6; padding: 8px 10px"><div class="mut" style="font-size: 11px">Part dùng LOT-B</div><div class="mono" style="font-size: 20px; font-weight: 500">1,000</div></div>
+<div style="background: #F3F4F6; padding: 8px 10px"><div class="mut" style="font-size: 11px">Thùng</div><div class="mono" style="font-size: 20px; font-weight: 500">42</div></div>
+<div style="background: #FDECEC; padding: 8px 10px"><div style="font-size: 11px; color: #A61B1B">Đã tới khách hàng</div><div class="mono" style="font-size: 20px; font-weight: 500; color: #A61B1B">2 lô · 640</div></div>
+<div style="background: #FFF4E5; padding: 8px 10px"><div style="font-size: 11px; color: #7A4300">Trong kho · cần cách ly</div><div class="mono" style="font-size: 20px; font-weight: 500; color: #7A4300">1 lô · 360</div></div>
+</div>
+<table class="g">
+<thead><tr><th>Lô xuất hàng</th><th>Khách hàng</th><th>Số part</th><th>Thùng</th><th>Trạng thái</th><th>Nguồn</th></tr></thead>
+<tbody>
+<tr style="background: #FDECEC"><td class="mono">SHP-1112</td><td>Customer C3 · có CLM-0012</td><td class="mono">400</td><td class="mono">17</td><td style="color: #A61B1B">đã giao 11-12</td><td><span class="cite">ERP SHP</span></td></tr>
+<tr style="background: #FDECEC"><td class="mono">SHP-1115</td><td>Customer C5 · chưa có claim</td><td class="mono">240</td><td class="mono">10</td><td style="color: #A61B1B">đã giao 11-15</td><td><span class="cite">ERP SHP</span></td></tr>
+<tr style="background: #FFF4E5"><td class="mono">SHP-1120</td><td>chưa xuất</td><td class="mono">360</td><td class="mono">15</td><td style="color: #7A4300">trong kho FG</td><td><span class="cite">WMS FG</span></td></tr>
+</tbody>
+</table>
+</div>
+</sc-if>
+</div>
+</main>
+
+<aside aria-label="AI agent" style="width: 340px; flex: none; border-left: 1px solid #C9CDD3; background: #FAFAFB; display: flex; flex-direction: column">
+<div style="height: 32px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-bottom: 1px solid #D5D8DD; background: #ECEEF1">
+<span style="font-weight: 600">Agent</span><span class="chip thr">Context · CLM-0012</span><span style="flex: 1"></span>
+<button class="btn" aria-label="New chat">+</button><button class="btn" aria-label="Collapse agent panel">›</button>
+</div>
+<div style="flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 9px; line-height: 1.5">
+<div style="align-self: flex-end; max-width: 92%; background: #E9ECEF; border: 1px solid #D5D8DD; padding: 6px 8px">Vì sao MH20-0001 của CLM-0012 kêu to? Tìm nguyên nhân gốc và phạm vi ảnh hưởng.</div>
+<div style="font-size: 11px; color: #3A4049; border: 1px dashed #C9CDD3; padding: 6px; display: flex; flex-direction: column; gap: 2px">
+<span style="color: #5F6670">▾ 7 tool calls · read-only · 21 s</span>
+<span class="mono">trace_serial(MH20-0001)</span>
+<span class="mono">get_events(M02, 11-03 12:00–16:00)</span>
+<span class="mono">get_docs(BRG-6203, at=11-03)</span>
+<span class="mono">get_links(LOT-B, status=confirmed)</span>
+<span class="mono">metrics(cpk, LOT-A|LOT-B)</span>
+<span class="mono">run_python(compare_by_lot)</span>
+<span class="mono">trace_forward(LOT-B)</span>
+</div>
+<div><b style="font-weight: 600">Nguyên nhân khả dĩ:</b> ổ bi Bearing 6203 <b style="font-weight: 600">LOT-B</b>, nhập kho 28/10 từ Supplier S1, IQC Cpk 0.92 dưới chuẩn 1.33 <span class="cite">IQC-5531</span> <span class="cite">D-12 p.7</span></div>
+<div>Sau khi nạp LOT-B lúc 13:52, cycle time Machine 02 tăng 31 → 42 s, lực ép +6% <span class="cite">PLC2</span>. MH20-0001 được ép lúc 14:05, cùng cửa sổ <span class="cite">MES</span></div>
+<div><b style="font-weight: 600">Đã loại trừ:</b> bảo trì <span class="cite">PM-0241</span>, người vận hành <span class="cite">HR ca 2</span>, nhiệt độ <span class="cite">ENV-L1</span></div>
+<div><b style="font-weight: 600">Khoanh vùng:</b> 1,000 part · 42 thùng · 3 lô xuất, 2 lô đã tới khách <span class="cite">trace_forward</span></div>
+<div style="border-left: 2px solid #0E7C86; padding-left: 8px" class="mut">Ca CLM-0009 đã xử lý bằng tăng lấy mẫu IQC. D-03 chỉ là gợi ý bậc 5, không dùng làm bằng chứng.</div>
+<div style="display: flex; gap: 6px"><button class="btn pri">Tạo nháp báo cáo</button><button class="btn" onClick="{{ pickImpact }}">Xem khoanh vùng</button></div>
+</div>
+<div style="border-top: 1px solid #D5D8DD; padding: 8px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; gap: 4px; flex-wrap: wrap"><button class="chip">/trace</button><button class="chip">/as-of</button><button class="chip">/impact</button><button class="chip thr">/report</button></div>
+<label style="display: flex; flex-direction: column; gap: 4px"><span style="position: absolute; left: -9999px">Ask the agent</span><textarea rows="2" placeholder="Hỏi về claim này…" style="resize: none; font: inherit; font-size: 12px; border: 1px solid #B9BEC6; border-radius: 2px; padding: 6px; background: #FFFFFF; color: #1B1F24"></textarea></label>
+<div style="display: flex; justify-content: space-between; align-items: center"><span class="mut" style="font-size: 11px">Mọi nhận định đều dẫn nguồn · chỉ đọc</span><button class="btn pri">Send</button></div>
+</div>
+</aside>
+</div>
+
+<div style="height: 78px; flex: none; display: flex; flex-direction: column">
+<div style="height: 56px; display: flex; background: #F3F4F6; border-top: 1px solid #A9AEB6">
+<div style="width: 312px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 10px; border-right: 1px solid #C9CDD3">
+<span class="mut" style="font-size: 11px">Hành trình serial</span>
+<span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 500">11-03 14:05</span>
+</div>
+<div style="flex: 1; position: relative; overflow: hidden">
+<div class="mono" style="position: absolute; left: 0; right: 0; top: 2px; height: 12px; font-size: 11px; color: #5F6670">
+<span style="position: absolute; left: 6px">10-28</span><span style="position: absolute; left: 25%">11-23</span><span style="position: absolute; left: 50%">12-20</span><span style="position: absolute; left: 75%">01-16</span><span style="position: absolute; right: 6px">02-12</span>
+</div>
+<div style="position: absolute; left: 6px; top: 20px; width: 9px; height: 9px; background: #B45309; transform: rotate(45deg)"></div>
+<span style="position: absolute; left: 18px; top: 17px; font-size: 11px; color: #7A4300">LOT-B nhập kho</span>
+<div style="position: absolute; left: 14%; top: 34px; width: 9px; height: 9px; background: #0E7C86; transform: rotate(45deg)"></div>
+<span style="position: absolute; left: 15.2%; top: 31px; font-size: 11px; color: #0B6770">giao C3 11-12</span>
+<div style="position: absolute; left: 14%; width: 83%; top: 46px; height: 4px; background: #E3E5E8"></div>
+<span style="position: absolute; left: 45%; top: 31px; font-size: 11px; color: #5F6670">khách dùng 3 tháng</span>
+<div style="position: absolute; left: 97.4%; top: 16px; width: 10px; height: 10px; background: #C62828; transform: rotate(45deg)"></div>
+<span style="position: absolute; right: 22px; top: 30px; font-size: 11px; color: #A61B1B; font-weight: 600">CLM-0012 02-10</span>
+<div style="position: absolute; left: 5.6%; top: 0; bottom: 0; width: 2px; background: #1C2026"></div>
+<div style="position: absolute; left: 5.6%; top: 0; width: 8px; height: 8px; margin-left: -3px; background: #1C2026"></div>
+</div>
+<div style="width: 200px; flex: none; border-left: 1px solid #C9CDD3; padding: 6px 10px; display: flex; flex-direction: column; gap: 4px; justify-content: center">
+<span class="mut" style="font-size: 11px">Kịch bản demo</span>
+<span style="font-size: 11px">Bước 2–4 / 4 · trace → bằng chứng → RCA</span>
+</div>
+</div>
+<div style="height: 22px; background: #1C2026; color: #C9CFD6; display: flex; align-items: center; gap: 18px; padding: 0 10px; font-size: 11px">
+<span style="background: #B45309; color: #FFFFFF; padding: 0 6px; font-weight: 600">DEMO · scripted data</span>
+<span>Line 1 · MH-20 · Bearing 6203</span>
+<span>Sources 7/7 · read-only</span>
+<span>Review queue 1</span>
+<span style="margin-left: auto">Agent: Claude · live, có fallback DEMO_MODE</span>
+<span>UTC+7</span>
+<span>One Thread demo v0.1</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 'm02' };
+  }
+  renderVals() {
+    var sel = this.state.sel;
+    var on = 'background: #FFFFFF; color: #1B1F24; box-shadow: inset 0 2px 0 #0E7C86; font-weight: 600';
+    var off = 'background: transparent; color: #5A616B';
+    var pts = [];
+    for (var m = 0; m <= 240; m += 8) {
+      var x = 36 + m / 240 * 410;
+      var base = m < 112 ? 31 : 42;
+      var noise = Math.sin(m * 1.7) * 0.9 + Math.cos(m * 0.6) * 0.5;
+      var y = 176 - (base + noise - 25) * 8;
+      pts.push(x.toFixed(1) + ',' + y.toFixed(1));
+    }
+    return {
+      isM02: sel === 'm02',
+      isLot: sel === 'lot',
+      isImpact: sel === 'impact',
+      tabM02: sel === 'm02' ? on : off,
+      tabLot: sel === 'lot' ? on : off,
+      tabImpact: sel === 'impact' ? on : off,
+      pts: pts.join(' '),
+      pickM02: () => this.setState({ sel: 'm02' }),
+      pickLot: () => this.setState({ sel: 'lot' }),
+      pickImpact: () => this.setState({ sel: 'impact' })
+    };
+  }
+}
+</script>
+</body>
+</html>
