@@ -70,13 +70,13 @@ def fault_trace(conn: psycopg.Connection, origin: str, at: datetime | None = Non
         ups.setdefault(down, []).append((up, e))
         downs.setdefault(up, []).append((down, e))
 
-    red: dict[str, str] = {origin: "điểm lỗi"}
+    red: dict[str, str] = {origin: "fault origin"}
     queue = deque([origin])
     while queue:
         child = queue.popleft()
         for up, e in ups.get(child, []):
             if up not in red:
-                reason = f"thượng nguồn của {child} qua {e.relation}"
+                reason = f"upstream of {child} via {e.relation}"
                 if record := e.evidence.get("record"):
                     reason += f" ({record})"
                 red[up] = reason
@@ -92,7 +92,7 @@ def fault_trace(conn: psycopg.Connection, origin: str, at: datetime | None = Non
             if down not in seen:
                 seen.add(down)
                 source[down] = source[node]
-                orange[down] = f"hạ nguồn của {source[node]}"
+                orange[down] = f"downstream of {source[node]}"
                 queue.append(down)
 
     types = {i: v["type"] for i, v in node_info(conn, list(orange)).items()}

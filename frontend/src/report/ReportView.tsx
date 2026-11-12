@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { getReportDraft } from '../api/client'
 import type { ReportDraft, ReportSegment } from '../api/types'
 import { CiteChip } from '../agent/AgentPanel'
-import { useDemo } from '../store/demo'
 
 const fmt = (n: number) => n.toLocaleString('en-US')
 const TONE = {
@@ -26,15 +25,13 @@ const Tile = ({ label, value, bg, ink }: { label: string; value: string; bg: str
   </div>
 )
 
-export function ReportView() {
-  const claimId = useDemo((s) => s.claimId)
+export function ReportView({ claimId }: { claimId: string }) {
   const [draft, setDraft] = useState<ReportDraft | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   useEffect(() => {
-    if (!claimId) return
     let stale = false
     setDraft(null); setError(null)
     getReportDraft(claimId).then((d) => { if (!stale) setDraft(d) }, (e: Error) => { if (!stale) setError(e.message) })
@@ -48,8 +45,8 @@ export function ReportView() {
     timer.current = setTimeout(() => setToast(null), 2500)
   }
 
-  if (error) return <div className="mut" style={{ padding: 16 }}>Không tạo được nháp báo cáo: {error}</div>
-  if (!draft) return <div className="mut" style={{ padding: 16 }}>Đang tạo nháp báo cáo…</div>
+  if (error) return <div className="mut" style={{ padding: 16 }}>Could not create the report draft: {error}</div>
+  if (!draft) return <div className="mut" style={{ padding: 16 }}>Creating the report draft…</div>
   const imp = draft.impact
   const held = imp.shipments.filter((s) => s.status !== 'delivered')
 
@@ -58,18 +55,18 @@ export function ReportView() {
       <article style={{ width: 680, maxWidth: 'calc(100% - 24px)', margin: '0 auto', background: '#FFFFFF', border: '1px solid var(--line)', padding: '20px 28px 24px', lineHeight: 1.5 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="mono mut">{draft.id}</span>
-          <span className="chip" style={{ borderStyle: 'dotted' }}>nháp · chưa duyệt</span>
+          <span className="chip" style={{ borderStyle: 'dotted' }}>draft · not approved</span>
           <span style={{ flex: 1 }} />
-          <button className="btn" onClick={() => show('Demo: chưa xuất PDF')}>Export PDF</button>
-          <button className="btn pri" onClick={() => show('Demo: chưa gửi')}>Send to Quality</button>
+          <button className="btn" onClick={() => show('Demo: PDF export not available')}>Export PDF</button>
+          <button className="btn pri" onClick={() => show('Demo: sending not available')}>Send to Quality</button>
         </div>
         <h1 style={{ fontSize: 18, fontWeight: 600, margin: '12px 0 2px' }}>{draft.title}</h1>
         <div className="mut">{draft.subtitle}</div>
 
-        <H>TÓM TẮT</H>
+        <H>SUMMARY</H>
         <div><Segments segs={draft.summary} /></div>
 
-        <H>CHUỖI TRUY VẾT</H>
+        <H>TRACE CHAIN</H>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
           {draft.chain.map((c, i) => (
             <span key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -79,21 +76,21 @@ export function ReportView() {
           ))}
         </div>
 
-        <H>PHẠM VI ẢNH HƯỞNG</H>
+        <H>IMPACT SCOPE</H>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
-          <Tile label={`Part dùng ${imp.lot}`} value={fmt(imp.parts)} bg="var(--panel)" />
-          <Tile label="Thùng" value={fmt(imp.boxes)} bg="var(--panel)" />
-          <Tile label="Đã tới khách hàng" value={fmt(imp.delivered_parts)} bg="var(--red-bg)" ink="var(--red-ink)" />
+          <Tile label={`Parts using ${imp.lot}`} value={fmt(imp.parts)} bg="var(--panel)" />
+          <Tile label="Boxes" value={fmt(imp.boxes)} bg="var(--panel)" />
+          <Tile label="Delivered to customers" value={fmt(imp.delivered_parts)} bg="var(--red-bg)" ink="var(--red-ink)" />
           <Tile label="Trong kho" value={fmt(imp.held_parts)} bg="var(--amber-bg)" ink="var(--amber-ink)" />
         </div>
         <div className="mut" style={{ marginTop: 4, fontSize: 11 }}>
-          {imp.shipments.length} lô xuất: {imp.delivered_shipments} lô đã giao · {held.length} lô còn trong kho
+          {imp.shipments.length} shipments: {imp.delivered_shipments} delivered · {held.length} still in warehouse
         </div>
 
-        <H>NGUYÊN NHÂN GỐC</H>
+        <H>ROOT CAUSE</H>
         <div><Segments segs={draft.cause} /></div>
 
-        <H>HÀNH ĐỘNG ĐỀ XUẤT</H>
+        <H>PROPOSED ACTIONS</H>
         <ol style={{ margin: 0, paddingLeft: 18, listStyle: 'decimal', display: 'flex', flexDirection: 'column', gap: 3 }}>
           {draft.actions.map((a) => <li key={a}>{a}</li>)}
         </ol>

@@ -12,7 +12,7 @@ def ids(ms):
 def test_claim_fault_matches_spec(client):
     f = client.get("/api/claims/CLM-0012/fault-trace").json()
     assert ids(f["red"]) == RED and ids(f["orange"]) == ORANGE
-    assert next(m for m in f["red"] if m["id"] == "HOP-1")["reason"].startswith("thượng nguồn của M02")
+    assert next(m for m in f["red"] if m["id"] == "HOP-1")["reason"].startswith("upstream of M02")
 
 
 def test_time_window_changes_red(client):

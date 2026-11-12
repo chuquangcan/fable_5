@@ -2,11 +2,10 @@ import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { attachSample, getSummary, listSamples, uploadDocument } from '../api/client'
 import type { AttachMethod, AttachResult } from '../api/types'
 import { NOT_ATTACHABLE } from '../evidence/OverviewTab'
-import { DEFAULT_ASSET } from '../plant/PlantView'
 import { useFocusTrap } from '../lib/useFocusTrap'
-import { useDemo } from '../store/demo'
+import { activeMain, activeProduct, useDemo } from '../store/demo'
 
-const METHOD_LABEL: Record<AttachMethod, string> = { code: 'Mã', rule: 'Quy tắc', llm: 'LLM', manual: 'Thủ công' }
+const METHOD_LABEL: Record<AttachMethod, string> = { code: 'Code', rule: 'Rule', llm: 'LLM', manual: 'Manual' }
 
 function ResultCard({ r }: { r: AttachResult }) {
   return (
@@ -14,24 +13,24 @@ function ResultCard({ r }: { r: AttachResult }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span className="mono" style={{ fontWeight: 600 }}>{r.doc_id}</span>
         <span className="chip">{r.type}</span>
-        <span className="chip" title="Cách phân loại" style={{ borderColor: 'var(--teal)', color: 'var(--teal-ink)' }}>{METHOD_LABEL[r.method] ?? r.method}</span>
+        <span className="chip" title="Classification method" style={{ borderColor: 'var(--teal)', color: 'var(--teal-ink)' }}>{METHOD_LABEL[r.method] ?? r.method}</span>
       </div>
       {r.links.length === 0 ? (
-        <span className="mut">Chưa gắn được vào node nào</span>
+        <span className="mut">Could not be attached to any node</span>
       ) : (
         r.links.map((l) => (
           <div key={l.to_id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="mut">Đích</span>
+            <span className="mut">Target</span>
             <span className="mono">{l.to_id}</span>
             <span className="chip">{`${l.status} · ${l.score}`}</span>
           </div>
         ))
       )}
       <span className="mut">{r.reason}</span>
-      {r.duplicate && <span style={{ color: 'var(--amber-ink)' }}>Tài liệu đã gắn trước đó</span>}
+      {r.duplicate && <span style={{ color: 'var(--amber-ink)' }}>Document was already attached</span>}
       <div>
         <button className="btn" onClick={() => { useDemo.getState().closeAttach(); useDemo.getState().openDoc(r.doc_id) }}>
-          {r.links.some((l) => l.status !== 'confirmed') ? 'Xem chi tiết & duyệt' : 'Xem chi tiết'}
+          {r.links.some((l) => l.status !== 'confirmed') ? 'View details & review' : 'View details'}
         </button>
       </div>
     </div>
@@ -40,8 +39,12 @@ function ResultCard({ r }: { r: AttachResult }) {
 
 function Dialog() {
   const closeAttach = useDemo((s) => s.closeAttach)
-  // The node on screen: the plant view's asset, else the focused thread node, else the thread's root serial.
-  const target = useDemo((s) => (s.view === 'plant' ? s.plantAsset ?? DEFAULT_ASSET : s.view === 'data' ? null : s.focusNodeId ?? s.threadRoot))
+  // The node in context: the product tab's focused node (else its serial), the object selected on the twin, else none.
+  const target = useDemo((s) => {
+    const prod = activeProduct(s)
+    if (prod) return prod.p.focusNodeId ?? prod.p.root
+    return activeMain(s)?.kind === 'twin' ? s.twin.selected : null
+  })
   const [checked, setChecked] = useState<{ id: string; ok: boolean } | null>(null)
   const [samples, setSamples] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
@@ -108,8 +111,8 @@ function Dialog() {
         style={{ width: 460, maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 32px)', overflowY: 'auto', background: '#fff', border: '1px solid var(--line)', borderRadius: 2, boxShadow: '0 8px 28px rgba(0,0,0,.25)', display: 'flex', flexDirection: 'column', outline: 'none' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid var(--line-soft)' }}>
-          <span id="attach-title" style={{ fontWeight: 600, flex: 1 }}>Gắn tài liệu</span>
-          <button className="btn" aria-label="Đóng" onClick={closeAttach}>✕</button>
+          <span id="attach-title" style={{ fontWeight: 600, flex: 1 }}>Attach document</span>
+          <button className="btn" aria-label="Close" onClick={closeAttach}>✕</button>
         </div>
         <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div
@@ -118,24 +121,24 @@ function Dialog() {
             onDrop={onDrop}
             style={{ border: `1px dashed ${over ? 'var(--teal)' : '#B9BEC6'}`, background: over ? 'var(--teal-bg)' : '#FAFAFB', borderRadius: 2, padding: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
           >
-            <span>Kéo thả tệp vào đây hoặc chọn tệp</span>
-            <input type="file" aria-label="Chọn tệp" disabled={busy} onChange={(e) => { upload(e.target.files?.[0]); e.target.value = '' }} />
+            <span>Drag and drop a file here or choose one</span>
+            <input type="file" aria-label="Choose file" disabled={busy} onChange={(e) => { upload(e.target.files?.[0]); e.target.value = '' }} />
             <span className="mut" style={{ fontSize: 11 }}>
-              {!target ? 'Chưa chọn node — tài liệu không có mã sẽ bị từ chối'
-                : !hint ? `Đang kiểm tra ${target}…`
-                : hint.ok ? `Đích gợi ý khi không nhận ra mã: ${target}`
-                : `${target} không phải đối tượng — tài liệu không có mã sẽ bị từ chối`}
+              {!target ? 'No node selected — documents without a code will be rejected'
+                : !hint ? `Checking ${target}…`
+                : hint.ok ? `Suggested target when no code is recognised: ${target}`
+                : `${target} is not an object — documents without a code will be rejected`}
             </span>
           </div>
           {samples.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span className="mut" style={{ fontSize: 11 }}>Hoặc dùng tệp mẫu</span>
+              <span className="mut" style={{ fontSize: 11 }}>Or use a sample file</span>
               {samples.map((n) => (
                 <button key={n} className="btn" disabled={busy} style={{ justifyContent: 'flex-start', height: 28 }} onClick={() => void run(() => attachSample(n))}>{n}</button>
               ))}
             </div>
           )}
-          {busy && <span className="mut">Đang gắn…</span>}
+          {busy && <span className="mut">Attaching…</span>}
           {error && <div role="alert" style={{ color: 'var(--red)' }}>{error}</div>}
           {result && <ResultCard r={result} />}
         </div>

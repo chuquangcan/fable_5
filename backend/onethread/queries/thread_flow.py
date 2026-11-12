@@ -155,26 +155,26 @@ def _subs(conn: psycopg.Connection, info: dict[str, dict[str, Any]]) -> dict[str
             case "purchase_order":
                 out[i] = f"{a['qty']:,} pcs" if a.get("qty") is not None else ""
             case "receipt":
-                out[i] = f"nhập {_fmt(received.get(i) or a.get('received_at'), '%m-%d %H:%M')}"
+                out[i] = f"received {_fmt(received.get(i) or a.get('received_at'), '%m-%d %H:%M')}"
             case "lot":
                 part = names.get(a.get("part"), a.get("part", ""))
                 out[i] = f"{part} · {a['qty']:,}" if a.get("qty") is not None else part
             case "hopper":
-                out[i] = "cấp liệu"
+                out[i] = "feeding"
             case "machine":
                 out[i] = names.get(a.get("line"), a.get("line", ""))
             case "serial":
-                out[i] = f"ép {_fmt(pressed.get(i), '%m-%d %H:%M')}"
+                out[i] = f"pressed {_fmt(pressed.get(i), '%m-%d %H:%M')}"
             case "box":
-                out[i] = f"{box_parts.get(i, 0)} part"
+                out[i] = f"{box_parts.get(i, 0)} parts"
             case "shipment":
-                out[i] = f"giao {_fmt(a['date'], '%m-%d')}" if a.get("date") else "trong kho"
+                out[i] = f"shipped {_fmt(a['date'], '%m-%d')}" if a.get("date") else "in warehouse"
             case "sales_order":
                 out[i] = names.get(customer_of.get(i), a.get("customer", ""))
             case "customer":
                 out[i] = info[i]["name"]
             case "claim":
-                out[i] = f"nhận {_fmt(a['received'], '%m-%d')}" if a.get("received") else ""
+                out[i] = f"received {_fmt(a['received'], '%m-%d')}" if a.get("received") else ""
             case _:
                 out[i] = ""
     return out
@@ -274,11 +274,11 @@ def build_flow(conn: psycopg.Connection, id: str) -> FlowGraph:
     for agg, m in members.items():
         if agg in shown:
             lot = agg.removeprefix("AGG-")
-            info[agg] = {"type": "aggregate", "name": f"+{m['parts']:,} part · {lot}", "attributes": {}}
+            info[agg] = {"type": "aggregate", "name": f"+{m['parts']:,} parts · {lot}", "attributes": {}}
 
     subs = _subs(conn, {k: v for k, v in info.items() if v["type"] != "aggregate"})
     for agg, m in members.items():
-        subs[agg] = f"+{m['parts']:,} part · {m['boxes']} thùng"
+        subs[agg] = f"+{m['parts']:,} parts · {m['boxes']} boxes"
 
     def node(i: str, order: int | None, row: int, parent_id: str | None = None) -> FlowNode:
         t = info[i]["type"]

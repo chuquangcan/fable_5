@@ -25,7 +25,7 @@ export function useAsync<T>(fn: () => Promise<T>, deps: DependencyList, keepKey?
 }
 
 /** Grey placeholder bars while a panel loads. */
-export function Skeleton({ rows = 4, label = 'Đang tải…' }: { rows?: number; label?: string }) {
+export function Skeleton({ rows = 4, label = 'Loading…' }: { rows?: number; label?: string }) {
   return (
     <div role="status" aria-busy="true" aria-label={label} style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
       {Array.from({ length: rows }, (_, i) => <div key={i} className="skel" style={{ width: `${90 - ((i * 17) % 40)}%` }} />)}
@@ -37,8 +37,8 @@ export function Pending({ state }: { state: Async<unknown> }) {
   if (state.status === 'error')
     return (
       <div role="alert" style={{ padding: 14, color: 'var(--red-ink)', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span>Không tải được dữ liệu: {state.message}</span>
-        {state.retry && <button className="btn" onClick={state.retry}>Thử lại</button>}
+        <span>Could not load data: {state.message}</span>
+        {state.retry && <button className="btn" onClick={state.retry}>Retry</button>}
       </div>
     )
   return <Skeleton />

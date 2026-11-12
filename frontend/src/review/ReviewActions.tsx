@@ -31,13 +31,13 @@ export function ReviewActions({ linkId, status, label, withNote = false }: {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }} onClick={(e) => e.stopPropagation()}>
       {withNote && (
         <input
-          aria-label={`Ghi chú duyệt ${label}`} placeholder="Ghi chú (tuỳ chọn)" value={note} disabled={busy}
+          aria-label={`Review note ${label}`} placeholder="Note (optional)" value={note} disabled={busy}
           onChange={(e) => setNote(e.target.value)} maxLength={500} className="inp"
         />
       )}
       <div style={{ display: 'flex', gap: 4 }}>
-        <button className="btn pri" disabled={busy} aria-label={`Duyệt ${label}`} onClick={() => void decide('approve')}>Duyệt</button>
-        <button className="btn" disabled={busy} aria-label={`Từ chối ${label}`} onClick={() => void decide('reject')}>Từ chối</button>
+        <button className="btn pri" disabled={busy} aria-label={`Approve ${label}`} onClick={() => void decide('approve')}>Approve</button>
+        <button className="btn" disabled={busy} aria-label={`Reject ${label}`} onClick={() => void decide('reject')}>Reject</button>
       </div>
       {error && <span role="alert" style={{ color: 'var(--red)', fontSize: 11 }}>{error}</span>}
     </div>

@@ -1,0 +1,225 @@
+[
+ {
+  "id": "kho_nl",
+  "label": "Raw materials warehouse",
+  "groups": [
+   {
+    "type": "receipt",
+    "label": "Goods receipt",
+    "items": [
+     {
+      "id": "RCV-1410",
+      "type": "receipt",
+      "name": "RCV-1410",
+      "sub": "",
+      "events": 1,
+      "docs": 0,
+      "to_review": 0
+     },
+     {
+      "id": "RCV-2810",
+      "type": "receipt",
+      "name": "RCV-2810",
+      "sub": "2026-10-28",
+      "events": 0,
+      "docs": 0,
+      "to_review": 0
+     }
+    ]
+   },
+   {
+    "type": "lot",
+    "label": "Component lot",
+    "items": [
+     {
+      "id": "LOT-A",
+      "type": "lot",
+      "name": "LOT-A",
+      "sub": "BRG-6203",
+      "events": 1,
+      "docs": 0,
+      "to_review": 0
+     },
+     {
+      "id": "LOT-B",
+      "type": "lot",
+      "name": "LOT-B",
+      "sub": "BRG-6203 · 5,000 pcs",
+      "events": 2,
+      "docs": 1,
+      "to_review": 1
+     },
+     {
+      "id": "LOT-C",
+      "type": "lot",
+      "name": "LOT-C",
+      "sub": "BRG-6204 · 4,000 pcs",
+      "events": 0,
+      "docs": 0,
+      "to_review": 0
+     }
+    ]
+   }
+  ],
+  "volume": null
+ },
+ {
+  "id": "san_xuat",
+  "label": "Production",
+  "groups": [
+   {
+    "type": "line",
+    "label": "Line",
+    "items": [
+     {
+      "id": "LINE-1",
+      "type": "line",
+      "name": "Line 1",
+      "sub": "",
+      "events": 5,
+      "docs": 0,
+      "to_review": 0
+     },
+     {
+      "id": "LINE-2",
+      "type": "line",
+      "name": "Line 2",
+      "sub": "",
+      "events": 0,
+      "docs": 0,
+      "to_review": 0
+     }
+    ]
+   },
+   {
+    "type": "hopper",
+    "label": "Hopper",
+    "items": [
+     {
+      "id": "HOP-1",
+      "type": "hopper",
+      "name": "Hopper 1",
+      "sub": "",
+      "events": 1,
+      "docs": 0,
+      "to_review": 0
+     },
+     {
+      "id": "HOP-2",
+      "type": "hopper",
+      "name": "Hopper 2",
+      "sub": "",
+      "events": 0,
+      "docs": 0,
+      "to_review": 0
+     }
+    ]
+   },
+   {
+    "type": "machine",
+    "label": "Machine",
+    "items": [
+     {
+      "id": "M01",
+      "type": "machine",
+      "name": "Machine 01",
+      "sub": "Line 2",
+      "events": 1310,
+      "docs": 0,
+      "to_review": 0
+     },
+     {
+      "id": "M02",
+      "type": "machine",
+      "name": "Machine 02",
+      "sub": "Line 1",
+      "events": 1684,
+      "docs": 0,
+      "to_review": 0
+     },
+     {
+      "id": "M03",
+      "type": "machine",
+      "name": "Machine 03",
+      "sub": "Line 2",
+      "events": 1465,
+      "docs": 0,
+      "to_review": 0
+     }
+    ]
+   }
+  ],
+  "volume": "1,000 serial"
+ },
+ {
+  "id": "chat_luong",
+  "label": "Quality",
+  "groups": [
+   {
+    "type": "inspection",
+    "label": "IQC",
+    "items": [
+     {
+      "id": "IQC-5507",
+      "type": "inspection",
+      "name": "IQC-5507",
+      "sub": "LOT-A · Cpk 1.45",
+      "events": 0,
+      "docs": 0,
+      "to_review": 0
+     },
+     {
+      "id": "IQC-5531",
+      "type": "inspection",
+      "name": "IQC-5531",
+      "sub": "LOT-B · Cpk 0.92",
+      "events": 0,
+      "docs": 1,
+      "to_review": 0
+     }
+    ]
+   }
+  ],
+  "volume": null
+ },
+ {
+  "id": "kho_tp",
+  "label": "Finished goods warehouse · shipping",
+  "groups": [
+   {
+    "type": "shipment",
+    "label": "Shipment",
+    "items": [
+     {
+      "id": "SHP-1112",
+      "type": "shipment",
+      "name": "SHP-1112",
+      "sub": "delivered · 2026-11-12",
+      "events": 0,
+      "docs": 0,
+      "to_review": 0
+     },
+     {
+      "id": "SHP-1115",
+      "type": "shipment",
+      "name": "SHP-1115",
+      "sub": "delivered · 2026-11-15",
+      "events": 0,
+      "docs": 0,
+      "to_review": 0
+     },
+     {
+      "id": "SHP-1120",
+      "type": "shipment",
+      "name": "SHP-1120",
+      "sub": "in_warehouse",
+      "events": 0,
+      "docs": 0,
+      "to_review": 0
+     }
+    ]
+   }
+  ],
+  "volume": "42 boxes"
+ }
+]

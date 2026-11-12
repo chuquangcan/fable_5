@@ -1,29 +1,56 @@
-import { type MainTab, useDemo } from '../store/demo'
+import { type GroupId, useDemo } from '../store/demo'
 
-export function TabBar() {
-  const openTabs = useDemo((s) => s.openTabs)
-  const activeTab = useDemo((s) => s.activeTab)
-  const claimId = useDemo((s) => s.claimId)
-  const root = useDemo((s) => s.threadRoot)
-  const setTab = useDemo((s) => s.setTab)
+/** Tab id being dragged (HTML5 drag data is not readable on dragover, and jsdom has no DataTransfer). */
+let dragging: { group: GroupId; id: string } | null = null
+
+/** One tab bar for every group: ✕ to close, middle-click closes, drag to reorder, double-click keeps a preview. */
+export function TabBar({ group }: { group: GroupId }) {
+  const g = useDemo((s) => s.groups[group])
+  const activate = useDemo((s) => s.activate)
   const closeTab = useDemo((s) => s.closeTab)
-  const label: Record<MainTab, string> = {
-    claim: `${claimId ?? ''} · claim`,
-    thread: `Thread · ${root ?? '…'}`,
-    report: 'Báo cáo RCA · nháp',
-  }
-  if (openTabs.length === 0) return null
+  const keepTab = useDemo((s) => s.keepTab)
+  const moveTab = useDemo((s) => s.moveTab)
+  const collapsed = useDemo((s) => s.layout.dockCollapsed)
+  const split = useDemo((s) => s.layout.split)
   return (
-    <div role="tablist" aria-label="Tab đang mở" style={{ height: 32, flex: 'none', display: 'flex', background: '#ECEEF1', borderBottom: '1px solid var(--line)' }}>
-      {openTabs.map((t) => (
-        <div key={t} className={`tab${t === activeTab ? ' on' : ''}`}>
-          <button role="tab" aria-selected={t === activeTab} className="tab-btn" onClick={() => setTab(t)}>
-            {t === 'claim' && <span style={{ width: 6, height: 6, background: 'var(--red)' }} />}
-            {label[t]}
-          </button>
-          <button className="xbtn" aria-label={`Đóng ${label[t]}`} onClick={() => closeTab(t)}>✕</button>
+    <div className={`tabbar tabbar-${group}`}>
+      <div role="tablist" aria-label={group === 'main' ? 'Open tabs' : 'Panel tabs'} className="tabs">
+        {g.tabs.map((t) => (
+          <div
+            key={t.id} className={`tab${t.id === g.active ? ' on' : ''}${t.preview ? ' preview' : ''}`}
+            onDragOver={(e) => { if (dragging?.group === group) e.preventDefault() }}
+            onDrop={(e) => {
+              e.preventDefault()
+              if (dragging?.group === group) moveTab(group, dragging.id, t.id)
+              dragging = null
+            }}
+          >
+            <button
+              role="tab" aria-selected={t.id === g.active} className="tab-btn" title={t.title} draggable
+              onClick={() => activate(group, t.id)} onDoubleClick={() => keepTab(group, t.id)}
+              onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); closeTab(group, t.id) } }}
+              onDragStart={(e) => { dragging = { group, id: t.id }; e.dataTransfer?.setData('text/plain', t.id) }}
+              onDragEnd={() => { dragging = null }}
+            >
+              {t.kind === 'thread' && group === 'main' && <span className="tab-dot" />}
+              <span className="ellipsis">{t.title}</span>
+            </button>
+            {!t.pinned && <button className="xbtn" aria-label={`Close ${t.title}`} onClick={() => closeTab(group, t.id)}>✕</button>}
+          </div>
+        ))}
+      </div>
+      {group === 'bottom' && (
+        <div className="tabbar-actions">
+          <button
+            className="xbtn" aria-label={split ? 'Join panels' : 'Split panel'} title={split ? 'Join the two panel groups' : 'Move this tab to a second group'}
+            onClick={() => useDemo.getState().splitDock(!split)}
+          >◫</button>
+          <button
+            className="xbtn" aria-label={collapsed ? 'Restore panel' : 'Collapse panel'}
+            onClick={() => useDemo.getState().setLayout({ dockCollapsed: !collapsed })}
+          >{collapsed ? '▴' : '▾'}</button>
         </div>
-      ))}
+      )}
     </div>
   )
 }

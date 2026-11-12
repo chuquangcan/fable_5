@@ -10,6 +10,8 @@ export interface Claim {
   customer_name: string | null
   serial: string | null
   received: string | null
+  /** The claim's serial exists in the data, so its thread can be opened. */
+  traceable: boolean
 }
 
 export interface TraceNode {
@@ -371,3 +373,39 @@ export interface LotCompare {
   rows: LotRow[]
   similar: SimilarClaim[]
 }
+
+export interface FeedRef { doc_id: string | null; link_id: number | null; claim_id: string | null }
+
+/** One card of the notifications & changes feed (/api/feed), newest first. */
+export interface FeedItem {
+  id: string
+  kind: 'alert' | '4m' | 'doc' | 'link' | 'claim'
+  badge: string
+  /** Plant time (UTC+7) the item happened. */
+  at: string
+  title: string
+  reason: string
+  /** Department that sent it; null when no department is known. */
+  sender: string | null
+  /** Departments that must act. */
+  acting: string[]
+  objects: string[]
+  status: 'proposed' | 'watching' | 'approved' | 'closed'
+  ref: FeedRef
+}
+
+export type TwinState = 'running' | 'stopped' | 'warning' | 'watch4m' | 'idle'
+export interface NodeState { state: TwinState; value: string; sub: string | null }
+export interface TwinEdge { from_id: string; to_id: string; relation: string; status: EdgeStatus }
+/** Live state of the plant at one moment (/api/plant/state?at=). */
+export interface PlantState { at: string; nodes: Record<string, NodeState>; edges: TwinEdge[] }
+
+export interface Kpis { output: number; cycle_s: number | null; target_s: number | null; open_alerts: number; watch_4m: number; pending_links: number }
+export interface OverviewRow {
+  id: string; kind: 'line' | 'machine'; name: string; line: string | null; state: TwinState
+  cycle_s: number | null; target_s: number | null; output: number; lot: string | null; trend: number[]
+}
+export interface ShipmentRisk { id: string; status: string | null; date: string | null; customer: string | null; parts: number; risk: 'high' | 'none'; reason: string }
+export interface SourceRow { source: string; dept: string | null; events: number; last_at: string | null; delay_s: number | null }
+/** Plant overview at one moment (/api/plant/overview?at=). */
+export interface PlantOverview { at: string; kpis: Kpis; rows: OverviewRow[]; shipments: ShipmentRisk[]; sources: SourceRow[] }

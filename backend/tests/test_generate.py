@@ -39,3 +39,12 @@ def test_seed_idempotent(conn, story_path):
     seed(conn, story_path)
     seed(conn, story_path)
     assert conn.execute("select count(*) n from objects where type='serial'").fetchone()["n"] == 1000
+
+
+def test_extra_machines_have_cycles_but_no_serials(story):
+    v = generate_volume(story)
+    extra = [e for e in v.events if e["type"] == "press_cycle" and e["object_ids"][0] in ("M01", "M03")]
+    assert {e["object_ids"][0] for e in extra} == {"M01", "M03"}
+    assert all(len(e["object_ids"]) == 1 for e in extra)
+    assert {e["source"] for e in extra} == {"PLC1", "PLC3"}
+    assert len([o for o in v.objects if o["type"] == "serial"]) == 1000

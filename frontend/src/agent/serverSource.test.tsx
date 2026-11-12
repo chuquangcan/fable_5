@@ -35,10 +35,10 @@ async function collect(it: AsyncIterable<AgentEvent>) {
 }
 
 test('streams parsed events and closes after done', async () => {
-  const p = collect(makeServerSource()('Vì sao?', new AbortController().signal))
+  const p = collect(makeServerSource()('Why?', new AbortController().signal))
   await tick()
   const es = last()
-  expect(es.url).toBe('/api/agent/ask?q=V%C3%AC+sao%3F&claim=CLM-0012')
+  expect(es.url).toBe('/api/agent/ask?q=Why%3F&claim=CLM-0012')
   es.emit({ type: 'text', text: 'a' })
   es.emit({ type: 'cite', label: 'LOT-B', target_id: 'LOT-B' })
   es.emit({ type: 'done', elapsed_s: 3 })
@@ -49,14 +49,30 @@ test('streams parsed events and closes after done', async () => {
 test('passes reset through so a partial answer can be discarded', async () => {
   const p = collect(makeServerSource()('q', new AbortController().signal))
   await tick()
-  last().emit({ type: 'text', text: 'dở dang' })
+  last().emit({ type: 'text', text: 'partial' })
   last().emit({ type: 'reset' })
   last().emit({ type: 'done', elapsed_s: 1 })
   expect((await p).map((e) => e.type)).toEqual(['text', 'reset', 'done'])
 })
 
-test('uses the open claim and forces mode=replay when toggled', async () => {
-  useDemo.getState().openClaim('CLM-0012')
+test('asks about the claim of the active product tab; the story claim on the twin', async () => {
+  const ask = async () => {
+    const p = collect(makeServerSource()('q', new AbortController().signal))
+    await tick()
+    const claim = new URL(last().url, 'http://x').searchParams.get('claim')
+    last().emit({ type: 'done', elapsed_s: 1 })
+    await p
+    return claim
+  }
+  useDemo.getState().openClaim('CLM-0009', 'MH20-0457')
+  expect(await ask()).toBe('CLM-0009')
+  useDemo.getState().openClaim('CLM-0012', 'MH20-0001')
+  expect(await ask()).toBe('CLM-0012')
+  useDemo.getState().activate('main', 'twin')
+  expect(await ask()).toBe('CLM-0012')
+})
+
+test('forces mode=replay when toggled', async () => {
   useAgentMode.setState({ replay: true })
   const p = collect(makeServerSource()('q', new AbortController().signal))
   await tick()
@@ -80,7 +96,7 @@ test('connection error before done becomes an error, and EventSource does not au
   const p = collect(makeServerSource()('q', new AbortController().signal))
   await tick()
   last().onerror?.()
-  await expect(p).rejects.toThrow(/kết nối/i)
+  await expect(p).rejects.toThrow(/connection/i)
   expect(last().closed).toBe(true)
 })
 

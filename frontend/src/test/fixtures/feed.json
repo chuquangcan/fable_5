@@ -1,0 +1,292 @@
+[
+ {
+  "id": "CLM-0012",
+  "kind": "claim",
+  "badge": "CLAIM",
+  "at": "2027-02-10T00:00:00+07:00",
+  "title": "CLM-0012 · Pump is abnormally noisy when running",
+  "reason": "Customer C3 · MH20-0001",
+  "sender": "quality",
+  "acting": [
+   "quality",
+   "logistics"
+  ],
+  "objects": [
+   "CLM-0012",
+   "MH20-0001"
+  ],
+  "status": "watching",
+  "ref": {
+   "doc_id": null,
+   "link_id": null,
+   "claim_id": "CLM-0012"
+  }
+ },
+ {
+  "id": "CLM-0011",
+  "kind": "claim",
+  "badge": "CLAIM",
+  "at": "2027-02-03T00:00:00+07:00",
+  "title": "CLM-0011 · Water leak",
+  "reason": "Customer C1 · MH20-2457",
+  "sender": "quality",
+  "acting": [
+   "quality",
+   "logistics"
+  ],
+  "objects": [
+   "CLM-0011",
+   "MH20-2457"
+  ],
+  "status": "watching",
+  "ref": {
+   "doc_id": null,
+   "link_id": null,
+   "claim_id": "CLM-0011"
+  }
+ },
+ {
+  "id": "LINK-14",
+  "kind": "link",
+  "badge": "LINK",
+  "at": "2026-11-03T14:05:00+07:00",
+  "title": "CLM-0009 → SUP-S1",
+  "reason": "concerns · score 0.81",
+  "sender": null,
+  "acting": [
+   "quality"
+  ],
+  "objects": [
+   "CLM-0009",
+   "SUP-S1"
+  ],
+  "status": "proposed",
+  "ref": {
+   "doc_id": null,
+   "link_id": 14,
+   "claim_id": null
+  }
+ },
+ {
+  "id": "AL-0001",
+  "kind": "alert",
+  "badge": "P1",
+  "at": "2026-11-03T14:00:00+07:00",
+  "title": "M02 cycle time 31 s → 42 s",
+  "reason": "Jump right after LOT-B was loaded into HOP-1 at 13:52; target 30 s",
+  "sender": "production",
+  "acting": [
+   "quality",
+   "maintenance"
+  ],
+  "objects": [
+   "M02",
+   "LINE-1",
+   "LOT-B"
+  ],
+  "status": "watching",
+  "ref": {
+   "doc_id": null,
+   "link_id": null,
+   "claim_id": null
+  }
+ },
+ {
+  "id": "4M-0002",
+  "kind": "4m",
+  "badge": "4M",
+  "at": "2026-11-03T13:52:00+07:00",
+  "title": "HOP-1 material change LOT-A → LOT-B",
+  "reason": "Issue ISS-1103 at 13:52",
+  "sender": "warehouse",
+  "acting": [
+   "production",
+   "quality"
+  ],
+  "objects": [
+   "HOP-1",
+   "LOT-B",
+   "M02"
+  ],
+  "status": "watching",
+  "ref": {
+   "doc_id": null,
+   "link_id": null,
+   "claim_id": null
+  }
+ },
+ {
+  "id": "LINK-17",
+  "kind": "link",
+  "badge": "LINK",
+  "at": "2026-10-29T00:00:00+07:00",
+  "title": "D-07 → LOT-B",
+  "reason": "mentions · score 0.78",
+  "sender": "meeting",
+  "acting": [
+   "quality"
+  ],
+  "objects": [
+   "D-07",
+   "LOT-B"
+  ],
+  "status": "proposed",
+  "ref": {
+   "doc_id": "D-07",
+   "link_id": 17,
+   "claim_id": null
+  }
+ },
+ {
+  "id": "D-07",
+  "kind": "doc",
+  "badge": "DOC",
+  "at": "2026-10-29T00:00:00+07:00",
+  "title": "D-07 · meeting_minutes",
+  "reason": "Meeting minutes 29/10: lot B is slightly loose, keep monitoring.",
+  "sender": "meeting",
+  "acting": [
+   "warehouse"
+  ],
+  "objects": [
+   "LOT-B"
+  ],
+  "status": "proposed",
+  "ref": {
+   "doc_id": "D-07",
+   "link_id": null,
+   "claim_id": null
+  }
+ },
+ {
+  "id": "4M-0001",
+  "kind": "4m",
+  "badge": "4M",
+  "at": "2026-10-28T15:00:00+07:00",
+  "title": "LOT-B accepted conditionally",
+  "reason": "IQC-5531 Cpk 0.92 < 1.33 (drawing D-12 p.7)",
+  "sender": "quality",
+  "acting": [
+   "purchasing",
+   "production"
+  ],
+  "objects": [
+   "LOT-B",
+   "IQC-5531",
+   "SUP-S1"
+  ],
+  "status": "watching",
+  "ref": {
+   "doc_id": null,
+   "link_id": null,
+   "claim_id": null
+  }
+ },
+ {
+  "id": "D-09",
+  "kind": "doc",
+  "badge": "DOC",
+  "at": "2026-09-30T00:00:00+07:00",
+  "title": "D-09 · 8d_report",
+  "reason": "8D report for CLM-0009: the noise came from bearing 6203 supplied by Supplier S1. Corrective action: increase IQC sampli",
+  "sender": "quality",
+  "acting": [
+   "quality"
+  ],
+  "objects": [
+   "CLM-0009"
+  ],
+  "status": "approved",
+  "ref": {
+   "doc_id": "D-09",
+   "link_id": null,
+   "claim_id": null
+  }
+ },
+ {
+  "id": "CLM-0009",
+  "kind": "claim",
+  "badge": "CLAIM",
+  "at": "2026-09-30T00:00:00+07:00",
+  "title": "CLM-0009 · Bearing 6203 noise",
+  "reason": "",
+  "sender": "quality",
+  "acting": [
+   "quality",
+   "logistics"
+  ],
+  "objects": [
+   "CLM-0009"
+  ],
+  "status": "closed",
+  "ref": {
+   "doc_id": null,
+   "link_id": null,
+   "claim_id": "CLM-0009"
+  }
+ },
+ {
+  "id": "D-12",
+  "kind": "doc",
+  "badge": "DOC",
+  "at": "2026-01-01T00:00:00+07:00",
+  "title": "D-12 · drawing",
+  "reason": "MH-20 bearing drawing, page 7: bearing 6203 must reach a process capability index Cpk ≥ 1.33 at incoming inspection (IQC",
+  "sender": "design",
+  "acting": [
+   "quality"
+  ],
+  "objects": [
+   "IQC-5531"
+  ],
+  "status": "approved",
+  "ref": {
+   "doc_id": "D-12",
+   "link_id": null,
+   "claim_id": null
+  }
+ },
+ {
+  "id": "LINK-18",
+  "kind": "link",
+  "badge": "LINK",
+  "at": "2025-06-30T00:00:00+07:00",
+  "title": "D-03 → CLM-0009",
+  "reason": "similar_to · score 0.64",
+  "sender": "quality",
+  "acting": [
+   "quality"
+  ],
+  "objects": [
+   "D-03",
+   "CLM-0009"
+  ],
+  "status": "proposed",
+  "ref": {
+   "doc_id": "D-03",
+   "link_id": 18,
+   "claim_id": null
+  }
+ },
+ {
+  "id": "D-03",
+  "kind": "doc",
+  "badge": "DOC",
+  "at": "2025-06-30T00:00:00+07:00",
+  "title": "D-03 · defect_report",
+  "reason": "Defect report 2025: bearing noise in some returned pumps. The report does not record the component code.",
+  "sender": "quality",
+  "acting": [
+   "quality"
+  ],
+  "objects": [
+   "CLM-0009"
+  ],
+  "status": "proposed",
+  "ref": {
+   "doc_id": "D-03",
+   "link_id": null,
+   "claim_id": null
+  }
+ }
+]

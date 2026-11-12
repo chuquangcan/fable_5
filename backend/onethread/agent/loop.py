@@ -79,7 +79,7 @@ async def run_agent(question: str, claim_id: str, *, conn, turn: Callable,
 
         stop = message.stop_reason
         if stop == "refusal":
-            yield ErrorEv(message="Claude từ chối trả lời yêu cầu này.")
+            yield ErrorEv(message="Claude declined to answer this request.")
             return
         if stop == "max_tokens":
             yield done()
@@ -88,7 +88,7 @@ async def run_agent(question: str, claim_id: str, *, conn, turn: Callable,
         if stop == "tool_use":
             blocks = [b for b in message.content if b.type == "tool_use"]
             if tool_calls + len(blocks) > max_tool_calls:
-                yield TextEv("Đã dừng vì quá số bước.")
+                yield TextEv("Stopped: step limit exceeded.")
                 yield done()
                 return
             messages.append({"role": "assistant", "content": message.content})
@@ -107,7 +107,7 @@ async def run_agent(question: str, claim_id: str, *, conn, turn: Callable,
             continue
 
         # end_turn (or anything else that is not a tool request)
-        if "Khoanh vùng" in "".join(turn_text):
+        if "Impact scope" in "".join(turn_text):
             yield ActionEv(action="open_impact")
         yield ActionEv(action="open_report")
         yield done()

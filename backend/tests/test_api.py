@@ -94,14 +94,14 @@ def _sse_events(resp) -> list[dict]:
 
 def test_agent_ask_streams_events(client):
     turn = FakeTurn([tool_use_msg("trace_forward", {"lot_id": "LOT-B"}),
-                     text_msg("Khoanh vùng: 1,000 part [[cite:LOT-B]]")])
+                     text_msg("Impact scope: 1,000 parts [[cite:LOT-B]]")])
     app.dependency_overrides[get_turn_factory] = lambda: (lambda: turn)
-    r = client.get("/api/agent/ask", params={"q": "Vì sao?", "claim": "CLM-0012", "mode": "live"})
+    r = client.get("/api/agent/ask", params={"q": "Why?", "claim": "CLM-0012", "mode": "live"})
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/event-stream")
     evs = _sse_events(r)
     assert [e["type"] for e in evs][0] == "tool_call" and evs[-1]["type"] == "done"
     assert {"type": "cite", "label": "LOT-B", "target_id": "LOT-B"} in evs
-    assert "Vì sao?" in turn.requests[0][0]["content"]
+    assert "Why?" in turn.requests[0][0]["content"]
 
 
 def test_agent_ask_unknown_claim_is_404(client):
@@ -186,3 +186,30 @@ def test_agent_provider_endpoint_reports_key_based_choice(client, monkeypatch):
     assert body["provider"] == "deepseek" and body["model"] == "deepseek-flash" and body["mode"] in {"live", "replay", "auto"}
     monkeypatch.setenv("DEEPSEEK_API_KEY", "")
     assert client.get("/api/agent/provider").json()["provider"] is None
+
+
+def test_search_finds_serial_by_fragment(client):
+    assert client.get("/api/search", params={"q": "0457"}).json()[0]["id"] == "MH20-0457"
+    hits = client.get("/api/search", params={"q": "MH20-00"}).json()
+    assert hits[0]["type"] == "serial"
+
+
+def test_search_puts_object_prefix_matches_before_documents(client):
+    hits = client.get("/api/search", params={"q": "SUP-S1"}).json()  # object SUP-S1 and document D-09 both match
+    assert hits[0]["id"] == "SUP-S1" and hits[-1]["kind"] == "document"
+
+
+def test_claims_traceable_flag(client):
+    by = {c["id"]: c for c in client.get("/api/claims").json()}
+    assert by["CLM-0012"]["traceable"] is True and by["CLM-0011"]["traceable"] is False
+
+
+def test_shipment_serials(client):
+    r = client.get("/api/shipments/SHP-1112/serials")
+    assert r.status_code == 200
+    serials = r.json()
+    assert serials and all(s.startswith("MH20-") for s in serials)
+    assert serials == sorted(serials) and len(serials) <= 50
+    box = {l["from_id"] for l in client.get("/api/objects/BOX-001/links").json() if l["relation"] == "packed_in"}
+    assert box <= set(client.get("/api/shipments/SHP-1112/serials", params={"limit": 1000}).json())  # BOX-001 ships in SHP-1112
+    assert client.get("/api/shipments/SHP-9999/serials").status_code == 404

@@ -1,4 +1,7 @@
 /** Fixed points of the demo story (spec 3.1) used by deep links and the agent's default question. */
 export const STORY_CLAIM = 'CLM-0012'
 export const STORY_LOT = 'LOT-B'
-export const DEMO_QUESTION = 'Vì sao MH20-0001 của CLM-0012 kêu to? Tìm nguyên nhân gốc và phạm vi ảnh hưởng.'
+export const STORY_SERIAL = 'MH20-0001'
+export const DEMO_QUESTION = 'Why is MH20-0001 from CLM-0012 noisy? Find the root cause and the impact scope.'
+/** Department of the demo user: feed cards from other departments are marked. */
+export const USER_DEPT = 'quality'

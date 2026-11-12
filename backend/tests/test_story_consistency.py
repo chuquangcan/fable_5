@@ -41,7 +41,7 @@ def test_peak_force_up_6_percent(seeded_conn):
 
 def test_iqc_cpk(seeded_conn):
     b, a = _attrs(seeded_conn, "IQC-5531"), _attrs(seeded_conn, "IQC-5507")
-    assert b["cpk"] == 0.92 and b["lot"] == "LOT-B" and b["verdict"] == "Chấp nhận có điều kiện"
+    assert b["cpk"] == 0.92 and b["lot"] == "LOT-B" and b["verdict"] == "Conditionally accepted"
     assert a["cpk"] == 1.45
     assert a["spec_min"] == 1.33 and b["spec_min"] == 1.33
 

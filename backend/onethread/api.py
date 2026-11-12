@@ -14,8 +14,8 @@ from onethread.agent.replay import default_fixture_path, load_fixture
 from onethread.agent.stream import agent_event_stream
 from onethread.config import settings
 from onethread.db import connect
-from onethread.queries import (analysis, claims, docs, events, fault, impact, links, metrics, plant, repository, summary,
-                               thread_flow, trace)
+from onethread.queries import (analysis, claims, docs, events, fault, feed, impact, links, metrics, plant, plant_state,
+                               repository, serials, summary, thread_flow, trace)
 from onethread.queries.common import NotFound
 from onethread.report import ReportDraft, build_report_draft
 
@@ -112,6 +112,11 @@ def api_impact(lot: str, conn=Conn) -> impact.Impact:
     return impact.trace_forward(conn, lot)
 
 
+@app.get("/api/shipments/{shipment_id}/serials")
+def api_shipment_serials(shipment_id: str, limit: int = Query(50, ge=1, le=1000), conn=Conn) -> list[str]:
+    return serials.shipment_serials(conn, shipment_id, limit)
+
+
 @app.get("/api/reports/{claim_id}/draft")
 def api_report_draft(claim_id: str, conn=Conn) -> ReportDraft:
     return build_report_draft(conn, claim_id)
@@ -181,6 +186,21 @@ def api_lot_compare(lot_id: str, conn=Conn) -> analysis.LotCompare:
 @app.get("/api/plant")
 def api_plant(conn=Conn) -> list[plant.Area]:
     return plant.plant_tree(conn)
+
+
+@app.get("/api/feed")
+def api_feed(conn=Conn) -> list[feed.FeedItem]:
+    return feed.list_feed(conn)
+
+
+@app.get("/api/plant/state")
+def api_plant_state(at: datetime | None = None, conn=Conn) -> plant_state.PlantState:
+    return plant_state.plant_state(conn, at or feed.DEFAULT_AS_OF)
+
+
+@app.get("/api/plant/overview")
+def api_plant_overview(at: datetime | None = None, conn=Conn) -> plant_state.PlantOverview:
+    return plant_state.plant_overview(conn, at or feed.DEFAULT_AS_OF)
 
 
 @app.get("/api/db/tables")

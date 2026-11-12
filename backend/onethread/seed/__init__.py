@@ -50,3 +50,9 @@ def seed(conn: psycopg.Connection, story_path: Path) -> None:
                 "INSERT INTO time_mappings (source, offset_s, uncertainty_s, valid_from) VALUES (%s, %s, %s, %s)",
                 [(t["source"], t["offset_s"], t["uncertainty_s"], t["valid_from"]) for t in story["time_mappings"]],
             )
+            cur.executemany(
+                "INSERT INTO notices (notice_id, kind, severity, category, title, reason, source, acting, object_ids,"
+                " status, at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                [(n["notice_id"], n["kind"], n["severity"], n["category"], n["title"], n["reason"], n["source"],
+                  n["acting"], n["object_ids"], n["status"], n["at"]) for n in story["notices"]],
+            )

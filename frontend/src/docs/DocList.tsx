@@ -15,10 +15,10 @@ export function DocList({ docs }: { docs: DocView[] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minHeight: 0 }}>
       {present.length > 2 && (
-        <div role="group" aria-label="Lọc tài liệu theo trạng thái" style={{ display: 'flex', gap: 4, flexWrap: 'wrap', padding: '0 10px' }}>
+        <div role="group" aria-label="Filter documents by status" style={{ display: 'flex', gap: 4, flexWrap: 'wrap', padding: '0 10px' }}>
           {present.map((f) => (
             <button key={f} className={`chip fchip${filter === f ? ' on' : ''}`} aria-pressed={filter === f} onClick={() => setFilter(f)}>
-              {f === 'all' ? `Tất cả ${docs.length}` : `${statusLabel(f)} ${docs.filter((d) => d.status === f).length}`}
+              {f === 'all' ? `All ${docs.length}` : `${statusLabel(f)} ${docs.filter((d) => d.status === f).length}`}
             </button>
           ))}
         </div>
@@ -27,13 +27,13 @@ export function DocList({ docs }: { docs: DocView[] }) {
         {shown.map((d, i) => (
           <button
             key={`${d.doc_id}-${d.page}-${i}`} className={`it doc doc-${d.status}`} onClick={() => openDoc(d.doc_id)}
-            title="Xem chi tiết tài liệu"
+            title="View document details"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span className="mono" style={{ fontWeight: 500 }}>{docTitle(d)}</span>
               <span className="mut" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{docTypeLabel(d.type)}</span>
               <span style={{ flex: 1 }} />
-              {d.doc_id.startsWith('D-U') && <span className="chip thr">mới</span>}
+              {d.doc_id.startsWith('D-U') && <span className="chip thr">new</span>}
               <DocBadge d={d} />
             </div>
             <span className="mut clamp2">{d.text}</span>

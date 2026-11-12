@@ -75,10 +75,10 @@ def _supplier(conn: psycopg.Connection, id: str) -> str | None:
 
 def _receipt_param(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> list[Param]:
     for e in _events(conn, id, "goods_receipt"):
-        return [Param(label="Ngày nhập", value=_fmt(e.event_time), source=e.source,
+        return [Param(label="Received on", value=_fmt(e.event_time), source=e.source,
                       source_record_id=e.source_record_id)]
     if attrs.get("received_at"):
-        return [Param(label="Ngày nhập", value=_fmt(attrs["received_at"]), source="WMS",
+        return [Param(label="Received on", value=_fmt(attrs["received_at"]), source="WMS",
                       source_record_id=id)]
     return []
 
@@ -104,21 +104,21 @@ def _params_machine(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) ->
     if day is not None:
         stats = compare_by_lot(conn, id, day)
         for s in stats:
-            out.append(Param(label=f"Cycle TB · {s.lot}", value=round(s.cycle_mean_s, 1), unit="s", source="PLC2"))
-            out.append(Param(label=f"Lực ép TB · {s.lot}", value=round(s.force_mean_kn, 1), unit="kN",
+            out.append(Param(label=f"Avg cycle · {s.lot}", value=round(s.cycle_mean_s, 1), unit="s", source="PLC2"))
+            out.append(Param(label=f"Avg press force · {s.lot}", value=round(s.force_mean_kn, 1), unit="kN",
                              source="PLC2"))
     if attrs.get("cycle_target_s") is not None:
-        out.append(Param(label="Mục tiêu cycle", value=attrs["cycle_target_s"], unit="s", source="MES"))
+        out.append(Param(label="Cycle target", value=attrs["cycle_target_s"], unit="s", source="MES"))
     if day is not None:
-        out.append(Param(label=f"Số chu kỳ {day:%m-%d}", value=sum(s.n for s in stats), source="PLC2"))
+        out.append(Param(label=f"Cycle count {day:%m-%d}", value=sum(s.n for s in stats), source="PLC2"))
     if maint := _events(conn, id, "maintenance"):
         m = maint[-1]
         result = m.payload.get("result", "")
-        out.append(Param(label="Bảo trì gần nhất", value=f"{_fmt(m.event_time, '%Y-%m-%d')} · {result}",
+        out.append(Param(label="Last maintenance", value=f"{_fmt(m.event_time, '%Y-%m-%d')} · {result}",
                          source=m.source, source_record_id=m.source_record_id))
     if shifts := _events(conn, id, "shift"):
         s = shifts[-1]
-        out.append(Param(label="Vận hành", value=f"{s.payload.get('operator', '')} · {s.payload.get('shift', '')}",
+        out.append(Param(label="Operator", value=f"{s.payload.get('operator', '')} · {s.payload.get('shift', '')}",
                          source=s.source, source_record_id=s.source_record_id))
     if day is not None:
         for line in _linked(conn, id, "part_of", outgoing=True):
@@ -127,7 +127,7 @@ def _params_machine(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) ->
                      if _fmt(e.event_time, "%Y-%m-%d") == day.isoformat() and "temp_c" in e.payload]
             if temps:
                 lo, hi = min(t for t, _ in temps), max(t for t, _ in temps)
-                out.append(Param(label="Nhiệt độ line", value=f"{lo:.1f}–{hi:.1f}", unit="°C",
+                out.append(Param(label="Line temperature", value=f"{lo:.1f}–{hi:.1f}", unit="°C",
                                  source=temps[0][1]))
                 break
     return out
@@ -137,7 +137,7 @@ def _params_hopper(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> 
     out = []
     for e in _events(conn, id, "lot_loaded"):
         lot = e.payload.get("lot") or next((o for o in e.object_ids if o != id), "")
-        out.append(Param(label=f"Nạp {lot}", value=_fmt(e.event_time, "%m-%d %H:%M"), source=e.source,
+        out.append(Param(label=f"Loaded {lot}", value=_fmt(e.event_time, "%m-%d %H:%M"), source=e.source,
                          source_record_id=e.source_record_id))
     return out
 
@@ -145,12 +145,12 @@ def _params_hopper(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> 
 def _params_lot(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> list[Param]:
     out = []
     if attrs.get("qty") is not None:
-        out.append(Param(label="Số lượng", value=attrs["qty"], unit="pcs", source="ERP"))
+        out.append(Param(label="Quantity", value=attrs["qty"], unit="pcs", source="ERP"))
     if part := attrs.get("part"):
-        out.append(Param(label="Linh kiện", value=node_info(conn, [part]).get(part, {}).get("name", part),
+        out.append(Param(label="Component", value=node_info(conn, [part]).get(part, {}).get("name", part),
                          source="PLM"))
     if supplier := _supplier(conn, id):
-        out.append(Param(label="Nhà cung cấp", value=supplier, source="ERP"))
+        out.append(Param(label="Supplier", value=supplier, source="ERP"))
     out += _receipt_param(conn, id, attrs)
     for iqc in _linked(conn, id, "inspected", outgoing=False):
         a = node_info(conn, [iqc]).get(iqc, {}).get("attributes") or {}
@@ -158,23 +158,23 @@ def _params_lot(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> lis
             out.append(Param(label="Cpk IQC", value=f"{a['cpk']} · {a.get('verdict', '')}", source="QMS",
                              source_record_id=iqc))
     if (parts := trace_forward(conn, id).parts) > 0:
-        out.append(Param(label="Part đã dùng", value=parts, source="MES"))
+        out.append(Param(label="Parts used", value=parts, source="MES"))
     return out
 
 
 def _params_po_receipt(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> list[Param]:
     out = []
     if attrs.get("qty") is not None:
-        out.append(Param(label="Số lượng", value=attrs["qty"], unit="pcs", source="ERP"))
+        out.append(Param(label="Quantity", value=attrs["qty"], unit="pcs", source="ERP"))
     if supplier := _supplier(conn, id):
-        out.append(Param(label="Nhà cung cấp", value=supplier, source="ERP"))
+        out.append(Param(label="Supplier", value=supplier, source="ERP"))
     return out + _receipt_param(conn, id, attrs)
 
 
 def _params_supplier(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> list[Param]:
     out = []
     if attrs.get("erp_code"):
-        out.append(Param(label="Mã ERP", value=attrs["erp_code"], source="ERP"))
+        out.append(Param(label="ERP code", value=attrs["erp_code"], source="ERP"))
     downs = sorted({e.down for e in flow_edges(conn) if e.up == id})
     info = node_info(conn, downs)
     if pos := [i for i in downs if info.get(i, {}).get("type") == "purchase_order"]:
@@ -185,7 +185,7 @@ def _params_supplier(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -
         {"o": id, "st": list(FLOW_STATUSES)}).fetchall()
     others = node_info(conn, [r["other"] for r in rows])
     if claims := sorted(i for i, n in others.items() if n["type"] == "claim"):
-        out.append(Param(label="Claim liên quan", value=", ".join(claims), source="QMS"))
+        out.append(Param(label="Related claims", value=", ".join(claims), source="QMS"))
     return out
 
 
@@ -196,10 +196,10 @@ def _params_serial(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> 
         " ORDER BY link_id LIMIT 1", (id, list(FLOW_STATUSES))).fetchone()
     if presses := _events(conn, id, "press_cycle"):
         record = ((link or {}).get("evidence") or {}).get("source_record_id")
-        out.append(Param(label="Ép lúc", value=_fmt(presses[0].event_time), source="PLC2",
+        out.append(Param(label="Pressed at", value=_fmt(presses[0].event_time), source="PLC2",
                          source_record_id=record))
-    for label, relation, source in (("Máy", "processed_on", "MES"), ("Lô", "uses_lot", "MES"),
-                                    ("Thùng", "packed_in", "MES"), ("Lô xuất", "shipped_in", "WMS")):
+    for label, relation, source in (("Machine", "processed_on", "MES"), ("Lot", "uses_lot", "MES"),
+                                    ("Box", "packed_in", "MES"), ("Shipment", "shipped_in", "WMS")):
         if targets := _linked(conn, id, relation, outgoing=True):
             out.append(Param(label=label, value=targets[0], source=source))
     return out
@@ -207,8 +207,8 @@ def _params_serial(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> 
 
 def _params_shipment(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> list[Param]:
     out = []
-    for label, key in (("Số part", "parts"), ("Số thùng", "boxes"), ("Trạng thái", "status"),
-                       ("Ngày giao", "date"), ("Khách", "customer")):
+    for label, key in (("Parts", "parts"), ("Boxes", "boxes"), ("Status", "status"),
+                       ("Delivery date", "date"), ("Customer", "customer")):
         if attrs.get(key) is not None:
             out.append(Param(label=label, value=attrs[key], source="WMS"))
     return out
@@ -221,22 +221,22 @@ def _shipments_of_order(conn: psycopg.Connection, order: str) -> list[str]:
 def _params_sales_order(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> list[Param]:
     out = []
     if customers := _linked(conn, id, "delivered_to", outgoing=True):
-        out.append(Param(label="Khách", value=customers[0], source="ERP"))
+        out.append(Param(label="Customer", value=customers[0], source="ERP"))
     if shipments := _shipments_of_order(conn, id):
-        out.append(Param(label="Lô xuất", value=", ".join(sorted(shipments)), source="ERP"))
+        out.append(Param(label="Shipment", value=", ".join(sorted(shipments)), source="ERP"))
     return out
 
 
 def _params_customer(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> list[Param]:
     shipments = {s for so in _linked(conn, id, "delivered_to", outgoing=False)
                  for s in _shipments_of_order(conn, so)}
-    return [Param(label="Lô xuất", value=", ".join(sorted(shipments)), source="ERP")] if shipments else []
+    return [Param(label="Shipment", value=", ".join(sorted(shipments)), source="ERP")] if shipments else []
 
 
 def _params_claim(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> list[Param]:
     out = []
-    for label, key in (("Triệu chứng", "symptom"), ("Ngày nhận", "received"), ("Serial", "serial"),
-                       ("Khách", "customer")):
+    for label, key in (("Symptom", "symptom"), ("Received on", "received"), ("Serial", "serial"),
+                       ("Customer", "customer")):
         if attrs.get(key) is not None:
             out.append(Param(label=label, value=attrs[key], source="QMS"))
     return out
@@ -244,10 +244,10 @@ def _params_claim(conn: psycopg.Connection, id: str, attrs: dict[str, Any]) -> l
 
 def _params_aggregate(conn: psycopg.Connection, lot: str) -> list[Param]:
     impact = trace_forward(conn, lot)
-    out = [Param(label="Số part", value=impact.parts, source="MES"),
-           Param(label="Số thùng", value=impact.boxes, source="MES")]
+    out = [Param(label="Parts", value=impact.parts, source="MES"),
+           Param(label="Boxes", value=impact.boxes, source="MES")]
     for s in impact.shipments:
-        out.append(Param(label="Lô xuất", value=f"{s.id} · {s.parts} part · {s.status}", source="WMS"))
+        out.append(Param(label="Shipment", value=f"{s.id} · {s.parts} parts · {s.status}", source="WMS"))
     return out
 
 
@@ -269,7 +269,7 @@ PARAMS_BY_TYPE = {
 def _aggregate_summary(conn: psycopg.Connection, lot: str) -> NodeSummary:
     params = _params_aggregate(conn, lot)  # NotFound unless `lot` is a lot
     parts = params[0].value
-    return NodeSummary(id=f"{AGG_PREFIX}{lot}", type="aggregate", name=f"{lot} · toàn lô ({parts:,} part)",
+    return NodeSummary(id=f"{AGG_PREFIX}{lot}", type="aggregate", name=f"{lot} · whole lot ({parts:,} parts)",
                        stage=DEFAULT_STAGE["aggregate"], aliases=[], params=params, docs=[],
                        counts={"links": 0, "events": 0})
 
@@ -288,9 +288,9 @@ def _event_summary(conn: psycopg.Connection, record_id: str) -> NodeSummary | No
     if e is None:
         return None
     cite = {"source": e["source"] or "", "source_record_id": record_id}
-    params = [Param(label="Thời điểm", value=_fmt(e["event_time"]), **cite)]
+    params = [Param(label="Time", value=_fmt(e["event_time"]), **cite)]
     if e["object_ids"]:
-        params.append(Param(label="Đối tượng", value=", ".join(e["object_ids"]), **cite))
+        params.append(Param(label="Object", value=", ".join(e["object_ids"]), **cite))
     params += [Param(label=k, value=_param_value(v), **cite) for k, v in (e["payload"] or {}).items()]
     return NodeSummary(id=record_id, type="event", name=f"{e['type']} · {_fmt(e['event_time'])}",
                        stage=ATTACHMENT_STAGE, aliases=[], params=params, docs=[],
@@ -304,8 +304,8 @@ def _source_summary(conn: psycopg.Connection, source: str) -> NodeSummary | None
     if not rows:
         return None
     n = sum(r["n"] for r in rows)
-    params = [Param(label="Số sự kiện", value=n, source=source),
-              Param(label="Loại sự kiện", value=", ".join(r["type"] for r in rows), source=source)]
+    params = [Param(label="Event count", value=n, source=source),
+              Param(label="Event types", value=", ".join(r["type"] for r in rows), source=source)]
     return NodeSummary(id=source, type="source", name=source, stage=ATTACHMENT_STAGE, aliases=[],
                        params=params, docs=[], counts={"links": 0, "events": n})
 

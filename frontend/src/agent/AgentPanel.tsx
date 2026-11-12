@@ -1,20 +1,16 @@
 import { Fragment, type ReactNode, useEffect, useState } from 'react'
-import { useDemo } from '../store/demo'
+import { activeProduct, agentContext, useDemo } from '../store/demo'
 import { useAgentMode } from './mode'
 import type { AgentState, Segment } from './reducer'
+import { STORY_CLAIM } from '../lib/story'
 import { DEMO_QUESTION } from './sources'
 import { useAgent } from './useAgent'
 
 export function CiteChip({ label, target_id }: { label: string; target_id: string | null }) {
-  const selectNode = useDemo((s) => s.selectNode)
-  const openDoc = useDemo((s) => s.openDoc)
+  const goTo = useDemo((s) => s.goTo)
   if (target_id === null) return <span className="cite">{label}</span>
-  // documents open in the detail drawer; everything else focuses the thread node
-  const open = () => {
-    if (/^D-/.test(target_id)) return openDoc(target_id)
-    if (useDemo.getState().claimId) useDemo.getState().setTab('thread')
-    selectNode(target_id)
-  }
+  // one navigation entry: documents open a tab, nodes on the open thread are focused, other objects open in the dock
+  const open = () => void goTo(target_id)
   return (
     <button
       className="cite"
@@ -32,7 +28,7 @@ export const formatToolCall = (name: string, args: Record<string, unknown>) => {
   return `${name}(${parts.join(', ')})`
 }
 
-const LABELS = /^(Nguyên nhân khả dĩ:|Đã loại trừ:|Khoanh vùng:)/
+const LABELS = /^(Probable cause:|Ruled out:|Impact scope:)/
 
 /** Splits segments into paragraphs on blank lines; cites stay inline. */
 function paragraphs(segments: Segment[]): Segment[][] {
@@ -78,8 +74,10 @@ export function AgentPanel() {
     if (cmd.kind === 'clear') clear()
     else if (cmd.kind === 'ask' && cmd.question) ask(cmd.question)
   }, [cmd, ask, clear])
-  const claimId = useDemo((s) => s.claimId)
-  const setTab = useDemo((s) => s.setTab)
+  const claimId = useDemo((s) => activeProduct(s)?.p.claimId ?? null)
+  const context = useDemo(agentContext)
+  const productTab = useDemo((s) => activeProduct(s)?.tabId ?? null)
+  const openReport = useDemo((s) => s.openReport)
   const setEvidence = useDemo((s) => s.setEvidence)
   const [draft, setDraft] = useState('')
   const replay = useAgentMode((s) => s.replay)
@@ -97,29 +95,29 @@ export function AgentPanel() {
       <div style={{ height: 32, flex: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px', borderBottom: '1px solid var(--line-soft)', background: '#ECEEF1' }}>
         <span style={{ fontWeight: 600 }}>Agent</span>
         {replay && <span title="Replay (Alt+Shift+D)" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--amber)' }} />}
-        <span className="chip thr">Context · {claimId ?? '—'}</span>
       </div>
+      <div data-testid="agent-context" className="agent-context" title="What the agent is looking at">{`Context · ${context}`}</div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 9, lineHeight: 1.5 }}>
         {state.status === 'idle' && (
-          <div className="mut">Hỏi về claim này, hoặc bấm <span className="mono">/report</span> để chạy kịch bản demo.</div>
+          <div className="mut">Ask about this claim, or press <span className="mono">/report</span> to run the demo script.</div>
         )}
         {state.status !== 'idle' && (
-          <div style={{ alignSelf: 'flex-end', maxWidth: '92%', background: '#E9ECEF', border: '1px solid var(--line-soft)', padding: '6px 8px' }}>{state.question}</div>
+          <div className="bubble user">{state.question}</div>
         )}
         {state.toolCalls.length > 0 && (
           <div style={{ fontSize: 11, color: '#3A4049', border: '1px dashed var(--line)', padding: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <span style={{ color: 'var(--muted)' }}>
-              ▾ {state.toolCalls.length} tool calls · read-only{state.status === 'done' ? ` · ${state.elapsed_s} s` : ' · đang chạy…'}
+              ▾ {state.toolCalls.length} tool calls · read-only{state.status === 'done' ? ` · ${state.elapsed_s} s` : ' · running…'}
             </span>
             {state.toolCalls.map((c, i) => <span key={i} className="mono">{formatToolCall(c.name, c.args)}</span>)}
           </div>
         )}
-        <Answer state={state} />
-        {state.status === 'error' && <div style={{ color: 'var(--red-ink)' }}>Lỗi agent: {state.error}</div>}
+        {state.segments.length > 0 && <div data-testid="agent-bubble" className="bubble agent"><Answer state={state} /></div>}
+        {state.status === 'error' && <div style={{ color: 'var(--red-ink)' }}>Agent error: {state.error}</div>}
         {state.actions.length > 0 && (
           <div style={{ display: 'flex', gap: 6 }}>
-            {state.actions.includes('open_report') && <button className="btn pri" onClick={() => setTab('report')}>Tạo nháp báo cáo</button>}
-            {state.actions.includes('open_impact') && <button className="btn" onClick={() => setEvidence('impact')}>Xem khoanh vùng</button>}
+            {state.actions.includes('open_report') && <button className="btn pri" onClick={() => openReport(claimId ?? STORY_CLAIM)}>Create report draft</button>}
+            {state.actions.includes('open_impact') && productTab && <button className="btn" onClick={() => setEvidence(productTab, 'impact')}>View impact scope</button>}
           </div>
         )}
       </div>
@@ -131,13 +129,13 @@ export function AgentPanel() {
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ position: 'absolute', left: -9999 }}>Ask the agent</span>
           <textarea
-            rows={2} value={draft} placeholder="Hỏi về claim này…" onChange={(e) => setDraft(e.target.value)}
+            rows={2} value={draft} placeholder="Ask about this claim…" onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
             style={{ resize: 'none', font: 'inherit', fontSize: 12, border: '1px solid #B9BEC6', borderRadius: 2, padding: 6, background: '#FFFFFF', color: 'var(--ink)' }}
           />
         </label>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="mut" style={{ fontSize: 11 }}>Mọi nhận định đều dẫn nguồn · chỉ đọc</span>
+          <span className="mut" style={{ fontSize: 11 }}>Every finding cites its source · read-only</span>
           <button className="btn pri" onClick={send}>Send</button>
         </div>
       </div>

@@ -17,13 +17,13 @@ def test_unknown_id_has_null_target():   # Review Focus #3
 
 def test_text_is_never_lost_or_reordered():
     p = CiteParser({"A"})
-    chunks = ["Một [", "[cite:A]", "] hai [x] [[ba", "d"]
+    chunks = ["One [", "[cite:A]", "] two [x] [[th", "d"]
     out = []
     for c in chunks:
         out += p.feed(c)
     out += p.flush()
     text = "".join(e.text for e in out if e.type == "text")
-    assert text == "Một  hai [x] [[bad"
+    assert text == "One  two [x] [[thd"
     assert [e.label for e in out if e.type == "cite"] == ["A"]
 
 

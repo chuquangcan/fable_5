@@ -113,17 +113,17 @@ def _classify(conn, safe_name: str, content: bytes, ext: str, target_hint: str |
                 "tier": entry["tier"], "status": entry["status"], "score": entry["score"],
                 "reason": entry["reason"], "text": entry["text"]}
     body = content.decode("utf-8", errors="ignore")[:MAX_TEXT] if ext == "txt" else ""
-    text = body or f"Tài liệu tải lên: {safe_name}"
+    text = body or f"Uploaded document: {safe_name}"
     found = _match_known_ids(conn, f"{safe_name}\n{body}")
     if found:
         return {"type": "upload", "method": "code", "targets": found, "tier": 4, "status": "inferred",
-                "score": 0.90, "reason": "Khớp mã " + ", ".join(found) + " trong tên file/nội dung", "text": text}
+                "score": 0.90, "reason": "Matched code " + ", ".join(found) + " in file name/content", "text": text}
     if not target_hint:
         raise HTTPException(422, "no known object code found; target_hint is required")
     if conn.execute("SELECT 1 FROM objects WHERE object_id = %s", (target_hint,)).fetchone() is None:
         raise HTTPException(422, f"target_hint {target_hint} is not a known object")
     return {"type": "upload", "method": "manual", "targets": [target_hint], "tier": 4, "status": "pending",
-            "score": 0.70, "reason": f"Người dùng chọn đích {target_hint}", "text": text}
+            "score": 0.70, "reason": f"User chose target {target_hint}", "text": text}
 
 
 def attach_document(conn, filename: str, content: bytes, target_hint: str | None) -> AttachResult:

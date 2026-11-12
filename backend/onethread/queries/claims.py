@@ -5,7 +5,8 @@ from onethread.queries.common import NotFound
 _SQL = """
 SELECT c.object_id AS id, c.name, c.attributes->>'status' AS status, c.attributes->>'symptom' AS symptom,
        c.attributes->>'customer' AS customer_id, cu.name AS customer_name,
-       c.attributes->>'serial' AS serial, c.attributes->>'received' AS received
+       c.attributes->>'serial' AS serial, c.attributes->>'received' AS received,
+       EXISTS (SELECT 1 FROM objects s WHERE s.object_id = c.attributes->>'serial') AS traceable
 FROM objects c LEFT JOIN objects cu ON cu.object_id = c.attributes->>'customer'
 WHERE c.type = 'claim'
 """
@@ -20,6 +21,7 @@ class Claim(BaseModel):
     customer_name: str | None = None
     serial: str | None = None
     received: str | None = None
+    traceable: bool = False  # the claim's serial exists in the data, so its thread can be opened
 
 
 def list_claims(conn) -> list[Claim]:
