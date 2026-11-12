@@ -10,7 +10,7 @@ export function PlantSidebar() {
   const s = useAsync(getPlant, [dataVersion])
   return (
     <>
-      <div className="side-title">Nhà máy · Plant 1</div>
+      <div className="side-title">Plant · Plant 1</div>
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
         {s.status !== 'ok' ? <Pending state={s} /> : s.data.map((a) => (
           <section key={a.id} aria-label={a.label}>
@@ -26,8 +26,8 @@ export function PlantSidebar() {
                     <span className="mono" style={{ fontWeight: 500 }}>{i.name}</span>
                     {i.name !== i.id && <span className="mut mono" style={{ fontSize: 11 }}>{i.id}</span>}
                     <span style={{ flex: 1 }} />
-                    {i.to_review > 0 && <span className="chip st-pending" title="Liên kết chờ duyệt">{i.to_review}</span>}
-                    {i.docs > 0 && <span className="chip" title="Tài liệu">{`${i.docs} tl`}</span>}
+                    {i.to_review > 0 && <span className="chip st-pending" title="Links pending review">{i.to_review}</span>}
+                    {i.docs > 0 && <span className="chip" title="Documents">{`${i.docs} docs`}</span>}
                     {i.sub && <span className="mut sub ellipsis">{i.sub}</span>}
                   </button>
                 ))}

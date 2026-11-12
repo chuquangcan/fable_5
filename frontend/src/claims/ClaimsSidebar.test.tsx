@@ -9,15 +9,15 @@ import { ClaimsSidebar } from './ClaimsSidebar'
 vi.mock('../api/client')
 
 const claims: Claim[] = [
-  { id: 'CLM-0012', name: 'CLM-0012', status: 'open', symptom: 'Bơm kêu to bất thường khi chạy', customer_id: 'CUS-C3', customer_name: 'Customer C3', serial: 'MH20-0001', received: '2027-02-10' },
-  { id: 'CLM-0011', name: 'CLM-0011', status: 'open', symptom: 'Rò nước', customer_id: 'CUS-C1', customer_name: 'Customer C1', serial: 'MH20-2457', received: '2027-02-03' },
-  { id: 'CLM-0009', name: 'CLM-0009', status: 'closed', symptom: 'Tiếng ồn ổ bi 6203', customer_id: null, customer_name: null, serial: null, received: null },
+  { id: 'CLM-0012', name: 'CLM-0012', status: 'open', symptom: 'Pump is abnormally noisy when running', customer_id: 'CUS-C3', customer_name: 'Customer C3', serial: 'MH20-0001', received: '2027-02-10' },
+  { id: 'CLM-0011', name: 'CLM-0011', status: 'open', symptom: 'Water leak', customer_id: 'CUS-C1', customer_name: 'Customer C1', serial: 'MH20-2457', received: '2027-02-03' },
+  { id: 'CLM-0009', name: 'CLM-0009', status: 'closed', symptom: 'Bearing 6203 noise', customer_id: null, customer_name: null, serial: null, received: null },
 ]
 
 const edge = (from_id: string, to_id: string, status: string, score = 1) => ({ from_id, to_id, relation: 'x', tier: 1, status, score })
 const trace = {
   root: 'MH20-0001',
-  nodes: [{ id: 'D-07', type: 'document', name: 'Biên bản họp · tr.2', attributes: {} }],
+  nodes: [{ id: 'D-07', type: 'document', name: 'Meeting minutes · p.2', attributes: {} }],
   edges: [edge('a', 'b', 'confirmed'), edge('b', 'c', 'confirmed'), edge('c', 'd', 'inferred', 0.81), edge('D-07', 'LOT-B', 'pending', 0.78), edge('D-03', 'CLM-0009', 'suggested', 0.64)],
 } as TraceGraph
 
@@ -50,19 +50,19 @@ test('clicking CLM-0012 opens the thread; CLM-0011 is static', async () => {
 test('confidence counts appear only after a claim is opened', async () => {
   render(<ClaimsSidebar />)
   await screen.findByText('CLM-0012')
-  expect(screen.queryByText(/Confirmed · bậc 1–2/)).toBeNull()
+  expect(screen.queryByText(/Confirmed · tier 1–2/)).toBeNull()
   await userEvent.click(screen.getByRole('button', { name: /CLM-0012/ }))
-  await waitFor(() => expect(screen.getByText(/Confirmed · bậc 1–2/)).toBeInTheDocument())
+  await waitFor(() => expect(screen.getByText(/Confirmed · tier 1–2/)).toBeInTheDocument())
   expect(api.getTrace).toHaveBeenCalledWith('MH20-0001')
-  expect(screen.getByText(/Confirmed · bậc 1–2/).parentElement).toHaveTextContent('2')
-  expect(screen.getByText(/Chờ duyệt · bậc 4/).parentElement).toHaveTextContent('1')
+  expect(screen.getByText(/Confirmed · tier 1–2/).parentElement).toHaveTextContent('2')
+  expect(screen.getByText(/Pending review · tier 4/).parentElement).toHaveTextContent('1')
 })
 
 test('the review queue is global; a doc item opens its drawer, a non-doc item the full queue', async () => {
   render(<ClaimsSidebar />)
   expect(await screen.findByText('D-07 → LOT-B')).toBeInTheDocument()
-  expect(screen.getByText('Chờ duyệt · 0.78')).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: /^Duyệt/ })).toBeNull()  // decisions are made in the drawer / data view
+  expect(screen.getByText('Pending review · 0.78')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /^Approve/ })).toBeNull()  // decisions are made in the drawer / data view
   await userEvent.click(screen.getByText('D-07 → LOT-B'))
   expect(useDemo.getState().docId).toBe('D-07')
   await userEvent.click(screen.getByText('CLM-0009 → SUP-S1'))

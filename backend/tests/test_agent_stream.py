@@ -11,7 +11,7 @@ from onethread.agent.stream import agent_event_stream
 
 FX_EVENTS = [
     ToolCallEv(name="trace_serial", args={"serial": "MH20-0001"}),
-    TextEv("Nguyên nhân khả dĩ: LOT-B "),
+    TextEv("Probable cause: LOT-B "),
     CiteEv(label="IQC-5531", target_id="IQC-5531"),
     DoneEv(elapsed_s=21),
 ]
@@ -29,7 +29,7 @@ async def collect(mode, live, timeout_s=5, fixture=FX):
 
 async def test_auto_falls_back_after_partial_output():   # Review Focus #4
     async def live():
-        yield TextEv("dở dang")
+        yield TextEv("partial")
         raise anthropic.APIConnectionError(request=fake_request())
 
     evs = [e async for e in agent_event_stream("q", "CLM-0012", "auto",
@@ -125,7 +125,7 @@ async def _drain(it):
 def test_shipped_fixture_loads(tmp_path):
     from onethread.agent.replay import default_fixture_path
     fx = load_fixture(default_fixture_path())
-    assert fx.question.startswith("Vì sao MH20-0001") and fx.events[-1].event.type == "done"
+    assert fx.question.startswith("Why is MH20-0001") and fx.events[-1].event.type == "done"
     assert sum(e.event.type == "tool_call" for e in fx.events) == 7
 
 
@@ -136,9 +136,9 @@ async def test_record_run_writes_fixture_with_real_gaps(tmp_path):
         yield DoneEv(elapsed_s=1)
 
     out = tmp_path / "fx.json"
-    await record_run("câu hỏi", "CLM-0012", out, live=live())
+    await record_run("question text", "CLM-0012", out, live=live())
     raw = json.loads(out.read_text())
-    assert raw["question"] == "câu hỏi" and [e["event"]["type"] for e in raw["events"]] == ["text", "done"]
+    assert raw["question"] == "question text" and [e["event"]["type"] for e in raw["events"]] == ["text", "done"]
     assert raw["events"][1]["delay_ms"] >= 40
     assert load_fixture(out).events[0].event == TextEv("a")
 

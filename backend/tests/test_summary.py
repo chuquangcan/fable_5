@@ -7,17 +7,17 @@ def p(s, label):
 
 def test_machine_summary(client):
     s = client.get("/api/objects/M02/summary").json()
-    assert round(p(s, "Cycle TB · LOT-A")["value"]) == 31 and round(p(s, "Cycle TB · LOT-B")["value"]) == 42
-    assert p(s, "Mục tiêu cycle")["value"] == 30
-    assert p(s, "Lực ép TB · LOT-B")["value"] == pytest.approx(13.1, abs=0.1)
-    assert p(s, "Bảo trì gần nhất")["source_record_id"] == "PM-0241"
-    assert "NV-118" in p(s, "Vận hành")["value"] and p(s, "Nhiệt độ line")["value"] == "26.2–26.9"
+    assert round(p(s, "Avg cycle · LOT-A")["value"]) == 31 and round(p(s, "Avg cycle · LOT-B")["value"]) == 42
+    assert p(s, "Cycle target")["value"] == 30
+    assert p(s, "Avg press force · LOT-B")["value"] == pytest.approx(13.1, abs=0.1)
+    assert p(s, "Last maintenance")["source_record_id"] == "PM-0241"
+    assert "NV-118" in p(s, "Operator")["value"] and p(s, "Line temperature")["value"] == "26.2–26.9"
 
 
 def test_lot_summary(client):
     s = client.get("/api/objects/LOT-B/summary").json()
-    assert p(s, "Số lượng")["value"] == 5000 and p(s, "Cpk IQC")["value"].startswith("0.92")
-    assert p(s, "Ngày nhập")["value"] == "2026-10-28 09:10" and p(s, "Nhà cung cấp")["value"] == "SUP-S1"
+    assert p(s, "Quantity")["value"] == 5000 and p(s, "Cpk IQC")["value"].startswith("0.92")
+    assert p(s, "Received on")["value"] == "2026-10-28 09:10" and p(s, "Supplier")["value"] == "SUP-S1"
 
 
 def test_supplier_docs(client):
@@ -27,8 +27,8 @@ def test_supplier_docs(client):
 
 def test_aggregate_summary(client):                       # Review Focus #1
     s = client.get("/api/objects/AGG-LOT-B/summary").json()
-    assert s["type"] == "aggregate" and p(s, "Số part")["value"] == 1000 and p(s, "Số thùng")["value"] == 42
-    assert s["name"] == "LOT-B · toàn lô (1,000 part)"   # whole lot; the graph node shows "+999" (minus the root)
+    assert s["type"] == "aggregate" and p(s, "Parts")["value"] == 1000 and p(s, "Boxes")["value"] == 42
+    assert s["name"] == "LOT-B · whole lot (1,000 parts)"   # whole lot; the graph node shows "+999" (minus the root)
 
 
 def test_empty_node_summary(client):                      # Review Focus #5
@@ -59,8 +59,8 @@ def test_event_record_summary(client):                    # agent cites a side-e
     assert r.status_code == 200
     s = r.json()
     assert s["type"] == "event" and s["id"] == "PM-0241" and s["name"].startswith("maintenance")
-    assert p(s, "Thời điểm")["source"] == "CMMS" and p(s, "Thời điểm")["source_record_id"] == "PM-0241"
-    assert p(s, "Đối tượng")["value"] == "M02" and p(s, "result")["value"] == "normal"
+    assert p(s, "Time")["source"] == "CMMS" and p(s, "Time")["source_record_id"] == "PM-0241"
+    assert p(s, "Object")["value"] == "M02" and p(s, "result")["value"] == "normal"
     shift = client.get("/api/objects/HR-SHIFT-1103/summary").json()
     assert p(shift, "changed")["value"] == "False" and p(shift, "operator")["value"] == "NV-118"
 
@@ -70,7 +70,7 @@ def test_event_source_summary(client, id, n):
     r = client.get(f"/api/objects/{id}/summary")
     assert r.status_code == 200
     s = r.json()
-    assert s["type"] == "source" and s["name"] == id and p(s, "Số sự kiện")["value"] == n
+    assert s["type"] == "source" and s["name"] == id and p(s, "Event count")["value"] == n
     assert s["counts"]["events"] == n
 
 

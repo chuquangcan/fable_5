@@ -24,7 +24,7 @@ function GraphNode({ data }: NodeProps<Node<GraphNodeData>>) {
     <>
       <button
         className={`${tone ? `gn gn-${tone}` : 'gn'}${flashing ? ' gn-flash' : ''}`}
-        title={reason ?? (claimMark ? 'điểm báo lỗi' : undefined)}
+        title={reason ?? (claimMark ? 'reported fault point' : undefined)}
         style={{
           position: 'relative', padding: '2px 4px', whiteSpace: 'nowrap', overflow: 'hidden',
           ...(claimMark ? { border: '2px solid #000', ...(tone ? {} : { background: '#FFFFFF' }) } : {}),
@@ -44,8 +44,8 @@ function GraphNode({ data }: NodeProps<Node<GraphNodeData>>) {
       </button>
       {attachments > 0 && (
         // corner badge: under the node it sat on the vertical edges to the branch row
-        <span data-testid={`att-${node.id}`} className="att-badge" title={`${attachments} đính kèm`}>
-          {attachments}<span className="sr-only"> đính kèm</span>
+        <span data-testid={`att-${node.id}`} className="att-badge" title={`${attachments} attached`}>
+          {attachments}<span className="sr-only"> attached</span>
         </span>
       )}
     </>
@@ -113,9 +113,9 @@ export function ThreadGraph({ flow, marks, reasons }: { flow: FlowGraph; marks?:
       <div className="mut" style={{ position: 'absolute', left: 16, top: height - 22, display: 'flex', gap: 12, fontSize: 11 }}>
         <span><span className="ln" style={{ borderTop: `2px solid ${ink}` }} />confirmed</span>
         <span><span className="ln" style={{ borderTop: `2px dashed ${ink}` }} />inferred</span>
-        <span><span className="ln" style={{ borderTop: `2px dotted ${ink}` }} />chờ duyệt</span>
-        <span><span className="ln" style={{ borderTop: '2px dotted #8E959F' }} />gợi ý</span>
-        {marks && <span>Đỏ: điểm lỗi và thượng nguồn · Cam: hạ nguồn có thể bị ảnh hưởng</span>}
+        <span><span className="ln" style={{ borderTop: `2px dotted ${ink}` }} />pending review</span>
+        <span><span className="ln" style={{ borderTop: '2px dotted #8E959F' }} />suggested</span>
+        {marks && <span>Red: fault origin and upstream · Orange: downstream possibly affected</span>}
       </div>
     </div>
   )

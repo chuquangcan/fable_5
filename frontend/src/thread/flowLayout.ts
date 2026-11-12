@@ -3,20 +3,20 @@ import { NODE_H, NODE_W } from './layout'
 
 /** Display labels for the raw stage codes sent by /api/flow. */
 export const STAGES: Record<FlowStage, string> = {
-  cung_ung: 'Cung ứng',
-  kho: 'Kho',
-  san_xuat: 'Sản xuất',
+  cung_ung: 'Supply',
+  kho: 'Warehouse',
+  san_xuat: 'Production',
   logistics: 'Logistics',
-  khach_hang: 'Khách hàng',
-  hau_mai: 'Hậu mãi',
-  dinh_kem: 'Đính kèm',
+  khach_hang: 'Customer',
+  hau_mai: 'After-sales',
+  dinh_kem: 'Attached',
 }
 
 export const COL_GAP = 20
 export const ROW_GAP = 26
 const LEFT = 16
 const TOP = 40
-/** Room under the lowest row for the "n đính kèm" badge and the edge legend. */
+/** Room under the lowest row for the "n attached" badge and the edge legend. */
 const BOTTOM = 52
 
 export const colX = (i: number) => LEFT + i * (NODE_W + COL_GAP)

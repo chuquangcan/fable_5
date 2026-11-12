@@ -20,7 +20,7 @@ function Item({ i, actions }: { i: ReviewItem; actions: boolean }) {
   const open = () => (i.doc_id ? openDoc(i.doc_id) : actions ? goTo(i.from_id) : setDataTab('review'))
   return (
     <div className={`it doc-${i.status}`} style={{ gap: 5 }}>
-      <button className="linkish" onClick={open} title={i.doc_id ? 'Xem chi tiết và duyệt' : actions ? 'Mở đối tượng' : 'Duyệt trong hàng đợi'}>
+      <button className="linkish" onClick={open} title={i.doc_id ? 'View details and review' : actions ? 'Open object' : 'Review in the queue'}>
         <span className="mono" style={{ fontWeight: 500 }}>{label}</span>
         <span className={`chip st-${i.status}`} style={{ marginLeft: 'auto' }}>
           {`${statusLabel(i.status)}${i.score != null ? ` · ${i.score.toFixed(2)}` : ''}`}
@@ -28,7 +28,7 @@ function Item({ i, actions }: { i: ReviewItem; actions: boolean }) {
       </button>
       <div className="mut">
         {i.doc_id ? docName(i) : objectTypeLabel(i.from_type)} {relationLabel(i.relation)} {objectTypeLabel(i.to_id === i.doc_id ? i.from_type : i.to_type).toLowerCase()}
-        {i.method ? ` · ${methodLabel(i.method)}` : ''}{` · bậc ${i.tier}`}
+        {i.method ? ` · ${methodLabel(i.method)}` : ''}{` · tier ${i.tier}`}
       </div>
       {actions && <ReviewActions linkId={i.link_id} status={i.status} label={label} />}
     </div>
@@ -42,23 +42,23 @@ export function ReviewQueueList({ compact = false }: { compact?: boolean }) {
   if (s.status !== 'ok') return compact ? null : <Pending state={s} />
   const { pending, decided } = s.data
   return (
-    <section aria-label="Hàng đợi duyệt">
-      <div className="sec"><span>Hàng đợi duyệt</span><span className="mut">{pending.length}</span></div>
-      {pending.length === 0 && <div className="mut" style={{ padding: '0 10px' }}>Không còn liên kết chờ duyệt</div>}
+    <section aria-label="Review queue">
+      <div className="sec"><span>Review queue</span><span className="mut">{pending.length}</span></div>
+      {pending.length === 0 && <div className="mut" style={{ padding: '0 10px' }}>No links left to review</div>}
       {pending.map((i) => <Item key={i.link_id} i={i} actions={!compact} />)}
       {!compact && decided.length > 0 && (
         <>
-          <div className="sec"><span>Đã quyết định</span><span className="mut">{decided.length}</span></div>
+          <div className="sec"><span>Decided</span><span className="mut">{decided.length}</span></div>
           {decided.map((d) => (
             <div key={d.review_id} className="it">
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <span style={{ fontWeight: 600, color: d.decision === 'approve' ? 'var(--teal-ink)' : 'var(--red-ink)' }}>
-                  {d.decision === 'approve' ? 'Duyệt' : 'Từ chối'}
+                  {d.decision === 'approve' ? 'Approved' : 'Rejected'}
                 </span>
                 <span className="mono">{d.from_id} → {d.to_id}</span>
                 <span className="mut" style={{ marginLeft: 'auto' }}>{formatPlantTime(d.reviewed_at, 'YYYY-MM-DD HH:mm')}</span>
               </div>
-              <div className="mut">{`${relationLabel(d.relation)} · trước đó ${statusLabel(d.from_status).toLowerCase()} · ${d.reviewer}`}{d.note ? ` · “${d.note}”` : ''}</div>
+              <div className="mut">{`${relationLabel(d.relation)} · previously ${statusLabel(d.from_status).toLowerCase()} · ${d.reviewer}`}{d.note ? ` · “${d.note}”` : ''}</div>
             </div>
           ))}
         </>

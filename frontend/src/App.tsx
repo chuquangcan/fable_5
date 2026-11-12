@@ -24,7 +24,7 @@ function ProductMain() {
   return (
     <>
       <TabBar />
-      {!claimId ? <Placeholder text="Chọn một claim ở cột trái để bắt đầu truy vết" />
+      {!claimId ? <Placeholder text="Pick a claim in the left column to start tracing" />
         : tab === 'thread' ? <ThreadView />
         : tab === 'report' ? <ReportView />
         : <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}><OverviewTab id={claimId} /></div>}
@@ -40,7 +40,7 @@ export default function App() {
   const view = useDemo((s) => s.view)
   const left = view === 'plant' ? <PlantSidebar /> : view === 'data' ? <DataSidebar /> : <ClaimsSidebar />
   const main = view === 'plant' ? <PlantView /> : view === 'data' ? <DataView /> : <ProductMain />
-  const leftLabel = view === 'plant' ? 'Tài sản nhà máy' : view === 'data' ? 'Kho dữ liệu' : 'Claims'
+  const leftLabel = view === 'plant' ? 'Plant assets' : view === 'data' ? 'Data repository' : 'Claims'
   return (
     <>
       <AppShell left={left} main={main} right={<AgentPanel />} leftLabel={leftLabel} />

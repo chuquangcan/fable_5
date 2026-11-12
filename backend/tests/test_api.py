@@ -94,14 +94,14 @@ def _sse_events(resp) -> list[dict]:
 
 def test_agent_ask_streams_events(client):
     turn = FakeTurn([tool_use_msg("trace_forward", {"lot_id": "LOT-B"}),
-                     text_msg("Khoanh vùng: 1,000 part [[cite:LOT-B]]")])
+                     text_msg("Impact scope: 1,000 parts [[cite:LOT-B]]")])
     app.dependency_overrides[get_turn_factory] = lambda: (lambda: turn)
-    r = client.get("/api/agent/ask", params={"q": "Vì sao?", "claim": "CLM-0012", "mode": "live"})
+    r = client.get("/api/agent/ask", params={"q": "Why?", "claim": "CLM-0012", "mode": "live"})
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/event-stream")
     evs = _sse_events(r)
     assert [e["type"] for e in evs][0] == "tool_call" and evs[-1]["type"] == "done"
     assert {"type": "cite", "label": "LOT-B", "target_id": "LOT-B"} in evs
-    assert "Vì sao?" in turn.requests[0][0]["content"]
+    assert "Why?" in turn.requests[0][0]["content"]
 
 
 def test_agent_ask_unknown_claim_is_404(client):

@@ -16,8 +16,8 @@ test('renders every spine and branch node', () => {
   render(<ThreadGraph flow={flow} />)
   // getAllByText: "Customer C5" is both CUS-C5's title and SO-7790's subtitle in the fixture.
   for (const l of ['CLM-0012', 'MH20-0001', 'Machine 02', 'LOT-B', 'LOT-A', 'Customer C5']) expect(screen.getAllByText(l)[0]).toBeInTheDocument()
-  expect(screen.getByTestId('att-SUP-S1')).toHaveTextContent('3 đính kèm') // CLM-0009, D-09, D-03
-  expect(screen.getByTestId('att-LOT-B')).toHaveTextContent('6 đính kèm')
+  expect(screen.getByTestId('att-SUP-S1')).toHaveTextContent('3 attached') // CLM-0009, D-09, D-03
+  expect(screen.getByTestId('att-LOT-B')).toHaveTextContent('6 attached')
   expect(screen.queryByTestId('att-PO-4410')).toBeNull()
 })
 
@@ -31,7 +31,7 @@ test('the flashed node gets the flash class, others do not', () => {
 
 test('stage bands are labelled', () => {
   render(<ThreadGraph flow={flow} />)
-  for (const l of ['Cung ứng', 'Kho', 'Sản xuất', 'Logistics', 'Khách hàng', 'Hậu mãi']) expect(screen.getByText(l)).toBeInTheDocument()
+  for (const l of ['Supply', 'Warehouse', 'Production', 'Logistics', 'Customer', 'After-sales']) expect(screen.getByText(l)).toBeInTheDocument()
 })
 
 test('normal mode has no fault colours', () => {
@@ -86,16 +86,16 @@ test('fault marks colour 7 red and 12 orange nodes; the claim stays unmarked wit
   expect(claim).not.toHaveClass('gn-red')
   expect(claim).not.toHaveClass('gn-orange')
   expect(claim).toHaveStyle({ border: '2px solid #000' })
-  expect(screen.getByText('LOT-B').closest('button')).toHaveAttribute('title', 'thượng nguồn của MH20-0001 qua uses_lot')
+  expect(screen.getByText('LOT-B').closest('button')).toHaveAttribute('title', 'upstream of MH20-0001 via uses_lot')
 })
 
 test('fault legend is shown only with marks', () => {
   const { marks } = toMarks(fault)
   const { unmount } = render(<ThreadGraph flow={flow} marks={marks} />)
-  expect(screen.getByText('Đỏ: điểm lỗi và thượng nguồn · Cam: hạ nguồn có thể bị ảnh hưởng')).toBeInTheDocument()
+  expect(screen.getByText('Red: fault origin and upstream · Orange: downstream possibly affected')).toBeInTheDocument()
   unmount()
   render(<ThreadGraph flow={flow} />)
-  expect(screen.queryByText(/Đỏ: điểm lỗi/)).toBeNull()
+  expect(screen.queryByText(/Red: fault origin/)).toBeNull()
 })
 
 test('edges between two red nodes are thick red; others keep their style', () => {
@@ -105,7 +105,7 @@ test('edges between two red nodes are thick red; others keep their style', () =>
 })
 
 test('the claim node keeps the black border even when it carries a tone, and keeps the tone class', () => {
-  render(<ThreadGraph flow={flow} marks={{ 'CLM-0012': 'red' }} reasons={{ 'CLM-0012': 'điểm lỗi' }} />)
+  render(<ThreadGraph flow={flow} marks={{ 'CLM-0012': 'red' }} reasons={{ 'CLM-0012': 'fault origin' }} />)
   const claim = screen.getByText('CLM-0012').closest('button')!
   expect(claim).toHaveClass('gn-red')
   expect(claim).toHaveStyle({ border: '2px solid #000' })

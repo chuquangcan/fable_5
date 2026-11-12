@@ -25,9 +25,9 @@ def resolve_provider(env: Mapping[str, str] | None = None) -> Provider | None:
     if wanted == "auto":
         return next((p for p, key in KEYS.items() if _has(env, key)), None)
     if wanted not in KEYS:
-        raise NoProviderError(f"AGENT_PROVIDER={wanted!r} không hợp lệ (auto | anthropic | deepseek)")
+        raise NoProviderError(f"AGENT_PROVIDER={wanted!r} is not valid (auto | anthropic | deepseek)")
     if not _has(env, KEYS[wanted]):
-        raise NoProviderError(f"AGENT_PROVIDER={wanted} nhưng {KEYS[wanted]} chưa được đặt")
+        raise NoProviderError(f"AGENT_PROVIDER={wanted} but {KEYS[wanted]} is not set")
     return wanted  # type: ignore[return-value]
 
 
@@ -46,7 +46,7 @@ def make_turn(env: Mapping[str, str] | None = None) -> Callable:
 
         client = anthropic.AsyncAnthropic(api_key=env["ANTHROPIC_API_KEY"].strip())
         return ClaudeTurn(client, settings.agent_model, settings.agent_effort)
-    raise NoProviderError("Chưa có API key: đặt ANTHROPIC_API_KEY hoặc DEEPSEEK_API_KEY trong .env")
+    raise NoProviderError("No API key: set ANTHROPIC_API_KEY or DEEPSEEK_API_KEY in .env")
 
 
 def active_provider(env: Mapping[str, str] | None = None) -> dict[str, str | None]:

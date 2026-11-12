@@ -32,7 +32,7 @@ export const formatToolCall = (name: string, args: Record<string, unknown>) => {
   return `${name}(${parts.join(', ')})`
 }
 
-const LABELS = /^(Nguyên nhân khả dĩ:|Đã loại trừ:|Khoanh vùng:)/
+const LABELS = /^(Probable cause:|Ruled out:|Impact scope:)/
 
 /** Splits segments into paragraphs on blank lines; cites stay inline. */
 function paragraphs(segments: Segment[]): Segment[][] {
@@ -101,7 +101,7 @@ export function AgentPanel() {
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 9, lineHeight: 1.5 }}>
         {state.status === 'idle' && (
-          <div className="mut">Hỏi về claim này, hoặc bấm <span className="mono">/report</span> để chạy kịch bản demo.</div>
+          <div className="mut">Ask about this claim, or press <span className="mono">/report</span> to run the demo script.</div>
         )}
         {state.status !== 'idle' && (
           <div style={{ alignSelf: 'flex-end', maxWidth: '92%', background: '#E9ECEF', border: '1px solid var(--line-soft)', padding: '6px 8px' }}>{state.question}</div>
@@ -109,17 +109,17 @@ export function AgentPanel() {
         {state.toolCalls.length > 0 && (
           <div style={{ fontSize: 11, color: '#3A4049', border: '1px dashed var(--line)', padding: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <span style={{ color: 'var(--muted)' }}>
-              ▾ {state.toolCalls.length} tool calls · read-only{state.status === 'done' ? ` · ${state.elapsed_s} s` : ' · đang chạy…'}
+              ▾ {state.toolCalls.length} tool calls · read-only{state.status === 'done' ? ` · ${state.elapsed_s} s` : ' · running…'}
             </span>
             {state.toolCalls.map((c, i) => <span key={i} className="mono">{formatToolCall(c.name, c.args)}</span>)}
           </div>
         )}
         <Answer state={state} />
-        {state.status === 'error' && <div style={{ color: 'var(--red-ink)' }}>Lỗi agent: {state.error}</div>}
+        {state.status === 'error' && <div style={{ color: 'var(--red-ink)' }}>Agent error: {state.error}</div>}
         {state.actions.length > 0 && (
           <div style={{ display: 'flex', gap: 6 }}>
-            {state.actions.includes('open_report') && <button className="btn pri" onClick={() => setTab('report')}>Tạo nháp báo cáo</button>}
-            {state.actions.includes('open_impact') && <button className="btn" onClick={() => setEvidence('impact')}>Xem khoanh vùng</button>}
+            {state.actions.includes('open_report') && <button className="btn pri" onClick={() => setTab('report')}>Create report draft</button>}
+            {state.actions.includes('open_impact') && <button className="btn" onClick={() => setEvidence('impact')}>View impact scope</button>}
           </div>
         )}
       </div>
@@ -131,13 +131,13 @@ export function AgentPanel() {
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ position: 'absolute', left: -9999 }}>Ask the agent</span>
           <textarea
-            rows={2} value={draft} placeholder="Hỏi về claim này…" onChange={(e) => setDraft(e.target.value)}
+            rows={2} value={draft} placeholder="Ask about this claim…" onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
             style={{ resize: 'none', font: 'inherit', fontSize: 12, border: '1px solid #B9BEC6', borderRadius: 2, padding: 6, background: '#FFFFFF', color: 'var(--ink)' }}
           />
         </label>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="mut" style={{ fontSize: 11 }}>Mọi nhận định đều dẫn nguồn · chỉ đọc</span>
+          <span className="mut" style={{ fontSize: 11 }}>Every finding cites its source · read-only</span>
           <button className="btn pri" onClick={send}>Send</button>
         </div>
       </div>

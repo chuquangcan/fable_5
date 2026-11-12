@@ -38,10 +38,10 @@ def test_cites_resolve_to_known_records(seeded_conn):  # Review Focus #3
 def test_actions(seeded_conn):
     d = build_report_draft(seeded_conn, "CLM-0012")
     assert d.actions == [
-        "Cách ly 360 part SHP-1120 trong kho",
-        "Liên hệ Customer C5 về SHP-1115 (240 part, chưa có claim)",
-        "Yêu cầu Supplier S1 lập 8D cho LOT-B",
-        "Áp lại mức lấy mẫu IQC n=20 như CLM-0009",
+        "Quarantine 360 parts of SHP-1120 in the warehouse",
+        "Contact Customer C5 about SHP-1115 (240 parts, no claim yet)",
+        "Ask Supplier S1 to file an 8D report for LOT-B",
+        "Reapply the IQC sampling level n=20 used for CLM-0009",
     ]
 
 

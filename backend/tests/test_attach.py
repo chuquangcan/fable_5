@@ -34,8 +34,8 @@ def test_manual_needs_hint(client):
 
 def test_unsafe_and_duplicate_names(client, tmp_path):     # Review Focus #4
     parent_before = {p.name for p in tmp_path.parent.iterdir()}
-    a = client.post("/api/documents", files={"file": ("../../etc/Biên bản M02.txt", b"M02")}).json()
-    b = client.post("/api/documents", files={"file": ("../../etc/Biên bản M02.txt", b"M02")}).json()
+    a = client.post("/api/documents", files={"file": ("../../etc/Report M02.txt", b"M02")}).json()
+    b = client.post("/api/documents", files={"file": ("../../etc/Report M02.txt", b"M02")}).json()
     assert b["duplicate"] and b["doc_id"] == a["doc_id"]
     names = [p.name for p in tmp_path.iterdir()]
     assert len(names) == 1 and re.fullmatch(r"D-U\d{2}_[A-Za-z0-9._-]+", names[0])

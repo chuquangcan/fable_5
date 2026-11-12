@@ -20,17 +20,17 @@ export function ImpactTab({ lot }: { lot: string }) {
   return (
     <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-        <span style={{ fontWeight: 600 }}>Truy xuôi {imp.lot}</span>
-        <span className="mut">lô → processed_on → packed_in → shipped_in · knowledge graph</span>
+        <span style={{ fontWeight: 600 }}>Forward trace {imp.lot}</span>
+        <span className="mut">lot → processed_on → packed_in → shipped_in · knowledge graph</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
-        <Tile label={`Part dùng ${imp.lot}`} value={fmt(imp.parts)} bg="var(--panel)" />
-        <Tile label="Thùng" value={fmt(imp.boxes)} bg="var(--panel)" />
-        <Tile label="Đã tới khách hàng" value={`${imp.delivered_shipments} lô · ${fmt(imp.delivered_parts)}`} bg="var(--red-bg)" ink="var(--red-ink)" />
-        <Tile label="Trong kho · cần cách ly" value={`${held.length} lô · ${fmt(imp.held_parts)}`} bg="var(--amber-bg)" ink="var(--amber-ink)" />
+        <Tile label={`Parts using ${imp.lot}`} value={fmt(imp.parts)} bg="var(--panel)" />
+        <Tile label="Boxes" value={fmt(imp.boxes)} bg="var(--panel)" />
+        <Tile label="Delivered to customers" value={`${imp.delivered_shipments} shipments · ${fmt(imp.delivered_parts)}`} bg="var(--red-bg)" ink="var(--red-ink)" />
+        <Tile label="In warehouse · to quarantine" value={`${held.length} shipments · ${fmt(imp.held_parts)}`} bg="var(--amber-bg)" ink="var(--amber-ink)" />
       </div>
       <table className="g">
-        <thead><tr><th>Lô xuất hàng</th><th>Khách hàng</th><th>Số part</th><th>Thùng</th><th>Trạng thái</th><th>Nguồn</th></tr></thead>
+        <thead><tr><th>Shipment</th><th>Customer</th><th>Parts</th><th>Boxes</th><th>Status</th><th>Source</th></tr></thead>
         <tbody>
           {imp.shipments.map((x) => {
             const delivered = x.status === 'delivered'
@@ -38,11 +38,11 @@ export function ImpactTab({ lot }: { lot: string }) {
             return (
               <tr key={x.id} style={{ background: delivered ? 'var(--red-bg)' : 'var(--amber-bg)' }}>
                 <td className="mono">{x.id}</td>
-                <td>{x.customer_name ? `${x.customer_name} · ${claim ? `có ${claim}` : 'chưa có claim'}` : 'chưa xuất'}</td>
+                <td>{x.customer_name ? `${x.customer_name} · ${claim ? `has ${claim}` : 'no claim yet'}` : 'not shipped'}</td>
                 <td className="mono">{fmt(x.parts)}</td>
                 <td className="mono">{fmt(x.boxes)}</td>
                 <td style={{ color: delivered ? 'var(--red-ink)' : 'var(--amber-ink)' }}>
-                  {delivered ? `đã giao ${x.date ? formatPlantTime(`${x.date}T00:00:00+07:00`).slice(0, 5) : ''}` : 'trong kho FG'}
+                  {delivered ? `delivered ${x.date ? formatPlantTime(`${x.date}T00:00:00+07:00`).slice(0, 5) : ''}` : 'in FG warehouse'}
                 </td>
                 <td><span className="cite">{delivered ? 'ERP SHP' : 'WMS FG'}</span></td>
               </tr>

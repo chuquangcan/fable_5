@@ -9,7 +9,7 @@ import { AttachDialog } from './AttachDialog'
 
 vi.mock('../api/client')
 
-const SAMPLES = ['CoA_S1-6203-B.pdf', 'BienBan_BaoTri_Press2_2026-11-05.pdf', 'Email_CustomerC5_xac_nhan_nhan_hang.txt']
+const SAMPLES = ['CoA_S1-6203-B.pdf', 'Maintenance_Report_Press2_2026-11-05.pdf', 'Email_CustomerC5_delivery_confirmation.txt']
 
 beforeEach(() => {
   useDemo.getState().reset()
@@ -30,13 +30,13 @@ test('renders nothing while closed', () => {
 
 test('sample button attaches: result card, dataVersion +1, flash on target', async () => {
   render(<AttachDialog />)
-  expect(screen.getByRole('dialog', { name: 'Gắn tài liệu' })).toBeInTheDocument()
+  expect(screen.getByRole('dialog', { name: 'Attach document' })).toBeInTheDocument()
   await userEvent.click(await screen.findByRole('button', { name: 'CoA_S1-6203-B.pdf' }))
-  expect(await screen.findByText('Mã')).toBeInTheDocument()
+  expect(await screen.findByText('Code')).toBeInTheDocument()
   expect(screen.getByText('LOT-B')).toBeInTheDocument()
   expect(screen.getByText('inferred · 0.9')).toBeInTheDocument()
-  expect(screen.getByText(/alias NCC/)).toBeInTheDocument()
-  expect(screen.queryByText('Tài liệu đã gắn trước đó')).toBeNull()
+  expect(screen.getByText(/supplier alias/)).toBeInTheDocument()
+  expect(screen.queryByText('Document was already attached')).toBeNull()
   expect(api.attachSample).toHaveBeenCalledWith('CoA_S1-6203-B.pdf')
   expect(useDemo.getState().dataVersion).toBe(1)
   expect(useDemo.getState().flashNodeId).toBe('LOT-B')
@@ -47,8 +47,8 @@ test('upload sends the file with the focused node as hint', async () => {
   vi.mocked(api.uploadDocument).mockResolvedValue(attachCoa as AttachResult)
   render(<AttachDialog />)
   const file = new File(['x'], 'a.pdf', { type: 'application/pdf' })
-  expect(await screen.findByText('Đích gợi ý khi không nhận ra mã: LOT-B')).toBeInTheDocument()
-  await userEvent.upload(screen.getByLabelText('Chọn tệp'), file)
+  expect(await screen.findByText('Suggested target when no code is recognised: LOT-B')).toBeInTheDocument()
+  await userEvent.upload(screen.getByLabelText('Choose file'), file)
   expect(await screen.findByText('inferred · 0.9')).toBeInTheDocument()
   expect(api.uploadDocument).toHaveBeenCalledWith(file, 'LOT-B')
 })
@@ -57,9 +57,9 @@ test('without a focused node the hint defaults to the thread root, like the over
   useDemo.setState({ threadRoot: 'MH20-0001' })
   vi.mocked(api.uploadDocument).mockResolvedValue(attachCoa as AttachResult)
   render(<AttachDialog />)
-  expect(await screen.findByText('Đích gợi ý khi không nhận ra mã: MH20-0001')).toBeInTheDocument()
+  expect(await screen.findByText('Suggested target when no code is recognised: MH20-0001')).toBeInTheDocument()
   const file = new File(['x'], 'a.pdf', { type: 'application/pdf' })
-  await userEvent.upload(screen.getByLabelText('Chọn tệp'), file)
+  await userEvent.upload(screen.getByLabelText('Choose file'), file)
   expect(api.uploadDocument).toHaveBeenCalledWith(file, 'MH20-0001')
 })
 
@@ -67,30 +67,30 @@ test.each(['AGG-LOT-B', 'D-07', 'PM-0241'])('non-object target %s is not sent as
   useDemo.setState({ focusNodeId: id, threadRoot: 'MH20-0001' })
   vi.mocked(api.uploadDocument).mockResolvedValue(attachCoa as AttachResult)
   render(<AttachDialog />)
-  expect(await screen.findByText(`${id} không phải đối tượng — tài liệu không có mã sẽ bị từ chối`)).toBeInTheDocument()
-  expect(screen.queryByText(/Đích gợi ý/)).toBeNull()
+  expect(await screen.findByText(`${id} is not an object — documents without a code will be rejected`)).toBeInTheDocument()
+  expect(screen.queryByText(/Suggested target/)).toBeNull()
   const file = new File(['x'], 'a.pdf', { type: 'application/pdf' })
-  await userEvent.upload(screen.getByLabelText('Chọn tệp'), file)
+  await userEvent.upload(screen.getByLabelText('Choose file'), file)
   expect(api.uploadDocument).toHaveBeenCalledWith(file, undefined)
 })
 
 test('a drop while an attach is running is ignored', async () => {
   vi.mocked(api.uploadDocument).mockReturnValue(new Promise(() => {}))
   render(<AttachDialog />)
-  const zone = screen.getByText('Kéo thả tệp vào đây hoặc chọn tệp').parentElement!
+  const zone = screen.getByText('Drag and drop a file here or choose one').parentElement!
   const drop = () => fireEvent.drop(zone, { dataTransfer: { files: [new File(['x'], 'a.pdf')] } })
   drop()
-  expect(await screen.findByText('Đang gắn…')).toBeInTheDocument()
+  expect(await screen.findByText('Attaching…')).toBeInTheDocument()
   drop()
   expect(api.uploadDocument).toHaveBeenCalledTimes(1)
 })
 
 test('upload error shows the detail and leaves dataVersion alone', async () => {
-  vi.mocked(api.uploadDocument).mockRejectedValue(new Error('415 Định dạng không hỗ trợ'))
+  vi.mocked(api.uploadDocument).mockRejectedValue(new Error('415 Unsupported format'))
   render(<AttachDialog />)
-  await userEvent.upload(screen.getByLabelText('Chọn tệp'), new File(['x'], 'a.exe'), { applyAccept: false })
+  await userEvent.upload(screen.getByLabelText('Choose file'), new File(['x'], 'a.exe'), { applyAccept: false })
   const alert = await screen.findByRole('alert')
-  expect(alert).toHaveTextContent('415 Định dạng không hỗ trợ')
+  expect(alert).toHaveTextContent('415 Unsupported format')
   expect(useDemo.getState().dataVersion).toBe(0)
   expect(useDemo.getState().flashNodeId).toBeNull()
 })
@@ -99,7 +99,7 @@ test('duplicate result shows the already-attached line', async () => {
   vi.mocked(api.attachSample).mockResolvedValue({ ...(attachCoa as AttachResult), duplicate: true })
   render(<AttachDialog />)
   await userEvent.click(await screen.findByRole('button', { name: 'CoA_S1-6203-B.pdf' }))
-  expect(await screen.findByText('Tài liệu đã gắn trước đó')).toBeInTheDocument()
+  expect(await screen.findByText('Document was already attached')).toBeInTheDocument()
 })
 
 test('result without links still renders and does not flash', async () => {
@@ -112,7 +112,7 @@ test('result without links still renders and does not flash', async () => {
 
 test('close button and Escape close the dialog', async () => {
   const { unmount } = render(<AttachDialog />)
-  await userEvent.click(screen.getByRole('button', { name: 'Đóng' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Close' }))
   expect(useDemo.getState().attachOpen).toBe(false)
   unmount()
   useDemo.getState().openAttach()

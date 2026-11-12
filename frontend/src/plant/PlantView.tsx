@@ -11,11 +11,11 @@ export function PlantView() {
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <div className="viewbar">
-        <span style={{ fontWeight: 600 }}>Nhà máy</span>
-        <span className="mut">· tài sản theo thời gian, không cần claim</span>
+        <span style={{ fontWeight: 600 }}>Plant</span>
+        <span className="mut">· assets over time, no claim needed</span>
         <span style={{ flex: 1 }} />
         {onThread && (
-          <button className="btn" onClick={() => goTo(id)} title="Mở node này trên thread của claim đang mở">Xem trên thread</button>
+          <button className="btn" onClick={() => goTo(id)} title="Open this node on the open claim's thread">View on thread</button>
         )}
       </div>
       <EvidencePanel nodeId={id} />

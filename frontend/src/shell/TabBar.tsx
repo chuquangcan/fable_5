@@ -10,18 +10,18 @@ export function TabBar() {
   const label: Record<MainTab, string> = {
     claim: `${claimId ?? ''} · claim`,
     thread: `Thread · ${root ?? '…'}`,
-    report: 'Báo cáo RCA · nháp',
+    report: 'RCA report · draft',
   }
   if (openTabs.length === 0) return null
   return (
-    <div role="tablist" aria-label="Tab đang mở" style={{ height: 32, flex: 'none', display: 'flex', background: '#ECEEF1', borderBottom: '1px solid var(--line)' }}>
+    <div role="tablist" aria-label="Open tabs" style={{ height: 32, flex: 'none', display: 'flex', background: '#ECEEF1', borderBottom: '1px solid var(--line)' }}>
       {openTabs.map((t) => (
         <div key={t} className={`tab${t === activeTab ? ' on' : ''}`}>
           <button role="tab" aria-selected={t === activeTab} className="tab-btn" onClick={() => setTab(t)}>
             {t === 'claim' && <span style={{ width: 6, height: 6, background: 'var(--red)' }} />}
             {label[t]}
           </button>
-          <button className="xbtn" aria-label={`Đóng ${label[t]}`} onClick={() => closeTab(t)}>✕</button>
+          <button className="xbtn" aria-label={`Close ${label[t]}`} onClick={() => closeTab(t)}>✕</button>
         </div>
       ))}
     </div>

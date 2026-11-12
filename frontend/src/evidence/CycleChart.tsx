@@ -61,7 +61,7 @@ export function CycleChart({ events, markers, start, end, target, machineName }:
   const after = load ? points.filter(([m]) => m >= minutes(load.time)) : []
   const avg = (p: [number, number][]) => Math.round(p.reduce((s, [, v]) => s + v, 0) / Math.max(1, p.length))
   const label = load && before.length && after.length
-    ? `Cycle time ${machineName} từ ${avg(before)} giây lên ${avg(after)} giây sau khi ${load.label} lúc ${formatPlantTime(load.time, 'HH:mm')}`
+    ? `${machineName} cycle time rose from ${avg(before)} s to ${avg(after)} s after ${load.label} at ${formatPlantTime(load.time, 'HH:mm')}`
     : `Cycle time ${machineName}`
   return (
     <svg width="448" height="210" role="img" aria-label={label}>
@@ -78,7 +78,7 @@ export function CycleChart({ events, markers, start, end, target, machineName }:
       {target != null && (
         <>
           <line x1={X0} y1={yOf(target)} x2={X1} y2={yOf(target)} stroke="#5F6670" strokeDasharray="3 3" />
-          <text x="400" y={yOf(target) - 4} fontSize="10" fill="#5F6670" fontFamily={sans}>mục tiêu {target} s</text>
+          <text x="400" y={yOf(target) - 4} fontSize="10" fill="#5F6670" fontFamily={sans}>target {target} s</text>
         </>
       )}
       {load && (

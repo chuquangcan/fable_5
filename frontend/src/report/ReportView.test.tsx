@@ -22,14 +22,14 @@ test('renders the draft with impact numbers and cite chips', async () => {
   expect(screen.getByText('640')).toBeInTheDocument()
   expect(screen.getByText('1,000')).toBeInTheDocument()
   expect(container.querySelectorAll('.cite').length).toBeGreaterThanOrEqual(3)
-  expect(screen.getByText(/Cách ly 360 part SHP-1120/)).toBeInTheDocument()
+  expect(screen.getByText(/Quarantine 360 parts of SHP-1120/)).toBeInTheDocument()
 })
 
 test('Export and Send only show a toast', async () => {
   render(<ReportView />)
   await screen.findByText('RPT-CLM-0012')
   await userEvent.click(screen.getByRole('button', { name: 'Send to Quality' }))
-  expect(screen.getByRole('status')).toHaveTextContent('Demo: chưa gửi')
+  expect(screen.getByRole('status')).toHaveTextContent('Demo: sending not available')
   await userEvent.click(screen.getByRole('button', { name: 'Export PDF' }))
   await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Demo'))
 })

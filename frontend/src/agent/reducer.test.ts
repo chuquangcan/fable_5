@@ -4,11 +4,11 @@ import { type AgentEvent, agentReducer, initialAgentState } from './reducer'
 test('text accumulates and cites interleave', () => {
   let s = initialAgentState('q')
   for (const e of [
-    { type: 'text', text: 'Nguyên ' }, { type: 'text', text: 'nhân' },
+    { type: 'text', text: 'Probable ' }, { type: 'text', text: 'cause' },
     { type: 'cite', label: 'IQC-5531', target_id: 'IQC-5531' },
   ] as AgentEvent[]) s = agentReducer(s, e)
   expect(s.segments).toEqual([
-    { kind: 'text', text: 'Nguyên nhân' },
+    { kind: 'text', text: 'Probable cause' },
     { kind: 'cite', label: 'IQC-5531', target_id: 'IQC-5531' },
   ])
 })
@@ -22,7 +22,7 @@ test('text after a cite starts a new segment', () => {
 })
 
 test('reset clears partial answer', () => { // Review Focus #4
-  let s = agentReducer(initialAgentState('q'), { type: 'text', text: 'dở dang' })
+  let s = agentReducer(initialAgentState('q'), { type: 'text', text: 'partial' })
   s = agentReducer(s, { type: 'tool_call', name: 'trace_serial', args: {} })
   s = agentReducer(s, { type: 'reset' })
   expect(s.segments).toEqual([])

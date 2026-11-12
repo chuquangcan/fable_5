@@ -17,13 +17,13 @@ export function EvidencePanel({ nodeId }: { nodeId: string }) {
   const s = useAsync(() => getSummary(nodeId), [nodeId, dataVersion], nodeId)
 
   if (s.status === 'error' && s.message.startsWith('404'))
-    return <div className="mut" style={{ padding: 14 }}>{`Không có tổng hợp cho ${nodeId}`}</div>
-  const tabs = s.status === 'ok' ? tabsFor(s.data) : [{ id: 'overview' as EvidenceTab, label: 'Tổng quan' }]
+    return <div className="mut" style={{ padding: 14 }}>{`No summary for ${nodeId}`}</div>
+  const tabs = s.status === 'ok' ? tabsFor(s.data) : [{ id: 'overview' as EvidenceTab, label: 'Overview' }]
   const tab = tabs.some((t) => t.id === wanted) ? wanted : 'overview'
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <div role="tablist" aria-label={`Chi tiết ${nodeId}`} className="etabs">
-        <span className="mono etab-id" title="Node đang xem">{nodeId}</span>
+      <div role="tablist" aria-label={`Details of ${nodeId}`} className="etabs">
+        <span className="mono etab-id" title="Node being viewed">{nodeId}</span>
         {tabs.map((t) => (
           <button key={t.id} role="tab" aria-selected={t.id === tab} className={`etab${t.id === tab ? ' on' : ''}`} onClick={() => setEvidence(t.id)}>
             {t.label}

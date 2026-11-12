@@ -30,7 +30,7 @@ test('column and row arithmetic', () => {
 
 test('bands group consecutive same-stage columns', () => {
   const { bands } = flowLayout(flow)
-  expect(bands.map((b) => b.label)).toEqual(['Cung ứng', 'Kho', 'Sản xuất', 'Logistics', 'Khách hàng', 'Hậu mãi'])
+  expect(bands.map((b) => b.label)).toEqual(['Supply', 'Warehouse', 'Production', 'Logistics', 'Customer', 'After-sales'])
   const sx = bands.find((b) => b.stage === 'san_xuat')!
   expect(sx.w).toBe(3 * (NODE_W + 20))
 })

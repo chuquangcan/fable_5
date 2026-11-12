@@ -63,7 +63,7 @@ def _side_events(vol: dict) -> list[dict]:
             "event_id": "EV-SHIFT-1103", "type": "shift", "object_ids": ["M02"],
             "event_time": at(2026, 11, 3, 12), "time_kind": "transaction", "source": "HR",
             "source_record_id": "HR-SHIFT-1103",
-            "payload": {"operator": "NV-118", "shift": "Ca 2", "start": "12:00", "end": "20:00",
+            "payload": {"operator": "NV-118", "shift": "Shift 2", "start": "12:00", "end": "20:00",
                         "changed": False},
         },
         {

@@ -1,14 +1,14 @@
 import { expect, test } from 'vitest'
 import { docTypeLabel, formatPayload, objectTypeLabel } from './labels'
 
-test('payload keys get Vietnamese labels and units; booleans and device times are readable', () => {
+test('payload keys get English labels and units; booleans and device times are readable', () => {
   expect(formatPayload({ cycle_s: 42.1, changed: false, plc_time: '2026-11-03T13:52:38+07:00' }))
-    .toBe('Chu kỳ 42.10 s · Thay đổi không · Giờ PLC 13:52:38')
+    .toBe('Cycle 42.10 s · Changed no · PLC time 13:52:38')
   expect(formatPayload({ unknown_key: 3 })).toBe('unknown_key 3')
 })
 
 test('unknown codes fall back to the code', () => {
-  expect(docTypeLabel('drawing')).toBe('Bản vẽ')
+  expect(docTypeLabel('drawing')).toBe('Drawing')
   expect(docTypeLabel('weird')).toBe('weird')
   expect(objectTypeLabel(null)).toBe('')
 })

@@ -16,7 +16,7 @@ async def _run(conn, turn, **kw):
 
 async def test_tool_then_answer(seeded_conn):
     turn = FakeTurn([tool_use_msg("trace_serial", {"serial": "MH20-0001"}),
-                     text_msg("Nguyên nhân khả dĩ: LOT-B [[cite:IQC-5531]]\n\nKhoanh vùng: 1,000 part")])
+                     text_msg("Probable cause: LOT-B [[cite:IQC-5531]]\n\nImpact scope: 1,000 parts")])
     evs = [e async for e in run_agent("q", "CLM-0012", conn=seeded_conn, turn=turn)]
     assert evs[0].type == "tool_call" and evs[0].name == "trace_serial"
     assert any(e.type == "cite" and e.target_id == "IQC-5531" for e in evs)
@@ -55,8 +55,8 @@ async def test_parallel_tool_calls_share_one_user_message(seeded_conn):
     assert turn.requests[1][-2]["role"] == "assistant"          # raw tool_use blocks echoed back
 
 
-async def test_no_khoanh_vung_means_no_open_impact(seeded_conn):
-    evs = await _run(seeded_conn, FakeTurn([text_msg("Nguyên nhân khả dĩ: chưa rõ")]))
+async def test_no_impact_scope_means_no_open_impact(seeded_conn):
+    evs = await _run(seeded_conn, FakeTurn([text_msg("Probable cause: unclear")]))
     assert [e.action for e in evs if e.type == "action"] == ["open_report"]
 
 
@@ -64,13 +64,13 @@ async def test_too_many_tool_calls_stops(seeded_conn):
     turn = FakeTurn([tool_use_msg("trace_forward", {"lot_id": "LOT-B"}, f"t{i}") for i in range(5)])
     evs = await _run(seeded_conn, turn, max_tool_calls=2)
     assert sum(e.type == "tool_call" for e in evs) == 2
-    assert any(e.type == "text" and "quá số bước" in e.text for e in evs)
+    assert any(e.type == "text" and "step limit" in e.text for e in evs)
     assert evs[-1].type == "done"
 
 
 async def test_max_tokens_flushes_partial_marker_and_finishes(seeded_conn):
-    evs = await _run(seeded_conn, FakeTurn([text_msg("dở [[cit", "max_tokens")]))
-    assert "".join(e.text for e in evs if e.type == "text") == "dở [[cit"
+    evs = await _run(seeded_conn, FakeTurn([text_msg("partial [[cit", "max_tokens")]))
+    assert "".join(e.text for e in evs if e.type == "text") == "partial [[cit"
     assert evs[-1].type == "done" and not any(e.type == "action" for e in evs)
 
 
@@ -129,8 +129,8 @@ async def test_claude_turn_request_shape_and_stream():
     sse = "\n".join([
         'event: message_start\ndata: {"type":"message_start","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-opus-5-5","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":1,"output_tokens":1}}}\n',
         'event: content_block_start\ndata: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}\n',
-        'event: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Xin "}}\n',
-        'event: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"chào"}}\n',
+        'event: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hi "}}\n',
+        'event: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"hello"}}\n',
         'event: content_block_stop\ndata: {"type":"content_block_stop","index":0}\n',
         'event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":2}}\n',
         'event: message_stop\ndata: {"type":"message_stop"}\n',
@@ -143,7 +143,7 @@ async def test_claude_turn_request_shape_and_stream():
 
     client = anthropic.AsyncAnthropic(api_key="test", http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)))
     out = [x async for x in ClaudeTurn(client, "claude-opus-5-5", "low")([{"role": "user", "content": "hi"}])]
-    assert [v for k, v in out if k == "text"] == ["Xin ", "chào"]
+    assert [v for k, v in out if k == "text"] == ["Hi ", "hello"]
     assert out[-1][0] == "message" and out[-1][1].stop_reason == "end_turn"
 
     body = seen["body"]

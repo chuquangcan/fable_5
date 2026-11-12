@@ -38,12 +38,12 @@ def test_queue_lists_the_three_unreviewed_seed_links(client):
 
 def test_approve_confirms_and_reset_restores(client):
     link = _link(client, "D-07", "LOT-B")
-    r = client.post(f"/api/links/{link['link_id']}/review", json={"decision": "approve", "note": "đã xem biên bản"})
+    r = client.post(f"/api/links/{link['link_id']}/review", json={"decision": "approve", "note": "reviewed the report"})
     assert r.status_code == 200 and r.json()["from_status"] == "pending"
     assert _doc_status(client, "LOT-B", "D-07") == "confirmed"
     assert all(i["link_id"] != link["link_id"] for i in _queue(client)["pending"])
     detail = client.get("/api/documents/D-07").json()
-    assert detail["status"] == "confirmed" and detail["history"][0]["note"] == "đã xem biên bản"
+    assert detail["status"] == "confirmed" and detail["history"][0]["note"] == "reviewed the report"
 
     assert client.post("/api/demo/reset").json()["reviews"] == 1
     assert _doc_status(client, "LOT-B", "D-07") == "pending"
@@ -93,11 +93,11 @@ def test_document_list_filters_and_upload_first(client):
 
 def test_document_detail_and_file(client):
     d = client.get("/api/documents/D-12").json()
-    assert d["pages"] == [7] and d["chunks"][0]["text"].startswith("Bản vẽ") and not d["has_file"]
+    assert d["pages"] == [7] and d["chunks"][0]["text"].startswith("MH-20 bearing drawing") and not d["has_file"]
     assert client.get("/api/documents/D-12/file").status_code == 404  # seeded docs keep their bytes in PLM
     assert client.get("/api/documents/D-99").status_code == 404
 
-    up = client.post("/api/documents/samples/Email_CustomerC5_xac_nhan_nhan_hang.txt").json()
+    up = client.post("/api/documents/samples/Email_CustomerC5_delivery_confirmation.txt").json()
     f = client.get(f"/api/documents/{up['doc_id']}/file")
     assert f.status_code == 200 and f.headers["content-type"].startswith("text/plain")
     assert f.headers["x-content-type-options"] == "nosniff" and "sandbox" in f.headers["content-security-policy"]
@@ -122,7 +122,7 @@ def test_plant_tree(client):
     prod = {g["type"]: g for g in areas["san_xuat"]["groups"]}
     m02 = next(i for i in prod["machine"]["items"] if i["id"] == "M02")
     assert m02["sub"] == "Line 1" and m02["events"] > 1000
-    assert areas["san_xuat"]["volume"] == "1,000 serial" and areas["kho_tp"]["volume"] == "42 thùng"
+    assert areas["san_xuat"]["volume"] == "1,000 serial" and areas["kho_tp"]["volume"] == "42 boxes"
     lot_b = next(i for g in areas["kho_nl"]["groups"] for i in g["items"] if i["id"] == "LOT-B")
     assert lot_b["to_review"] == 1 and lot_b["docs"] >= 1
 

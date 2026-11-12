@@ -14,7 +14,7 @@ from onethread.config import settings
 
 MAX_DELAY_MS = 400
 BACKEND_DIR = Path(__file__).resolve().parents[2]
-DEFAULT_QUESTION = "Vì sao MH20-0001 của CLM-0012 kêu to? Tìm nguyên nhân gốc và phạm vi ảnh hưởng."
+DEFAULT_QUESTION = "Why is MH20-0001 from CLM-0012 noisy? Find the root cause and the impact scope."
 
 
 class FixtureEvent(BaseModel):

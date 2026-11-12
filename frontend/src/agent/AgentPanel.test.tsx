@@ -45,9 +45,9 @@ test('?step=4 asks the demo question; reset clears the answer', async () => {
   try {
     render(<AgentPanel />)
     act(() => useDemo.getState().applyStep(4))
-    expect(await screen.findByText(/Vì sao MH20-0001 của CLM-0012 kêu to/)).toBeInTheDocument()
+    expect(await screen.findByText(/Why is MH20-0001 from CLM-0012 noisy/)).toBeInTheDocument()
     act(() => useDemo.getState().reset())
-    expect(await screen.findByText(/Hỏi về claim này, hoặc bấm/)).toBeInTheDocument()
+    expect(await screen.findByText(/Ask about this claim, or press/)).toBeInTheDocument()
   } finally {
     vi.unstubAllGlobals()
   }

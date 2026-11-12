@@ -16,14 +16,14 @@ const ticks: { label: string; style: React.CSSProperties }[] = [
 const abs = (style: React.CSSProperties): React.CSSProperties => ({ position: 'absolute', ...style })
 const diamond = (style: React.CSSProperties): React.CSSProperties => abs({ background: 'var(--teal)', transform: 'rotate(45deg)', ...style })
 
-const VIEW_LABEL = { product: 'Truy vết sản phẩm', plant: 'Nhà máy', data: 'Kho dữ liệu' } as const
+const VIEW_LABEL = { product: 'Product tracing', plant: 'Plant', data: 'Data repository' } as const
 
 /** The claim's journey (story timeline); only meaningful next to its thread. */
 function Journey() {
   return (
     <div style={{ height: 50, display: 'flex', background: 'var(--panel)', borderTop: '1px solid #A9AEB6' }}>
       <div style={{ width: 264, flex: 'none', display: 'flex', alignItems: 'center', gap: 6, padding: '0 10px', borderRight: '1px solid var(--line)' }}>
-        <span className="mut" style={{ fontSize: 11 }}>Hành trình serial · ép lúc</span>
+        <span className="mut" style={{ fontSize: 11 }}>Serial journey · pressed at</span>
         <span style={{ marginLeft: 'auto', fontFamily: "'IBM Plex Mono', monospace", fontSize: 15, fontWeight: 500 }}>
           {formatPlantTime(CURSOR)}
         </span>
@@ -33,11 +33,11 @@ function Journey() {
           {ticks.map((t) => <span key={t.label} style={abs(t.style)}>{t.label}</span>)}
         </div>
         <div style={abs({ left: 6, top: 19, width: 9, height: 9, background: 'var(--amber)', transform: 'rotate(45deg)' })} />
-        <span style={abs({ left: 18, top: 16, fontSize: 11, color: 'var(--amber-ink)' })}>LOT-B nhập kho</span>
+        <span style={abs({ left: 18, top: 16, fontSize: 11, color: 'var(--amber-ink)' })}>LOT-B received</span>
         <div style={diamond({ left: '14%', top: 31, width: 9, height: 9 })} />
         <span style={abs({ left: '15.2%', top: 28, fontSize: 11, color: 'var(--teal-ink)' })}>giao C3 11-12</span>
         <div style={abs({ left: '14%', width: '83%', top: 42, height: 4, background: 'var(--line-faint)' })} />
-        <span style={abs({ left: '45%', top: 28, fontSize: 11, color: 'var(--muted)' })}>khách dùng 3 tháng</span>
+        <span style={abs({ left: '45%', top: 28, fontSize: 11, color: 'var(--muted)' })}>customer used 3 months</span>
         <div style={abs({ left: '97.4%', top: 16, width: 10, height: 10, background: 'var(--red)', transform: 'rotate(45deg)' })} />
         <span style={abs({ right: 22, top: 28, fontSize: 11, color: 'var(--red-ink)', fontWeight: 600 })}>CLM-0012 02-10</span>
         <div style={abs({ left: '5.6%', top: 0, bottom: 0, width: 2, background: 'var(--header)' })} />
@@ -54,14 +54,14 @@ export function StatusBar() {
   const reviews = useReviewCount()
   const p = useAsync(getProvider, [])
   const agent = p.status !== 'ok' ? 'Agent: …'
-    : p.data.provider ? `Agent: ${p.data.provider} · ${p.data.mode}` : `Agent: phát lại (chưa có API key) · ${p.data.mode}`
+    : p.data.provider ? `Agent: ${p.data.provider} · ${p.data.mode}` : `Agent: replay (no API key) · ${p.data.mode}`
   return (
     <div style={{ flex: 'none', display: 'flex', flexDirection: 'column' }}>
       {journey && <Journey />}
       <div className="statusline">
         <span>{VIEW_LABEL[view]}</span>
         <span>Line 1 · MH-20 · Bearing 6203</span>
-        <button className="sbtn" onClick={() => setDataTab('review')}>{`Hàng đợi duyệt ${reviews ?? '…'}`}</button>
+        <button className="sbtn" onClick={() => setDataTab('review')}>{`Review queue ${reviews ?? '…'}`}</button>
         <span style={{ marginLeft: 'auto' }}>{agent}</span>
         <span>UTC+7</span>
         <span>One Thread demo v0.2</span>

@@ -16,12 +16,12 @@ function Badge({ n, bg }: { n: number; bg: string }) {
 
 const VIEWS: { id: View; label: string; icon: ReactNode }[] = [
   {
-    id: 'product', label: 'Truy vết sản phẩm',
+    id: 'product', label: 'Product tracing',
     icon: <><circle cx="6" cy="6" r="2.2" /><circle cx="18" cy="8" r="2.2" /><circle cx="9" cy="18" r="2.2" /><path d="M8.2 6.3l7.6 1.3M6.6 8.2l1.8 7.6M16.6 9.8l-6.2 6.6" /></>,
   },
-  { id: 'plant', label: 'Nhà máy', icon: <path d="M3 20V10l5 3v-3l5 3v-3l5 3V4h3v16z" /> },
+  { id: 'plant', label: 'Plant', icon: <path d="M3 20V10l5 3v-3l5 3v-3l5 3V4h3v16z" /> },
   {
-    id: 'data', label: 'Kho dữ liệu',
+    id: 'data', label: 'Data repository',
     icon: <><ellipse cx="12" cy="6" rx="7" ry="2.6" /><path d="M5 6v12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6" /></>,
   },
 ]
@@ -46,13 +46,13 @@ export function ActivityBar() {
         </button>
       ))}
       <button
-        className={`ab${reportOn ? ' on' : ''}`} title={claimId ? 'Nháp báo cáo RCA' : 'Mở một claim để tạo báo cáo'} aria-label="Báo cáo"
+        className={`ab${reportOn ? ' on' : ''}`} title={claimId ? 'RCA report draft' : 'Open a claim to create a report'} aria-label="Report"
         disabled={!claimId} onClick={() => useDemo.getState().setTab('report')}
       >
         <Icon><path d="M5 3h14v18H5z" /><path d="M8 8h8M8 12h8M8 16h5" /></Icon>
       </button>
       <div style={{ flex: 1 }} />
-      <button className={`ab${agentOpen ? ' on' : ''}`} title={agentOpen ? 'Ẩn Agent' : 'Hiện Agent'} aria-label="Agent" aria-pressed={agentOpen} onClick={toggleAgent}>
+      <button className={`ab${agentOpen ? ' on' : ''}`} title={agentOpen ? 'Hide Agent' : 'Show Agent'} aria-label="Agent" aria-pressed={agentOpen} onClick={toggleAgent}>
         <Icon><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /></Icon>
       </button>
     </nav>

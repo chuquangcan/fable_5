@@ -120,32 +120,32 @@ def build_report_draft(conn, claim_id: str) -> ReportDraft:
     load_t = _hm(loaded["event_time"]) if loaded else "?"
 
     summary: list[Segment] = [
-        TextSeg(text=f"Bơm MH-20 serial {serial} (giao {claim.customer_name} ngày {ship_date}) bị khiếu nại kêu to bất thường"
-                     + (f" sau {months} tháng sử dụng. " if months else ". ")),
-        TextSeg(text=f"Nguyên nhân khả dĩ: ổ bi {part['name']} {lot}, IQC Cpk {cpk.value:.2f} dưới chuẩn {spec_min:g} "),
+        TextSeg(text=f"MH-20 pump serial {serial} (shipped to {claim.customer_name} on {ship_date}) was reported as abnormally noisy"
+                     + (f" after {months} months of use. " if months else ". ")),
+        TextSeg(text=f"Probable cause: {part['name']} {lot}, IQC Cpk {cpk.value:.2f} below the {spec_min:g} standard "),
         CiteSeg(label=iqc["object_id"], target_id=iqc["object_id"]),
-        TextSeg(text=f"; {serial} được ép trên {machine['name']} lúc {_hm(press['event_time'])}, "
-                     f"sau khi nạp {lot} lúc {load_t} làm cycle time tăng {a} → {b} s "),
+        TextSeg(text=f"; {serial} was pressed on {machine['name']} at {_hm(press['event_time'])}, "
+                     f"after {lot} was loaded at {load_t}, which raised cycle time {a} → {b} s "),
         CiteSeg(label=press["source"], target_id=machine_id),
         TextSeg(text="."),
     ]
 
     cause: list[Segment] = [
-        TextSeg(text=f"Lô {lot} có Cpk {cpk.value:.2f} < {spec_min:g}"),
-        *([TextSeg(text=" theo chuẩn "), CiteSeg(label=doc_label, target_id=spec_doc)] if spec_doc else []),
+        TextSeg(text=f"Lot {lot} has Cpk {cpk.value:.2f} < {spec_min:g}"),
+        *([TextSeg(text=" per standard "), CiteSeg(label=doc_label, target_id=spec_doc)] if spec_doc else []),
         TextSeg(text=" "), CiteSeg(label=iqc["object_id"], target_id=iqc["object_id"]),
-        TextSeg(text=f". Sau khi nạp {lot} vào {hopper['name']} lúc {load_t}, cycle time {machine['name']} tăng {a} → {b} s "),
+        TextSeg(text=f". After {lot} was loaded into {hopper['name']} at {load_t}, {machine['name']} cycle time rose {a} → {b} s "),
         CiteSeg(label=press["source"], target_id=machine_id),
-        TextSeg(text=". Đã loại trừ:"),
+        TextSeg(text=". Ruled out:"),
     ]
     excluded: list[tuple[str, str, str, str]] = []
     if pm:
         ok = pm["payload"].get("result") == "normal"
-        excluded.append((" bảo trì ", pm["source_record_id"], machine_id, "" if ok else f" (kết quả {pm['payload'].get('result')})"))
+        excluded.append((" maintenance ", pm["source_record_id"], machine_id, "" if ok else f" (result {pm['payload'].get('result')})"))
     if shift:
-        excluded.append((" người vận hành ", shift["source"], machine_id, ""))
+        excluded.append((" operator ", shift["source"], machine_id, ""))
     if env:
-        excluded.append((" nhiệt độ ", env["source"], env["object_ids"][0], ""))
+        excluded.append((" temperature ", env["source"], env["object_ids"][0], ""))
     for i, (lead, label, target, note) in enumerate(excluded):
         cause += [TextSeg(text=("," if i else "") + lead), CiteSeg(label=label, target_id=target)]
         if note:
@@ -162,20 +162,20 @@ def build_report_draft(conn, claim_id: str) -> ReportDraft:
         *([ChainStep(id=po, label=f"{po} · {short}", tone="neutral")] if po else []),
     ]
 
-    actions = [f"Cách ly {s.parts} part {s.id} trong kho" for s in imp.shipments if s.status == "in_warehouse"]
-    actions += [f"Liên hệ {s.customer_name} về {s.id} ({s.parts} part, chưa có claim)"
+    actions = [f"Quarantine {s.parts} parts of {s.id} in the warehouse" for s in imp.shipments if s.status == "in_warehouse"]
+    actions += [f"Contact {s.customer_name} about {s.id} ({s.parts} parts, no claim yet)"
                 for s in imp.shipments if s.status == "delivered" and s.customer_id != claim.customer_id]
     if supplier:
-        actions.append(f"Yêu cầu {supplier['name']} lập 8D cho {lot}")
+        actions.append(f"Ask {supplier['name']} to file an 8D report for {lot}")
     similar = _link_in(conn, supplier["object_id"], "concerns") if supplier else None
     if similar:
         m = re.search(r"n=(\d+)\s*$", str(_obj(conn, similar)["attributes"].get("resolution", "")))
         if m:
-            actions.append(f"Áp lại mức lấy mẫu IQC n={m.group(1)} như {similar}")
+            actions.append(f"Reapply the IQC sampling level n={m.group(1)} used for {similar}")
 
     return ReportDraft(
         id=f"RPT-{claim.id}",
-        title=f"Truy vết claim {claim.id} — tiếng ồn bất thường trên bơm MH-20",
-        subtitle=f"{claim.customer_name} · serial {serial} · nhận claim {received} · nháp tự động, cần QA duyệt",
+        title=f"Trace of claim {claim.id} — abnormal noise on MH-20 pump",
+        subtitle=f"{claim.customer_name} · serial {serial} · claim received {received} · auto-generated draft, needs QA approval",
         summary=summary, chain=chain, impact=imp, cause=cause, actions=actions,
     )

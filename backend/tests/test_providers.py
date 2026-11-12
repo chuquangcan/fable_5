@@ -61,17 +61,17 @@ def test_active_provider_reports_model():
 
 def test_history_conversion():
     tool_block = SimpleNamespace(type="tool_use", id="t1", name="trace_forward", input={"lot_id": "LOT-B"})
-    text_block = SimpleNamespace(type="text", text="Để kiểm tra")
+    text_block = SimpleNamespace(type="text", text="To check")
     msgs = [
-        {"role": "user", "content": "câu hỏi\n\nContext: claim CLM-0012"},
+        {"role": "user", "content": "question text\n\nContext: claim CLM-0012"},
         {"role": "assistant", "content": [text_block, tool_block]},
         {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": '{"parts": 1000}'},
                                      {"type": "tool_result", "tool_use_id": "t2", "content": '{"error": "x"}', "is_error": True}]},
     ]
     out = to_openai_messages(msgs)
     assert out[0]["role"] == "system" and out[0]["content"].startswith(SYSTEM_PROMPT)
-    assert out[1] == {"role": "user", "content": "câu hỏi\n\nContext: claim CLM-0012"}
-    assert out[2]["role"] == "assistant" and out[2]["content"] == "Để kiểm tra"
+    assert out[1] == {"role": "user", "content": "question text\n\nContext: claim CLM-0012"}
+    assert out[2]["role"] == "assistant" and out[2]["content"] == "To check"
     assert out[2]["tool_calls"] == [{"id": "t1", "type": "function",
                                      "function": {"name": "trace_forward", "arguments": '{"lot_id": "LOT-B"}'}}]
     assert out[3] == {"role": "tool", "tool_call_id": "t1", "content": '{"parts": 1000}'}
@@ -113,7 +113,7 @@ def mock_turn(responses: list[bytes], seen: list):
                         http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)))
 
 
-TEXT_STREAM = sse(chunk({"role": "assistant", "content": "Nguyên nhân "}), chunk({"content": "khả dĩ"}), chunk(finish="stop"))
+TEXT_STREAM = sse(chunk({"role": "assistant", "content": "Probable cause "}), chunk({"content": "unclear"}), chunk(finish="stop"))
 TOOL_STREAM = sse(
     chunk({"role": "assistant", "content": None, "tool_calls": [
         {"index": 0, "id": "call_1", "type": "function", "function": {"name": "trace_serial", "arguments": ""}}]}),
@@ -129,10 +129,10 @@ async def test_deepseek_turn_streams_text_and_sets_request_shape():
     seen: list = []
     turn = mock_turn([TEXT_STREAM], seen)
     out = [x async for x in turn([{"role": "user", "content": "hi"}])]
-    assert [v for k, v in out if k == "text"] == ["Nguyên nhân ", "khả dĩ"]
+    assert [v for k, v in out if k == "text"] == ["Probable cause ", "unclear"]
     kind, msg = out[-1]
     assert kind == "message" and msg.stop_reason == "end_turn"
-    assert [(b.type, b.text) for b in msg.content] == [("text", "Nguyên nhân khả dĩ")]
+    assert [(b.type, b.text) for b in msg.content] == [("text", "Probable cause unclear")]
 
     req = seen[0]
     assert req["url"] == "https://api.deepseek.com/chat/completions" and req["auth"] == "Bearer ds-key"
@@ -178,7 +178,7 @@ async def test_deepseek_malformed_tool_arguments_become_empty_input():
 
 async def test_run_agent_end_to_end_over_deepseek(seeded_conn):
     seen: list = []
-    answer = sse(chunk({"content": "Nguyên nhân khả dĩ: LOT-B [[cite:IQC-5531]]\n\nKhoanh vùng: 1,000 part"}),
+    answer = sse(chunk({"content": "Probable cause: LOT-B [[cite:IQC-5531]]\n\nImpact scope: 1,000 parts"}),
                  chunk(finish="stop"))
     turn = mock_turn([TOOL_STREAM, answer], seen)
     evs = [e async for e in run_agent("q", "CLM-0012", conn=seeded_conn, turn=turn)]

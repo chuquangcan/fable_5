@@ -57,7 +57,7 @@ export const makeServerSource =
     }
     es.onerror = () => {
       // EventSource would silently reconnect and re-ask the question; close and surface the failure instead.
-      if (!finished) failure = new Error('Mất kết nối tới server agent')
+      if (!finished) failure = new Error('Lost connection to the agent server')
       es.close()
       poke()
     }

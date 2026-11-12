@@ -8,10 +8,10 @@ import { useDemo } from '../store/demo'
 const TRACEABLE = new Set(['CLM-0012'])
 
 const LEVELS: { status: EdgeStatus; label: string; line: string; color: string }[] = [
-  { status: 'confirmed', label: 'Confirmed · bậc 1–2', line: 'solid', color: '#0E7C86' },
-  { status: 'inferred', label: 'Inferred · bậc 3', line: 'dashed', color: '#0E7C86' },
-  { status: 'pending', label: 'Chờ duyệt · bậc 4', line: 'dotted', color: '#0E7C86' },
-  { status: 'suggested', label: 'Chỉ gợi ý · bậc 5', line: 'dotted', color: '#8E959F' },
+  { status: 'confirmed', label: 'Confirmed · tier 1–2', line: 'solid', color: '#0E7C86' },
+  { status: 'inferred', label: 'Inferred · tier 3', line: 'dashed', color: '#0E7C86' },
+  { status: 'pending', label: 'Pending review · tier 4', line: 'dotted', color: '#0E7C86' },
+  { status: 'suggested', label: 'Suggestion only · tier 5', line: 'dotted', color: '#8E959F' },
 ]
 
 const shortDate = (d: string | null) => (d ? d.slice(5) : '')
@@ -58,10 +58,10 @@ export function ClaimsSidebar() {
   return (
     <>
       <div style={{ height: 32, display: 'flex', alignItems: 'center', padding: '0 10px', fontWeight: 600, borderBottom: '1px solid var(--line-soft)' }}>
-        Claims khách hàng
+        Customer claims
       </div>
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
-        <div className="sec"><span>Đang mở</span><span className="mut">{open.length}</span></div>
+        <div className="sec"><span>Open</span><span className="mut">{open.length}</span></div>
         {open.map((c) =>
           TRACEABLE.has(c.id) ? (
             <button
@@ -73,14 +73,14 @@ export function ClaimsSidebar() {
               }}
               onClick={() => openClaim(c.id)}
             >
-              <ClaimBody c={c} tag="tiếng ồn" />
+              <ClaimBody c={c} tag="noise" />
             </button>
           ) : (
             <div key={c.id} className="it"><ClaimBody c={c} tag={c.symptom?.toLowerCase() ?? c.status} /></div>
           ),
         )}
 
-        <div className="sec"><span>Đã đóng · cùng họ linh kiện</span></div>
+        <div className="sec"><span>Closed · same component family</span></div>
         {closed.map((c) => (
           <div key={c.id} className="it">
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -92,7 +92,7 @@ export function ClaimsSidebar() {
 
         {trace && (
           <>
-            <div className="sec"><span>Liên kết trên thread · độ tin cậy</span></div>
+            <div className="sec"><span>Thread links · confidence</span></div>
             <div style={{ padding: '0 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
               {LEVELS.map((l) => (
                 <div key={l.status} style={{ display: 'flex', alignItems: 'center' }}>

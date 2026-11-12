@@ -15,7 +15,7 @@ export function EntityHeader({ serial, claim, trace, asOf }: { serial: string; c
   const shipment = trace.nodes.find((n) => n.type === 'shipment')
   const date = (shipment?.attributes.date as string | undefined) ?? null
   const used = date && claim.received ? monthsBetween(date, claim.received) : null
-  const sub = ['Bơm nước MH-20', claim.customer_name && date ? `giao ${claim.customer_name} ngày ${date}` : null, used ? `đã dùng ${used} tháng` : null]
+  const sub = ['MH-20 water pump', claim.customer_name && date ? `shipped to ${claim.customer_name} on ${date}` : null, used ? `in use for ${used} months` : null]
     .filter(Boolean).join(' · ')
   const lot = trace.edges.find((e) => e.from_id === serial && e.relation === 'uses_lot')?.to_id
   const fault = mode === 'fault'
@@ -33,24 +33,24 @@ export function EntityHeader({ serial, claim, trace, asOf }: { serial: string; c
         </div>
         <span className="mut ellipsis">{sub}</span>
       </div>
-      <span className="chip thr asof" title={`Thời điểm ${serial} được ép — mọi liên kết có hiệu lực tại mốc này`}>
-        <span className="mut">Tại</span><span className="mono">{asOf}</span>
+      <span className="chip thr asof" title={`When ${serial} was pressed — every link is evaluated as of this moment`}>
+        <span className="mut">As of</span><span className="mono">{asOf}</span>
       </span>
       {fault && faultOrigin && (
         <span className="chip red" style={{ flex: 'none' }}>
-          <span>{`Điểm lỗi: ${faultOrigin}`}</span>
-          <button className="xbtn" aria-label="Về điểm lỗi của claim" title="Về điểm lỗi của claim" onClick={() => setFaultOrigin(null)}>✕</button>
+          <span>{`Fault origin: ${faultOrigin}`}</span>
+          <button className="xbtn" aria-label="Back to the claim's fault origin" title="Back to the claim's fault origin" onClick={() => setFaultOrigin(null)}>✕</button>
         </span>
       )}
       <span className="vsep" />
       <button
         className={fault ? 'btn pri' : 'btn'} aria-pressed={fault} onClick={() => setMode(fault ? 'normal' : 'fault')}
-        title="Tô đỏ điểm lỗi và thượng nguồn, cam phần hạ nguồn có thể bị ảnh hưởng"
+        title="Highlight the fault origin and upstream in red, and possibly affected downstream in orange"
       >
-        Truy lỗi
+        Trace fault
       </button>
-      {lot && <button className="btn" onClick={showImpact} title={`Phạm vi ảnh hưởng của ${lot}`}>Khoanh vùng</button>}
-      <button className="btn" onClick={openAttach}>Gắn tài liệu</button>
+      {lot && <button className="btn" onClick={showImpact} title={`Impact scope of ${lot}`}>Impact scope</button>}
+      <button className="btn" onClick={openAttach}>Attach document</button>
     </div>
   )
 }

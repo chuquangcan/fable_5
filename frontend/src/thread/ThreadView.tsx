@@ -108,17 +108,17 @@ export function ThreadView() {
   if (error)
     return (
       <div role="alert" style={{ padding: 16, color: 'var(--red-ink)', display: 'flex', gap: 8, alignItems: 'center' }}>
-        <span>Không tải được thread: {error}</span>
-        <button className="btn" onClick={() => setAttempt((a) => a + 1)}>Thử lại</button>
+        <span>Could not load thread: {error}</span>
+        <button className="btn" onClick={() => setAttempt((a) => a + 1)}>Retry</button>
       </div>
     )
-  if (!data) return <Skeleton rows={6} label="Đang tải thread…" />
+  if (!data) return <Skeleton rows={6} label="Loading thread…" />
   const { claim, trace, flow } = data
   const overflows = !!layout && boxWidth > 0 && layout.width > boxWidth
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <EntityHeader serial={trace.root} claim={claim} trace={trace} asOf={formatPlantTime(flow.at, 'YYYY-MM-DD HH:mm')} />
-      {mode === 'fault' && faultError && <div role="alert" className="banner red">Không tải được dữ liệu dò lỗi</div>}
+      {mode === 'fault' && faultError && <div role="alert" className="banner red">Could not load fault-trace data</div>}
       <div style={{ position: 'relative', flex: 'none', borderBottom: '1px solid var(--line)' }}>
         <div ref={graphRef} data-testid="graph-scroll" style={{ overflowX: fit ? 'hidden' : 'auto' }}>
           {layout && scale < 1 ? (
@@ -130,8 +130,8 @@ export function ThreadView() {
           ) : <ThreadGraph flow={flow} marks={marks} reasons={reasons} />}
         </div>
         {(overflows || fit) && (
-          <button className="btn graph-fit" aria-pressed={fit} onClick={() => setFit(!fit)} title={fit ? 'Xem cỡ thật, cuộn ngang' : 'Thu nhỏ cho vừa khung'}>
-            {fit ? 'Cỡ thật' : 'Vừa khung'}
+          <button className="btn graph-fit" aria-pressed={fit} onClick={() => setFit(!fit)} title={fit ? 'Show actual size, scroll horizontally' : 'Shrink to fit the frame'}>
+            {fit ? 'Actual size' : 'Fit to frame'}
           </button>
         )}
       </div>

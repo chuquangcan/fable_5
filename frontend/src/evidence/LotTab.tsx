@@ -29,11 +29,11 @@ export function LotTab({ lotId }: { lotId: string }) {
     <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex' }}>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line-faint)' }}>
         <div style={{ padding: '10px 14px 6px', display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontWeight: 600 }}>{`Kiểm tra đầu vào · ${cmp.part_name ?? cmp.part ?? cmp.lot}`}</span>
+          <span style={{ fontWeight: 600 }}>{`Incoming inspection · ${cmp.part_name ?? cmp.part ?? cmp.lot}`}</span>
           {spec && <span className="mut">spec Cpk ≥ {spec.spec_min}{spec.spec_doc ? ` theo ${spec.spec_doc}${spec.spec_page ? ` p.${spec.spec_page}` : ''}` : ''}</span>}
         </div>
         <table className="g">
-          <thead><tr><th>Lô</th><th>Nhập kho</th><th>NCC</th><th>Cpk</th><th>Kết luận IQC</th><th>Nguồn</th></tr></thead>
+          <thead><tr><th>Lot</th><th>Received</th><th>Supplier</th><th>Cpk</th><th>IQC verdict</th><th>Source</th></tr></thead>
           <tbody>
             {cmp.rows.map((r) => {
               const fail = r.cpk != null && r.spec_min != null && r.cpk < r.spec_min
@@ -53,24 +53,24 @@ export function LotTab({ lotId }: { lotId: string }) {
         </table>
         {cmp.similar.length > 0 && (
           <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6, lineHeight: 1.45 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.06em', color: 'var(--label)' }}>CA TƯƠNG TỰ</div>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.06em', color: 'var(--label)' }}>SIMILAR CASES</div>
             {cmp.similar.map((c) => (
               <div key={c.id}>
                 <div>
                   <button className="linkish mono" style={{ fontWeight: 600 }} onClick={() => goTo(c.id)}>{c.id}</button>
-                  {c.period ? ` · ${c.period.slice(5)}/${c.period.slice(0, 4)}` : ''} · {lc(c.symptom)} cũng liên quan {c.via}.
-                  {c.resolution ? ` Đã xử lý bằng ${lc(c.resolution)} ` : ' '}
+                  {c.period ? ` · ${c.period.slice(5)}/${c.period.slice(0, 4)}` : ''} · {lc(c.symptom)} also involved {c.via}.
+                  {c.resolution ? ` Resolved by ${lc(c.resolution)} ` : ' '}
                   {c.docs.map((d) => <span key={d} className="cite">{d}</span>)}
                 </div>
-                <div className="mut">{`Nối qua ${c.via} · bậc ${c.tier} · ${statusLabel(c.status).toLowerCase()}`}</div>
+                <div className="mut">{`Linked via ${c.via} · tier ${c.tier} · ${statusLabel(c.status).toLowerCase()}`}</div>
               </div>
             ))}
           </div>
         )}
       </div>
       <div style={{ width: 340, flex: 'none', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <div style={{ padding: '10px 14px 6px', fontWeight: 600 }}>{`Tài liệu gắn với ${cmp.lot}${cmp.similar.length ? ' và ca tương tự' : ''}`}</div>
-        {docs.length ? <DocList docs={docs} /> : <div className="mut" style={{ padding: '0 14px' }}>Chưa có tài liệu</div>}
+        <div style={{ padding: '10px 14px 6px', fontWeight: 600 }}>{`Documents attached to ${cmp.lot}${cmp.similar.length ? ' and similar cases' : ''}`}</div>
+        {docs.length ? <DocList docs={docs} /> : <div className="mut" style={{ padding: '0 14px' }}>No documents yet</div>}
       </div>
     </div>
   )

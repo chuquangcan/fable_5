@@ -46,9 +46,9 @@ function Search() {
   return (
     <div className="search">
       <label className="search-box">
-        <span className="sr-only">Tìm kiếm</span>
+        <span className="sr-only">Search</span>
         <input
-          ref={ref} value={q} placeholder="Tìm serial, lô, máy, tài liệu, claim" role="combobox"
+          ref={ref} value={q} placeholder="Search serial, lot, machine, document, claim" role="combobox"
           aria-expanded={open && hits.length > 0} aria-controls="search-results" aria-autocomplete="list"
           onChange={(e) => { setQ(e.target.value); setOpen(true) }}
           onFocus={() => { clearTimeout(closeTimer.current); setOpen(true) }}
@@ -70,7 +70,7 @@ function Search() {
               onMouseDown={(e) => { e.preventDefault(); pick(h) }} onMouseEnter={() => setActive(i)}
             >
               <span className="mono" style={{ fontWeight: 500 }}>{h.id}</span>
-              <span className="mut">{h.kind === 'document' ? `Tài liệu · ${docTypeLabel(h.name)}` : `${objectTypeLabel(h.type)}${h.name !== h.id ? ` · ${h.name}` : ''}`}</span>
+              <span className="mut">{h.kind === 'document' ? `Document · ${docTypeLabel(h.name)}` : `${objectTypeLabel(h.type)}${h.name !== h.id ? ` · ${h.name}` : ''}`}</span>
             </li>
           ))}
         </ul>
@@ -82,7 +82,7 @@ function Search() {
 export function Header() {
   const [busy, setBusy] = useState(false)
   const reset = async () => {
-    if (!window.confirm('Reset demo: xoá tài liệu đã gắn, hoàn tác mọi quyết định duyệt và về màn đầu?')) return
+    if (!window.confirm('Reset demo: remove attached documents, undo every review decision and return to the first screen?')) return
     setBusy(true)
     try {
       await resetDemoData()
@@ -99,13 +99,13 @@ export function Header() {
         <span style={{ width: 12, height: 12, border: '2px solid #3FB6C0' }} />
         One Thread
       </div>
-      <span style={{ color: '#9AA3AF' }}>Plant 1 · Line 1 · Bơm nước MH-20</span>
+      <span style={{ color: '#9AA3AF' }}>Plant 1 · Line 1 · MH-20 water pump</span>
       <span style={{ flex: 1 }} />
       <Search />
       <span style={{ flex: 1 }} />
       <span className="mono" style={{ color: '#FFFFFF' }}>{formatPlantTime(DEMO_NOW, 'YYYY-MM-DD HH:mm')}</span>
-      <span className="demo-tag">DEMO · DỮ LIỆU MẪU</span>
-      <button className="hbtn" disabled={busy} onClick={() => void reset()} title="Xoá mọi thao tác ghi của demo">Reset demo</button>
+      <span className="demo-tag">DEMO · SAMPLE DATA</span>
+      <button className="hbtn" disabled={busy} onClick={() => void reset()} title="Remove everything the demo has written">Reset demo</button>
       <span style={{ color: '#C9CFD6' }}>Quality · QA engineer</span>
     </header>
   )

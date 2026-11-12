@@ -13,14 +13,14 @@ from onethread.review import REVIEWABLE
 
 # (area id, label, object types in display order)
 AREAS: list[tuple[str, str, list[str]]] = [
-    ("kho_nl", "Kho nguyên liệu", ["receipt", "lot"]),
-    ("san_xuat", "Sản xuất", ["line", "hopper", "machine"]),
-    ("chat_luong", "Chất lượng", ["inspection"]),
-    ("kho_tp", "Kho thành phẩm · xuất hàng", ["shipment"]),
+    ("kho_nl", "Raw materials warehouse", ["receipt", "lot"]),
+    ("san_xuat", "Production", ["line", "hopper", "machine"]),
+    ("chat_luong", "Quality", ["inspection"]),
+    ("kho_tp", "Finished goods warehouse · shipping", ["shipment"]),
 ]
-TYPE_LABEL = {"receipt": "Phiếu nhập", "lot": "Lô linh kiện", "line": "Line", "hopper": "Hopper",
-              "machine": "Máy", "inspection": "IQC", "shipment": "Lô xuất"}
-VOLUME = {"san_xuat": ("serial", "serial"), "kho_tp": ("box", "thùng")}
+TYPE_LABEL = {"receipt": "Goods receipt", "lot": "Component lot", "line": "Line", "hopper": "Hopper",
+              "machine": "Machine", "inspection": "IQC", "shipment": "Shipment"}
+VOLUME = {"san_xuat": ("serial", "serial"), "kho_tp": ("box", "boxes")}
 
 
 class Asset(BaseModel):
@@ -52,7 +52,7 @@ def _sub(type: str, a: dict[str, Any], line_of: dict[str, str]) -> str:
     if type == "receipt":
         return str(a.get("received_at", ""))[:10]
     if type == "machine":
-        return line_of.get(a.get("_id", ""), "chưa gán line")
+        return line_of.get(a.get("_id", ""), "no line assigned")
     if type == "inspection":
         return " · ".join(x for x in (str(a.get("lot", "")), f"Cpk {a['cpk']}" if a.get("cpk") is not None else "") if x)
     if type == "shipment":

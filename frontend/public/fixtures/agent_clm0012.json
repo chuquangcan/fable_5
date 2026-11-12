@@ -1,5 +1,5 @@
 {
- "question": "Vì sao MH20-0001 của CLM-0012 kêu to? Tìm nguyên nhân gốc và phạm vi ảnh hưởng.",
+ "question": "Why is MH20-0001 from CLM-0012 noisy? Find the root cause and the impact scope.",
  "events": [
   {
    "delay_ms": 800,
@@ -82,21 +82,21 @@
    "delay_ms": 900,
    "event": {
     "type": "text",
-    "text": "Nguyên nhân khả dĩ: "
+    "text": "Probable cause: "
    }
   },
   {
    "delay_ms": 260,
    "event": {
     "type": "text",
-    "text": "ổ bi Bearing 6203 LOT-B, nhập kho 28/10 từ Supplier S1, "
+    "text": "Bearing 6203 LOT-B, received on 28/10 from Supplier S1, "
    }
   },
   {
    "delay_ms": 260,
    "event": {
     "type": "text",
-    "text": "IQC Cpk 0.92 dưới chuẩn 1.33 "
+    "text": "IQC Cpk 0.92 below the 1.33 standard "
    }
   },
   {
@@ -133,14 +133,14 @@
    "delay_ms": 260,
    "event": {
     "type": "text",
-    "text": "Sau khi nạp LOT-B lúc 13:52, cycle time Machine 02 tăng 31 → 42 s, "
+    "text": "After LOT-B was loaded at 13:52, Machine 02 cycle time rose 31 → 42 s, "
    }
   },
   {
    "delay_ms": 260,
    "event": {
     "type": "text",
-    "text": "lực ép +6% "
+    "text": "press force +6% "
    }
   },
   {
@@ -155,7 +155,7 @@
    "delay_ms": 260,
    "event": {
     "type": "text",
-    "text": ". MH20-0001 được ép lúc 14:05, cùng cửa sổ "
+    "text": ". MH20-0001 was pressed at 14:05, within the same window "
    }
   },
   {
@@ -177,14 +177,14 @@
    "delay_ms": 300,
    "event": {
     "type": "text",
-    "text": "Đã loại trừ: "
+    "text": "Ruled out: "
    }
   },
   {
    "delay_ms": 260,
    "event": {
     "type": "text",
-    "text": "bảo trì "
+    "text": "maintenance "
    }
   },
   {
@@ -199,14 +199,14 @@
    "delay_ms": 260,
    "event": {
     "type": "text",
-    "text": ", người vận hành "
+    "text": ", operator "
    }
   },
   {
    "delay_ms": 300,
    "event": {
     "type": "cite",
-    "label": "HR ca 2",
+    "label": "HR shift 2",
     "target_id": "M02"
    }
   },
@@ -214,7 +214,7 @@
    "delay_ms": 260,
    "event": {
     "type": "text",
-    "text": ", nhiệt độ "
+    "text": ", temperature "
    }
   },
   {
@@ -236,14 +236,14 @@
    "delay_ms": 300,
    "event": {
     "type": "text",
-    "text": "Khoanh vùng: "
+    "text": "Impact scope: "
    }
   },
   {
    "delay_ms": 260,
    "event": {
     "type": "text",
-    "text": "1,000 part · 42 thùng · 3 lô xuất, 2 lô đã tới khách "
+    "text": "1,000 parts · 42 boxes · 3 shipments, 2 delivered to customers "
    }
   },
   {
@@ -265,14 +265,14 @@
    "delay_ms": 260,
    "event": {
     "type": "text",
-    "text": "Ca CLM-0009 đã xử lý bằng tăng lấy mẫu IQC. "
+    "text": "CLM-0009 was resolved by increasing IQC sampling. "
    }
   },
   {
    "delay_ms": 260,
    "event": {
     "type": "text",
-    "text": "D-03 chỉ là gợi ý bậc 5, không dùng làm bằng chứng."
+    "text": "D-03 is only a tier-5 suggestion and is not used as evidence."
    }
   },
   {

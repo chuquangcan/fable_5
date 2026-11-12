@@ -19,17 +19,17 @@ export function EventsTab({ id }: { id: string }) {
   const shown = rows.slice(0, LIMIT)
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <div role="group" aria-label="Lọc sự kiện theo loại" style={{ display: 'flex', gap: 4, padding: '8px 14px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <button className={`chip fchip${type === null ? ' on' : ''}`} aria-pressed={type === null} onClick={() => setType(null)}>{`Tất cả ${all.data.length}`}</button>
+      <div role="group" aria-label="Filter events by type" style={{ display: 'flex', gap: 4, padding: '8px 14px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <button className={`chip fchip${type === null ? ' on' : ''}`} aria-pressed={type === null} onClick={() => setType(null)}>{`All ${all.data.length}`}</button>
         {[...counts].map(([t, n]) => (
           <button key={t} className={`chip fchip${type === t ? ' on' : ''}`} aria-pressed={type === t} onClick={() => setType(t)}>{`${eventTypeLabel(t)} ${n}`}</button>
         ))}
-        {rows.length > LIMIT && <span className="mut" style={{ marginLeft: 'auto', fontSize: 11 }}>{`Hiển thị ${LIMIT} / ${rows.length.toLocaleString('en-US')}`}</span>}
+        {rows.length > LIMIT && <span className="mut" style={{ marginLeft: 'auto', fontSize: 11 }}>{`Showing ${LIMIT} / ${rows.length.toLocaleString('en-US')}`}</span>}
       </div>
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-        {shown.length === 0 ? <div className="mut" style={{ padding: '4px 14px' }}>Chưa có sự kiện</div> : (
+        {shown.length === 0 ? <div className="mut" style={{ padding: '4px 14px' }}>No events yet</div> : (
           <table className="g sticky">
-            <thead><tr><th>Thời điểm</th><th>Loại</th><th>Nội dung</th><th>Nguồn</th></tr></thead>
+            <thead><tr><th>Time</th><th>Type</th><th>Details</th><th>Source</th></tr></thead>
             <tbody>
               {shown.map((e) => (
                 <tr key={e.event_id}>
