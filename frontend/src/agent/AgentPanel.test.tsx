@@ -82,6 +82,16 @@ test('a cite to an event record shows its summary in the dock, not the error pan
   expect(screen.queryByText(/Could not load data/)).toBeNull()
 })
 
+test('the panel shows the workspace context under its title and follows it', async () => {
+  render(<AgentPanel />)
+  expect(screen.getByTestId('agent-context')).toHaveTextContent('Plant')
+  act(() => useDemo.getState().selectTwin('M02', 'Line 1 › M02'))
+  expect(screen.getByTestId('agent-context')).toHaveTextContent('Plant › M02')
+  act(() => openThread())
+  act(() => useDemo.getState().selectNode(T, 'LOT-B'))
+  expect(screen.getByTestId('agent-context')).toHaveTextContent('Thread · MH20-0001 (CLM-0012) › LOT-B')
+})
+
 test('?step=4 asks the demo question; reset clears the answer', async () => {
   // instant replay: no delays
   const fast = { ...fixture, events: fixture.events.map((e: { event: unknown }) => ({ ...e, delay_ms: 0 })) }
@@ -89,7 +99,8 @@ test('?step=4 asks the demo question; reset clears the answer', async () => {
   try {
     render(<AgentPanel />)
     act(() => useDemo.getState().applyStep(4))
-    expect(await screen.findByText(/Why is MH20-0001 from CLM-0012 noisy/)).toBeInTheDocument()
+    expect(await screen.findByText(/Why is MH20-0001 from CLM-0012 noisy/)).toHaveClass('bubble', 'user')
+    expect((await screen.findAllByTestId('agent-bubble')).every((b) => b.classList.contains('agent'))).toBe(true)
     act(() => useDemo.getState().reset())
     expect(await screen.findByText(/Ask about this claim, or press/)).toBeInTheDocument()
   } finally {

@@ -1,7 +1,7 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
 import type { Claim, LinkView } from '../api/types'
-import { activeMain, activeProduct, DEFAULT_AS_OF, detailTabId, threadTabId, useDemo } from './demo'
+import { activeMain, activeProduct, agentContext, DEFAULT_AS_OF, detailTabId, threadTabId, useDemo } from './demo'
 
 vi.mock('../api/client')
 
@@ -240,4 +240,24 @@ test('twin layers toggle and survive selecting an object; an old save without la
   localStorage.setItem('onethread.workspace', JSON.stringify(saved))
   await useDemo.persist.rehydrate()
   expect(s().twin).toEqual({ selected: 'M01', layers: { machines: true, lots: false, alerts: true, flow: true } })
+})
+
+test('agent context: the plant, a selected object, a feed card, a product tab with its claim and focus', async () => {
+  vi.mocked(api.getFault).mockResolvedValue({ origin: 'M02', at: '', red: [], orange: [] })
+  vi.mocked(api.getImpact).mockResolvedValue({ lot: 'LOT-B', shipments: [] } as never)
+  expect(agentContext(s())).toBe('Plant')
+  s().selectTwin('M02', 'Line 1 › M02')
+  expect(agentContext(s())).toBe('Plant › M02')
+  await s().selectCard({ id: 'AL-0001', kind: 'alert', badge: 'P1', at: '2026-11-03T14:00:00+07:00', objects: ['M02'], ref: {} } as never)
+  expect(agentContext(s())).toBe('Feed · AL-0001')
+  s().openClaim('CLM-0012', 'MH20-0001')
+  expect(agentContext(s())).toBe('Thread · MH20-0001 (CLM-0012)')
+  s().selectNode(T1, 'LOT-B')
+  expect(agentContext(s())).toBe('Thread · MH20-0001 (CLM-0012) › LOT-B')
+  s().openProduct('MH20-0457')
+  expect(agentContext(s())).toBe('Thread · MH20-0457')
+  s().openDoc('D-07')
+  expect(agentContext(s())).toBe('D-07')
+  s().activate('main', 'twin')
+  expect(agentContext(s())).toBe('Feed · AL-0001')
 })

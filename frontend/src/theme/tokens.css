@@ -11,6 +11,8 @@
   --muted: #5F6670;
   --label: #4A515B;
   --teal: #0E7C86;
+  --bubble-user: #E3F0FB;
+  --bubble-agent: #F1F2F4;
   /* department colours: feed sender pills, foreign-card edge, department strip */
   --dept-purchasing: #8E5A1E;
   --dept-quality: #0E7C86;
@@ -241,3 +243,9 @@ button.pill{cursor:pointer}
 .feed-detail-text{flex:1;min-width:0;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--line-faint)}
 .feed-detail-reach{width:380px;flex:none;overflow-y:auto;padding:6px 8px}
 mark{background:#FFF1A8;color:inherit;padding:0 1px}
+
+/* agent */
+.agent-context{flex:none;padding:3px 10px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bubble{max-width:92%;padding:6px 8px;border:1px solid var(--line-soft);color:var(--ink);display:flex;flex-direction:column;gap:9px}
+.bubble.user{margin-left:auto;background:var(--bubble-user)}
+.bubble.agent{margin-right:auto;background:var(--bubble-agent)}

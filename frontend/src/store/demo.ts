@@ -151,6 +151,19 @@ export function activeProduct(s: Pick<DemoState, 'groups' | 'product'>): { tabId
   return t && p ? { tabId: t.id, p } : null
 }
 
+/** What the agent is looking at, in words: the product tab on screen, else the selected feed card, else the plant. */
+export function agentContext(s: Pick<DemoState, 'groups' | 'product' | 'twin' | 'feed'>): string {
+  const prod = activeProduct(s)
+  if (prod) {
+    const { p } = prod
+    return `Thread · ${p.root}${p.claimId ? ` (${p.claimId})` : ''}${p.focusNodeId ? ` › ${p.focusNodeId}` : ''}`
+  }
+  const main = activeMain(s)
+  if (main && main.kind !== 'twin') return main.title
+  if (s.feed.selected) return `Feed · ${s.feed.selected}`
+  return s.twin.selected ? `Plant › ${s.twin.selected}` : 'Plant'
+}
+
 /** Bottom tab a main tab shows by default: the overview for the twin, the details for a product tab. */
 function defaultDock(s: Pick<DemoState, 'groups'>, mainId: string | null): string | null {
   const t = s.groups.main.tabs.find((x) => x.id === mainId)

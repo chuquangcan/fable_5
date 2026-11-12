@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode, useEffect, useState } from 'react'
-import { activeProduct, useDemo } from '../store/demo'
+import { activeProduct, agentContext, useDemo } from '../store/demo'
 import { useAgentMode } from './mode'
 import type { AgentState, Segment } from './reducer'
 import { STORY_CLAIM } from '../lib/story'
@@ -75,6 +75,7 @@ export function AgentPanel() {
     else if (cmd.kind === 'ask' && cmd.question) ask(cmd.question)
   }, [cmd, ask, clear])
   const claimId = useDemo((s) => activeProduct(s)?.p.claimId ?? null)
+  const context = useDemo(agentContext)
   const productTab = useDemo((s) => activeProduct(s)?.tabId ?? null)
   const openReport = useDemo((s) => s.openReport)
   const setEvidence = useDemo((s) => s.setEvidence)
@@ -94,14 +95,14 @@ export function AgentPanel() {
       <div style={{ height: 32, flex: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px', borderBottom: '1px solid var(--line-soft)', background: '#ECEEF1' }}>
         <span style={{ fontWeight: 600 }}>Agent</span>
         {replay && <span title="Replay (Alt+Shift+D)" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--amber)' }} />}
-        <span className="chip thr">Context · {claimId ?? '—'}</span>
       </div>
+      <div data-testid="agent-context" className="agent-context" title="What the agent is looking at">{`Context · ${context}`}</div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 9, lineHeight: 1.5 }}>
         {state.status === 'idle' && (
           <div className="mut">Ask about this claim, or press <span className="mono">/report</span> to run the demo script.</div>
         )}
         {state.status !== 'idle' && (
-          <div style={{ alignSelf: 'flex-end', maxWidth: '92%', background: '#E9ECEF', border: '1px solid var(--line-soft)', padding: '6px 8px' }}>{state.question}</div>
+          <div className="bubble user">{state.question}</div>
         )}
         {state.toolCalls.length > 0 && (
           <div style={{ fontSize: 11, color: '#3A4049', border: '1px dashed var(--line)', padding: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -111,7 +112,7 @@ export function AgentPanel() {
             {state.toolCalls.map((c, i) => <span key={i} className="mono">{formatToolCall(c.name, c.args)}</span>)}
           </div>
         )}
-        <Answer state={state} />
+        {state.segments.length > 0 && <div data-testid="agent-bubble" className="bubble agent"><Answer state={state} /></div>}
         {state.status === 'error' && <div style={{ color: 'var(--red-ink)' }}>Agent error: {state.error}</div>}
         {state.actions.length > 0 && (
           <div style={{ display: 'flex', gap: 6 }}>
