@@ -21,8 +21,13 @@ def test_machine_window_is_derived_from_the_lot_change(client):
     assert (w["cycle_source"], w["offset_s"], w["target_s"], w["line"]) == ("PLC2", 38.0, 30.0, "LINE-1")
 
 
-def test_machine_without_cycles_and_non_machine(client):
-    w = client.get("/api/machines/M01/cycle-window").json()
+def test_machine_without_cycles_and_non_machine(client, seeded_conn):
+    # every seeded machine has cycles now (line 2), so add a bare one for the edge case
+    seeded_conn.execute("insert into objects values ('M99', 'machine', 'Machine 99', '{\"stage\": \"san_xuat\"}')")
+    try:
+        w = client.get("/api/machines/M99/cycle-window").json()
+    finally:
+        seeded_conn.execute("delete from objects where object_id = 'M99'")
     assert w["day"] is None and w["change"] is None
     assert client.get("/api/machines/LOT-B/cycle-window").status_code == 404
 

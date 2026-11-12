@@ -32,7 +32,7 @@ def test_aggregate_summary(client):                       # Review Focus #1
 
 
 def test_empty_node_summary(client):                      # Review Focus #5
-    s = client.get("/api/objects/M01/summary").json()
+    s = client.get("/api/objects/HOP-2/summary").json()  # M01 has line-2 cycles now
     assert s["params"] == [] and s["docs"] == []
 
 

@@ -1,5 +1,5 @@
 -- One Thread core schema (6 tables) + the demo's review log. Idempotent: drops and recreates everything.
-DROP TABLE IF EXISTS link_reviews, time_mappings, links, documents, events, aliases, objects CASCADE;
+DROP TABLE IF EXISTS notices, link_reviews, time_mappings, links, documents, events, aliases, objects CASCADE;
 
 CREATE TABLE objects (
     object_id  text PRIMARY KEY,
@@ -75,4 +75,19 @@ CREATE TABLE link_reviews (
     note        text,
     reviewed_at timestamptz NOT NULL,
     snapshot    jsonb NOT NULL
+);
+
+-- Alerts and 4M changes (spec 2026-11-12 §2.3): what the plant flags, who sent it, who must act.
+CREATE TABLE notices (
+    notice_id  text PRIMARY KEY,
+    kind       text NOT NULL CHECK (kind IN ('alert', '4m_change')),
+    severity   text,
+    category   text,
+    title      text NOT NULL,
+    reason     text NOT NULL,
+    source     text NOT NULL,
+    acting     text[] NOT NULL DEFAULT '{}',
+    object_ids text[] NOT NULL DEFAULT '{}',
+    status     text NOT NULL CHECK (status IN ('proposed', 'watching', 'approved', 'closed')),
+    at         timestamptz NOT NULL
 );

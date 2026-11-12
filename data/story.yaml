@@ -43,11 +43,13 @@ objects:
       resolution: "Increase IQC sampling from n=5 to n=20"
 
   # --- Production ---
-  - {id: M01, type: machine, name: "Machine 01", attributes: {stage: san_xuat}}
+  - {id: M01, type: machine, name: "Machine 01", attributes: {stage: san_xuat, cycle_target_s: 32, line: LINE-2}}
   - {id: M02, type: machine, name: "Machine 02", attributes: {stage: san_xuat, cycle_target_s: 30, line: LINE-1}}
-  - {id: M03, type: machine, name: "Machine 03", attributes: {stage: san_xuat}}
+  - {id: M03, type: machine, name: "Machine 03", attributes: {stage: san_xuat, cycle_target_s: 29, line: LINE-2}}
   - {id: HOP-1, type: hopper, name: "Hopper 1", attributes: {stage: san_xuat}}
-  - {id: LINE-1, type: line, name: "Line 1", attributes: {stage: san_xuat}}
+  - {id: HOP-2, type: hopper, name: "Hopper 2", attributes: {stage: san_xuat}}
+  - {id: LINE-1, type: line, name: "Line 1", attributes: {stage: san_xuat, product: MH-20}}
+  - {id: LINE-2, type: line, name: "Line 2", attributes: {stage: san_xuat, product: MH-25}}
 
   # --- Components / lots ---
   - id: BRG-6203
@@ -62,6 +64,14 @@ objects:
     type: lot
     name: LOT-B
     attributes: {stage: kho, part: BRG-6203, qty: 5000, role: "suspect"}
+  - id: BRG-6204
+    type: part
+    name: "Bearing 6204"
+    attributes: {stage: dinh_kem}
+  - id: LOT-C
+    type: lot
+    name: LOT-C
+    attributes: {stage: kho, part: BRG-6204, qty: 4000}
   - id: S1-6203-B
     type: supplier_lot
     name: S1-6203-B
@@ -170,6 +180,21 @@ links:
   - {from: RCV-1410, to: PO-4380, relation: received_under, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
   - {from: LOT-A, to: RCV-1410, relation: received_under, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
   - {from: M02, to: LINE-1, relation: part_of, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  # Line 2 (MH-25): Hopper 2 feeds Machine 01 and Machine 03 with LOT-C. Nothing links it to LOT-B, so CLM-0012's reach is unchanged.
+  - {from: HOP-1, to: LINE-1, relation: part_of, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: HOP-2, to: LINE-2, relation: part_of, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: M01, to: LINE-2, relation: part_of, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: M03, to: LINE-2, relation: part_of, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: HOP-2, to: M01, relation: fed_into, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - {from: HOP-2, to: M03, relation: fed_into, tier: 1, status: confirmed, score: 1.0, rule_version: T1-exact}
+  - from: LOT-C
+    to: HOP-2
+    relation: fed_into
+    tier: 1
+    status: confirmed
+    score: 1.0
+    rule_version: T1-exact
+    evidence: {valid_from: "2026-11-03T08:00:00+07:00"}
 
 documents:
   - doc_id: D-12
@@ -220,6 +245,39 @@ events:
     source_record_id: RCV-1410
     payload: {lot: LOT-A}
 
+# Alerts and 4M changes (spec 2026-11-12 §2.3): data, not UI constants. `source` maps to the sending department.
+notices:
+  - notice_id: 4M-0001
+    kind: 4m_change
+    category: Material
+    title: "LOT-B accepted conditionally"
+    reason: "IQC-5531 Cpk 0.92 < 1.33 (drawing D-12 p.7)"
+    source: QMS
+    acting: [purchasing, production]
+    object_ids: [LOT-B, IQC-5531, SUP-S1]
+    status: watching
+    at: "2026-10-28T15:00:00+07:00"
+  - notice_id: 4M-0002
+    kind: 4m_change
+    category: Material
+    title: "HOP-1 material change LOT-A → LOT-B"
+    reason: "Issue ISS-1103 at 13:52"
+    source: WMS
+    acting: [production, quality]
+    object_ids: [HOP-1, LOT-B, M02]
+    status: watching
+    at: "2026-11-03T13:52:00+07:00"
+  - notice_id: AL-0001
+    kind: alert
+    severity: P1
+    title: "M02 cycle time 31 s → 42 s"
+    reason: "Jump right after LOT-B was loaded into HOP-1 at 13:52; target 30 s"
+    source: PLC2
+    acting: [quality, maintenance]
+    object_ids: [M02, LINE-1, LOT-B]
+    status: watching
+    at: "2026-11-03T14:00:00+07:00"
+
 time_mappings:
   - {source: PLC2, offset_s: 38, uncertainty_s: 1, valid_from: "2026-10-01T00:00:00+07:00"}
 
@@ -236,6 +294,11 @@ volume:
   force_kn: {LOT-A: 12.4, LOT-B: 13.1}
   force_noise_kn: 0.15
   plc_offset_s: 38
+  # Line 2 press cycles (events only: no serials or boxes, so the LOT-B numbers stay as they are)
+  extra_machines:
+    - {machine: M01, source: PLC1, lot: LOT-C, cycle_s: 33}
+    - {machine: M03, source: PLC3, lot: LOT-C, cycle_s: 29.5}
+  extra_window: {start: "2026-11-03T08:00:00+07:00", end: "2026-11-03T20:00:00+07:00"}
   shipments:
     - {id: SHP-1112, parts: 400, boxes: 17, status: delivered, date: "2026-11-12"}
     - {id: SHP-1115, parts: 240, boxes: 10, status: delivered, date: "2026-11-15"}

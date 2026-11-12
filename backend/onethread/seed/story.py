@@ -63,6 +63,20 @@ class StoryTimeMapping(BaseModel):
     valid_from: datetime
 
 
+class StoryNotice(BaseModel):
+    notice_id: str
+    kind: Literal["alert", "4m_change"]
+    severity: str | None = None
+    category: str | None = None
+    title: str
+    reason: str
+    source: str
+    acting: list[str] = Field(default_factory=list)
+    object_ids: list[str] = Field(default_factory=list)
+    status: Literal["proposed", "watching", "approved", "closed"]
+    at: datetime
+
+
 class Story(BaseModel):
     objects: list[StoryObject]
     aliases: list[StoryAlias]
@@ -70,6 +84,7 @@ class Story(BaseModel):
     documents: list[StoryDocument]
     events: list[StoryEvent]
     time_mappings: list[StoryTimeMapping]
+    notices: list[StoryNotice] = Field(default_factory=list)
     volume: dict[str, Any]
 
 

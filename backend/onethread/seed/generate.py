@@ -28,15 +28,15 @@ def _link(from_id: str, to_id: str, relation: str, evidence: dict | None = None)
 
 
 def _press_event(n: int, when: datetime, object_ids: list[str], lot: str, cycle_s: float,
-                 force_kn: float, plc_offset_s: float) -> dict:
+                 force_kn: float, plc_offset_s: float, source: str = "PLC2") -> dict:
     return {
-        "event_id": f"EV-PLC2-{n:06d}",
+        "event_id": f"EV-{source}-{n:06d}",
         "type": "press_cycle",
         "object_ids": object_ids,
         "event_time": when,
         "time_kind": "sensor",
-        "source": "PLC2",
-        "source_record_id": f"PLC2-{n:06d}",
+        "source": source,
+        "source_record_id": f"{source}-{n:06d}",
         "payload": {
             "cycle_s": round(cycle_s, 3),
             "peak_force_kn": round(force_kn, 3),
@@ -84,6 +84,24 @@ def _side_events(vol: dict) -> list[dict]:
             "event_time": at(2026, 11, 3, hour), "time_kind": "sensor", "source": "ENV-L1",
             "source_record_id": f"ENV-L1-{hour:02d}00", "payload": {"temp_c": temp},
         })
+    return events
+
+
+def _extra_cycles(vol: dict, rng: random.Random) -> list[dict]:
+    """Line 2 press cycles (M01, M03): events only, no serials, so the LOT-B story numbers are untouched."""
+    window = vol.get("extra_window") or {}
+    if not vol.get("extra_machines") or not window:
+        return []
+    start, end = datetime.fromisoformat(window["start"]), datetime.fromisoformat(window["end"])
+    events = []
+    for m in vol["extra_machines"]:
+        n, when = 0, start
+        while when < end:
+            n += 1
+            events.append(_press_event(
+                n, when, [m["machine"]], m["lot"], m["cycle_s"] + rng.uniform(-vol["cycle_noise_s"], vol["cycle_noise_s"]),
+                vol["force_kn"]["LOT-A"] + rng.uniform(-vol["force_noise_kn"], vol["force_noise_kn"]), 0, m["source"]))
+            when += timedelta(seconds=m["cycle_s"])
     return events
 
 
@@ -147,4 +165,5 @@ def generate_volume(story: dict, seed: int = 42) -> Volume:
             pos += size
 
     v.events.extend(_side_events(vol))
+    v.events.extend(_extra_cycles(vol, rng))  # after M02's cycles, so M02's random sequence is unchanged
     return v
