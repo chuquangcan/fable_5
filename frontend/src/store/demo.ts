@@ -1,151 +1,348 @@
 import { create } from 'zustand'
-import { DEMO_QUESTION, STORY_CLAIM, STORY_LOT } from '../lib/story'
+import { createJSONStorage, persist, type PersistStorage, type StateStorage } from 'zustand/middleware'
+import { DEMO_QUESTION, STORY_CLAIM, STORY_LOT, STORY_SERIAL } from '../lib/story'
 import { NODE_EVIDENCE } from '../thread/layout'
+import { closeIn, type Group, type GroupId, keepIn, moveIn, type NewTab, openIn, type Tab } from './tabs'
+import { goTo, viewOnThread } from './navigate'
 
-export type MainTab = 'claim' | 'thread' | 'report'
+export type { GroupId, Tab, TabKind } from './tabs'
 export type EvidenceTab = 'overview' | 'events' | 'machine' | 'lot' | 'impact'
 export type Mode = 'normal' | 'fault'
-/** product: one serial's thread (claim-driven) · plant: the plant's assets over time · data: document store + DB. */
-export type View = 'product' | 'plant' | 'data'
-export type DataTab = 'docs' | 'review' | 'tables'
-
-const isDoc = (id: string) => /^D-/.test(id)
-
-/** Deep-link steps of the demo script (spec §2): 1 inbox · 2 thread · 3 lot evidence · 4 agent RCA. */
+export type Rail = 'feed' | 'assets' | 'data'
+/** Deep-link steps of the demo script: 1 plant + feed · 2 CLM-0012 thread · 3 lot evidence · 4 agent RCA. */
 export type Step = 1 | 2 | 3 | 4
 export interface AgentCmd { kind: 'none' | 'ask' | 'clear'; question?: string; n: number }
 
-interface DemoState {
+/** State of one product (thread) tab: each tab keeps its own root, focus, fault mode and fault origin. */
+export interface ProductTab {
+  root: string
+  /** Fault colouring and "Set as fault origin" exist only when the tab has a claim. */
   claimId: string | null
-  activeTab: MainTab
-  openTabs: MainTab[]
-  evidenceTab: EvidenceTab
+  /** Node ids drawn on this tab's thread. */
+  threadIds: string[]
   focusNodeId: string | null
-  /** Root serial of the thread on screen (flow.root); the overview's default target when no node is focused. */
-  threadRoot: string | null
   mode: Mode
   /** Explicit fault origin picked by the user; null = the claim's own fault point. */
   faultOrigin: string | null
-  /** Bumped after a write (fault origin, attachment) so views refetch. */
+}
+
+export interface Layout { rail: Rail; leftW: number; agentW: number; dockH: number; dockCollapsed: boolean; split: boolean }
+
+export const DEFAULT_AS_OF = '2026-11-03T14:05:00+07:00'
+export const threadTabId = (serial: string) => `thread:${serial}`
+export const detailTabId = (threadId: string) => `detail:${threadId}`
+const objectTabId = (id: string) => `object:${id}`
+
+const TWIN: Tab = { id: 'twin', kind: 'twin', target: 'plant', title: 'Plant', pinned: true, preview: false }
+const OVERVIEW: Tab = { id: 'overview', kind: 'overview', target: 'plant', title: 'Plant overview', pinned: true, preview: false }
+const SOURCES: Tab = { id: 'table:sources', kind: 'table', target: 'sources', title: 'Data sources', pinned: false, preview: false }
+const REVIEW: Tab = { id: 'review', kind: 'review', target: 'queue', title: 'Review queue', pinned: false, preview: false }
+
+export interface DemoState {
+  groups: Record<GroupId, Group>
+  product: Record<string, ProductTab>
+  /** Evidence sub-tab per owner: a thread tab id (its details tab) or an object tab id. */
+  evidence: Record<string, EvidenceTab>
+  twin: { selected: string | null }
+  /** Bottom tab last shown for each main tab, so switching main tabs restores the dock. */
+  dockActive: Record<string, string>
+  layout: Layout
+  /** The demo clock: the twin and overview show the plant as of this time. */
+  asOf: string
+  /** Objects highlighted while hovering a feed card. */
+  hoverIds: string[]
+  /** Reach of the selected feed card on the twin: red (fault trace) and orange (impact). */
+  reach: { red: string[]; orange: string[] }
+  /** "View on thread" found several product tabs: ask which. */
+  picker: { id: string; tabIds: string[] } | null
+  /** Bumped after a write (fault origin, attachment, review) so views refetch. */
   dataVersion: number
   /** Node briefly highlighted after an attachment lands on it. */
   flashNodeId: string | null
   attachOpen: boolean
-  view: View
   agentOpen: boolean
-  /** Document open in the detail drawer. */
-  docId: string | null
-  /** Asset selected in the plant view. */
-  plantAsset: string | null
-  dataTab: DataTab
-  dataTable: string
-  /** Node ids drawn on the current thread (so a jump can stay in the product view). */
-  threadIds: string[]
   /** Command for the agent panel; `n` changes on every command so the same one can repeat. */
   agentCmd: AgentCmd
-  openClaim: (id: string) => void
-  setTab: (t: MainTab) => void
-  setEvidence: (t: EvidenceTab) => void
-  focusNode: (id: string | null) => void
-  setThreadRoot: (id: string | null) => void
-  setMode: (m: Mode) => void
-  setFaultOrigin: (id: string | null) => void
-  selectNode: (id: string) => void
+
+  openTab: (g: GroupId, tab: NewTab, opts?: { preview?: boolean; activate?: boolean }) => void
+  keepTab: (g: GroupId, id: string) => void
+  closeTab: (g: GroupId, id: string) => void
+  moveTab: (g: GroupId, fromId: string, toId: string) => void
+  activate: (g: GroupId, id: string) => void
+  splitDock: (on: boolean) => void
+  setLayout: (p: Partial<Layout>) => void
+  setRail: (r: Rail) => void
+  setAsOf: (at: string) => void
+  setHover: (ids: string[]) => void
+  setReach: (r: { red: string[]; orange: string[] }) => void
+  openProduct: (serial: string, opts?: { claimId?: string }) => string
+  openClaim: (claimId: string, serial: string) => void
+  openReport: (claimId: string) => void
+  openDoc: (id: string) => void
+  selectTwin: (id: string | null, title?: string) => void
+  focusNode: (tabId: string, id: string | null) => void
+  selectNode: (tabId: string, id: string) => void
+  setMode: (tabId: string, m: Mode) => void
+  setFaultOrigin: (tabId: string, id: string | null) => void
+  setThreadIds: (tabId: string, ids: string[]) => void
+  setRoot: (tabId: string, serial: string) => void
+  setEvidence: (owner: string, t: EvidenceTab) => void
+  /** Open any id where it is best shown (spec §1): documents and serials in main, other objects in the dock. */
+  goTo: (id: string) => Promise<void>
+  viewOnPlant: (id: string) => void
+  viewOnThread: (id: string) => void
+  closePicker: () => void
+  /** Jump to a step of the demo script; `mode` overrides the step's default colouring. */
+  applyStep: (step: Step, mode?: Mode) => void
+  reset: () => void
   bumpData: () => void
   flash: (id: string) => void
   openAttach: () => void
   closeAttach: () => void
-  reset: () => void
-  setView: (v: View) => void
   toggleAgent: () => void
-  openDoc: (id: string) => void
-  closeDoc: () => void
-  selectAsset: (id: string) => void
-  setDataTab: (t: DataTab, table?: string) => void
-  setThreadIds: (ids: string[]) => void
-  /** Open any id where it is best shown: a document in the drawer, a thread node on the thread, anything else in the plant view. */
-  goTo: (id: string) => void
-  closeTab: (t: MainTab) => void
-  /** Jump to a step of the demo script; `mode` overrides the step's default colouring. */
-  applyStep: (step: Step, mode?: Mode) => void
 }
 
-const initial = {
-  claimId: null,
-  activeTab: 'claim' as MainTab,
-  openTabs: [] as MainTab[],
-  evidenceTab: 'overview' as EvidenceTab,
-  focusNodeId: null,
-  threadRoot: null as string | null,
-  mode: 'normal' as Mode,
-  faultOrigin: null as string | null,
+const initialGroups = (): Record<GroupId, Group> => ({
+  main: { tabs: [TWIN], active: 'twin' },
+  bottom: { tabs: [OVERVIEW, SOURCES, REVIEW], active: 'overview' },
+  bottom2: { tabs: [], active: null },
+})
+
+const initial = () => ({
+  groups: initialGroups(),
+  product: {} as Record<string, ProductTab>,
+  evidence: {} as Record<string, EvidenceTab>,
+  twin: { selected: null as string | null },
+  dockActive: {} as Record<string, string>,
+  layout: { rail: 'feed', leftW: 280, agentW: 340, dockH: 300, dockCollapsed: false, split: false } as Layout,
+  asOf: DEFAULT_AS_OF,
+  hoverIds: [] as string[],
+  reach: { red: [] as string[], orange: [] as string[] },
+  picker: null as DemoState['picker'],
   dataVersion: 0,
   flashNodeId: null as string | null,
   attachOpen: false,
-  view: 'product' as View,
   agentOpen: true,
-  docId: null as string | null,
-  plantAsset: null as string | null,
-  dataTab: 'docs' as DataTab,
-  dataTable: 'objects',
-  threadIds: [] as string[],
   agentCmd: { kind: 'none', n: 0 } as AgentCmd,
+})
+
+export const activeMain = (s: Pick<DemoState, 'groups'>): Tab | null =>
+  s.groups.main.tabs.find((t) => t.id === s.groups.main.active) ?? null
+
+export function activeProduct(s: Pick<DemoState, 'groups' | 'product'>): { tabId: string; p: ProductTab } | null {
+  const t = activeMain(s)
+  const p = t && t.kind === 'thread' ? s.product[t.id] : undefined
+  return t && p ? { tabId: t.id, p } : null
+}
+
+/** Bottom tab a main tab shows by default: the overview for the twin, the details for a product tab. */
+function defaultDock(s: Pick<DemoState, 'groups'>, mainId: string | null): string | null {
+  const t = s.groups.main.tabs.find((x) => x.id === mainId)
+  if (t?.kind === 'twin') return 'overview'
+  if (t?.kind === 'thread') return detailTabId(t.id)
+  return s.groups.bottom.active
+}
+
+/** After the main tab changes: show the bottom tab it last showed (if still open), else its default. */
+function followMain(s: Pick<DemoState, 'dockActive'>, groups: Record<GroupId, Group>): Record<GroupId, Group> {
+  const main = groups.main.active
+  const has = (id: string | null | undefined) => !!id && groups.bottom.tabs.some((t) => t.id === id)
+  const remembered = main ? s.dockActive[main] : undefined
+  const want = has(remembered) ? remembered! : defaultDock({ groups }, main)
+  return has(want) ? { ...groups, bottom: { ...groups.bottom, active: want } } : groups
+}
+
+/** Records the bottom tab now showing for the active main tab. */
+const remember = (dockActive: Record<string, string>, groups: Record<GroupId, Group>) =>
+  groups.main.active && groups.bottom.active ? { ...dockActive, [groups.main.active]: groups.bottom.active } : dockActive
+
+function detailTab(threadId: string, serial: string): NewTab {
+  return { id: detailTabId(threadId), kind: 'thread', target: threadId, title: `Details · ${serial}` }
 }
 
 let flashTimer: ReturnType<typeof setTimeout> | undefined
 
-export const useDemo = create<DemoState>((set, get) => ({
-  ...initial,
-  openClaim: (id) => set({ claimId: id, openTabs: ['claim', 'thread'], activeTab: 'thread', mode: 'fault', faultOrigin: null, threadRoot: null, view: 'product', focusNodeId: null, evidenceTab: 'overview' }),
-  setTab: (t) => set((s) => ({ view: 'product', activeTab: t, openTabs: s.openTabs.includes(t) ? s.openTabs : [...s.openTabs, t] })),
-  setEvidence: (t) => set({ evidenceTab: t }),
-  focusNode: (id) => set({ focusNodeId: id }),
-  setThreadRoot: (id) => set({ threadRoot: id }),
-  setMode: (m) => set({ mode: m }),
-  setFaultOrigin: (id) => set(id === null ? { faultOrigin: null } : { faultOrigin: id, mode: 'fault' }),
-  selectNode: (id) => {
-    const ev = NODE_EVIDENCE[id]
-    set({ focusNodeId: id, evidenceTab: get().mode === 'fault' && ev ? ev : 'overview' })
-  },
-  bumpData: () => set((s) => ({ dataVersion: s.dataVersion + 1 })),
-  flash: (id) => {
-    clearTimeout(flashTimer)
-    set({ flashNodeId: id })
-    flashTimer = setTimeout(() => set({ flashNodeId: null }), 1200)
-  },
-  openAttach: () => set({ attachOpen: true }),
-  closeAttach: () => set({ attachOpen: false }),
-  reset: () => {
-    clearTimeout(flashTimer)
-    set((s) => ({ ...initial, openTabs: [], threadIds: [], agentCmd: { kind: 'clear', n: s.agentCmd.n + 1 } }))
-  },
-  setView: (v) => set({ view: v }),
-  toggleAgent: () => set((s) => ({ agentOpen: !s.agentOpen })),
-  openDoc: (id) => set({ docId: id }),
-  closeDoc: () => set({ docId: null }),
-  selectAsset: (id) => set({ view: 'plant', plantAsset: id, evidenceTab: 'overview' }),
-  setDataTab: (t, table) => set((s) => ({ view: 'data', dataTab: t, dataTable: table ?? s.dataTable })),
-  setThreadIds: (ids) => set({ threadIds: ids }),
-  goTo: (id) => {
-    const s = get()
-    if (isDoc(id)) return s.openDoc(id)
-    if (s.claimId && s.threadIds.includes(id)) {
-      set({ view: 'product', activeTab: 'thread' })
-      return s.selectNode(id)
-    }
-    s.selectAsset(id)
-  },
-  applyStep: (step, mode) => {
-    const s = get()
-    s.reset()
-    if (step >= 2) s.openClaim(STORY_CLAIM)
-    if (step >= 3) set({ focusNodeId: STORY_LOT, evidenceTab: 'lot' })
-    if (step >= 4) set((st) => ({ agentCmd: { kind: 'ask', question: DEMO_QUESTION, n: st.agentCmd.n + 1 } }))
-    if (mode) set({ mode })
-  },
-  closeTab: (t) => set((s) => {
-    const openTabs = s.openTabs.filter((x) => x !== t)
-    if (openTabs.length === 0) return { openTabs, claimId: null, activeTab: 'claim', focusNodeId: null, threadRoot: null, threadIds: [] }
-    return { openTabs, activeTab: s.activeTab === t ? openTabs[openTabs.length - 1] : s.activeTab }
+/** localStorage that never throws (private windows, blocked storage). */
+const safeStorage: StateStorage = {
+  getItem: (k) => { try { return localStorage.getItem(k) } catch { return null } },
+  setItem: (k, v) => { try { localStorage.setItem(k, v) } catch { /* not saved */ } },
+  removeItem: (k) => { try { localStorage.removeItem(k) } catch { /* nothing */ } },
+}
+
+type Saved = Pick<DemoState, 'groups' | 'product' | 'evidence' | 'twin' | 'dockActive' | 'layout' | 'asOf'>
+const jsonStorage = createJSONStorage<Saved>(() => safeStorage)!
+const storage: PersistStorage<Saved> = {
+  getItem: (name) => { try { return jsonStorage.getItem(name) } catch { return null } },  // bad JSON → defaults
+  setItem: jsonStorage.setItem,
+  removeItem: jsonStorage.removeItem,
+}
+const isUsable = (p: unknown): p is Saved => {
+  const g = (p as Saved | undefined)?.groups
+  return !!g?.main?.tabs?.some((t) => t.id === 'twin') && !!g.bottom?.tabs?.some((t) => t.id === 'overview') && !!g.bottom2
+    && !!(p as Saved).layout && typeof (p as Saved).asOf === 'string'
+}
+
+export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((set, get) => {
+  const setGroups = (groups: Record<GroupId, Group>, extra: Partial<DemoState> = {}) =>
+    set((s) => ({ groups, dockActive: remember(s.dockActive, groups), ...extra }))
+  const withGroup = (g: GroupId, next: Group, base = get().groups) => ({ ...base, [g]: next })
+  const patchProduct = (tabId: string, patch: Partial<ProductTab>) =>
+    set((s) => (s.product[tabId] ? { product: { ...s.product, [tabId]: { ...s.product[tabId], ...patch } } } : {}))
+  const showDetails = (tabId: string) => {
+    const p = get().product[tabId]
+    if (!p) return
+    const bottom = openIn(get().groups.bottom, detailTab(tabId, p.root))
+    setGroups(withGroup('bottom', bottom))
+  }
+
+  return {
+    ...initial(),
+
+    openTab: (g, tab, opts) => {
+      let groups = withGroup(g, openIn(get().groups[g], tab, opts))
+      if (g === 'main' && opts?.activate !== false) groups = followMain(get(), groups)
+      setGroups(groups)
+    },
+    keepTab: (g, id) => setGroups(withGroup(g, keepIn(get().groups[g], id))),
+    closeTab: (g, id) => {
+      const s = get()
+      const next = closeIn(s.groups[g], id)
+      if (next === s.groups[g]) return
+      let groups = withGroup(g, next)
+      const extra: Partial<DemoState> = {}
+      if (g === 'main' && s.product[id]) {
+        // a product tab takes its state and its details tab with it
+        const { [id]: _p, ...product } = s.product
+        const { [id]: _e, ...evidence } = s.evidence
+        const { [id]: _d, ...dockActive } = s.dockActive
+        extra.product = product
+        extra.evidence = evidence
+        extra.dockActive = dockActive
+        for (const b of ['bottom', 'bottom2'] as const) groups = { ...groups, [b]: closeIn(groups[b], detailTabId(id)) }
+      }
+      if (g === 'main') groups = followMain({ dockActive: extra.dockActive ?? s.dockActive }, groups)
+      if (g === 'bottom' && !groups.bottom.active) groups = followMain(s, groups)
+      const split = groups.bottom2.tabs.length > 0 && s.layout.split
+      set((st) => ({
+        groups, ...extra, dockActive: remember(extra.dockActive ?? st.dockActive, groups),
+        layout: split === st.layout.split ? st.layout : { ...st.layout, split },
+      }))
+    },
+    moveTab: (g, fromId, toId) => setGroups(withGroup(g, moveIn(get().groups[g], fromId, toId))),
+    activate: (g, id) => {
+      const s = get()
+      if (!s.groups[g].tabs.some((t) => t.id === id)) return
+      let groups = withGroup(g, { ...s.groups[g], active: id })
+      if (g === 'main') groups = followMain(s, groups)
+      setGroups(groups)
+    },
+    splitDock: (on) => {
+      const s = get()
+      if (on === s.layout.split) return
+      let { bottom, bottom2 } = s.groups
+      if (on) {
+        const t = bottom.tabs.find((x) => x.id === bottom.active)
+        if (!t || t.pinned) return
+        bottom = closeIn(bottom, t.id)
+        bottom2 = { tabs: [t], active: t.id }
+      } else {
+        bottom = { ...bottom, tabs: [...bottom.tabs, ...bottom2.tabs] }
+        bottom2 = { tabs: [], active: null }
+      }
+      set((st) => ({ groups: { ...st.groups, bottom, bottom2 }, layout: { ...st.layout, split: on } }))
+    },
+    setLayout: (p) => set((s) => ({ layout: { ...s.layout, ...p } })),
+    setRail: (rail) => set((s) => ({ layout: { ...s.layout, rail } })),
+    setAsOf: (asOf) => set({ asOf }),
+    setHover: (hoverIds) => set({ hoverIds }),
+    setReach: (reach) => set({ reach }),
+
+    openProduct: (serial, opts = {}) => {
+      const id = threadTabId(serial)
+      const s = get()
+      const cur = s.product[id]
+      const claimId = opts.claimId ?? cur?.claimId ?? null
+      const fresh = !cur || (opts.claimId && opts.claimId !== cur.claimId)
+      const p: ProductTab = fresh
+        ? { root: serial, claimId, threadIds: cur?.threadIds ?? [], focusNodeId: null, mode: claimId ? 'fault' : 'normal', faultOrigin: null }
+        : cur
+      let groups = withGroup('main', openIn(s.groups.main, { id, kind: 'thread', target: serial, title: `Thread · ${serial}` }))
+      groups = withGroup('bottom', openIn(groups.bottom, detailTab(id, serial), { activate: false }), groups)
+      groups = followMain(s, groups)
+      setGroups(groups, { product: { ...s.product, [id]: p }, ...(fresh ? { evidence: { ...s.evidence, [id]: 'overview' } } : {}) })
+      return id
+    },
+    openClaim: (claimId, serial) => { get().openProduct(serial, { claimId }) },
+    openReport: (claimId) => get().openTab('main', { id: `report:${claimId}`, kind: 'report', target: claimId, title: `RCA report · ${claimId}` }),
+    openDoc: (id) => get().openTab('main', { id: `doc:${id}`, kind: 'doc', target: id, title: id }, { preview: true }),
+    selectTwin: (id, title) => {
+      if (id === null) {
+        set({ twin: { selected: null } })
+        return get().activate('bottom', 'overview')
+      }
+      set({ twin: { selected: id } })
+      get().openTab('bottom', { id: objectTabId(id), kind: 'object', target: id, title: title ?? id }, { preview: true })
+    },
+
+    focusNode: (tabId, id) => patchProduct(tabId, { focusNodeId: id }),
+    selectNode: (tabId, id) => {
+      const p = get().product[tabId]
+      if (!p) return
+      const ev = NODE_EVIDENCE[id]
+      set((s) => ({ evidence: { ...s.evidence, [tabId]: p.mode === 'fault' && ev ? ev : 'overview' } }))
+      patchProduct(tabId, { focusNodeId: id })
+      showDetails(tabId)
+    },
+    setMode: (tabId, mode) => { if (get().product[tabId]?.claimId) patchProduct(tabId, { mode }) },
+    setFaultOrigin: (tabId, id) => {
+      if (!get().product[tabId]?.claimId) return
+      patchProduct(tabId, id === null ? { faultOrigin: null } : { faultOrigin: id, mode: 'fault' })
+    },
+    setThreadIds: (tabId, threadIds) => patchProduct(tabId, { threadIds }),
+    setRoot: (tabId, root) => patchProduct(tabId, { root }),
+    setEvidence: (owner, t) => set((s) => ({ evidence: { ...s.evidence, [owner]: t } })),
+
+    goTo: (id) => goTo(get, id),
+    viewOnPlant: (id) => {
+      get().activate('main', 'twin')
+      get().selectTwin(id)
+    },
+    viewOnThread: (id) => viewOnThread(get, set, id),
+    closePicker: () => set({ picker: null }),
+
+    applyStep: (step, mode) => {
+      const s = get()
+      s.reset()
+      if (step >= 2) s.openClaim(STORY_CLAIM, STORY_SERIAL)
+      const tab = threadTabId(STORY_SERIAL)
+      if (step >= 3) {
+        s.selectNode(tab, STORY_LOT)
+        s.setEvidence(tab, 'lot')
+      }
+      if (step >= 4) set((st) => ({ agentCmd: { kind: 'ask', question: DEMO_QUESTION, n: st.agentCmd.n + 1 } }))
+      if (mode && step >= 2) patchProduct(tab, { mode })
+    },
+    reset: () => {
+      clearTimeout(flashTimer)
+      set((s) => ({ ...initial(), agentOpen: s.agentOpen, agentCmd: { kind: 'clear', n: s.agentCmd.n + 1 } }))
+    },
+    bumpData: () => set((s) => ({ dataVersion: s.dataVersion + 1 })),
+    flash: (id) => {
+      clearTimeout(flashTimer)
+      set({ flashNodeId: id })
+      flashTimer = setTimeout(() => set({ flashNodeId: null }), 1200)
+    },
+    openAttach: () => set({ attachOpen: true }),
+    closeAttach: () => set({ attachOpen: false }),
+    toggleAgent: () => set((s) => ({ agentOpen: !s.agentOpen })),
+  }
+}, {
+  name: 'onethread.workspace',
+  version: 1,
+  storage,
+  partialize: (s): Saved => ({
+    groups: s.groups, product: s.product, evidence: s.evidence, twin: s.twin, dockActive: s.dockActive, layout: s.layout, asOf: s.asOf,
   }),
+  migrate: () => ({}) as Saved,  // an older shape is dropped: the defaults are a better start than a half-valid workspace
+  merge: (saved, current) => (isUsable(saved) ? { ...current, ...saved } : current),
 }))

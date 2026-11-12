@@ -1,5 +1,5 @@
 import { beforeEach, expect, test } from 'vitest'
-import { useDemo } from '../store/demo'
+import { threadTabId, useDemo } from '../store/demo'
 import { parseDeepLink } from './deepLink'
 import { DEMO_QUESTION } from './story'
 
@@ -14,12 +14,13 @@ test('parses ?step and ?mode; ignores anything else', () => {
 
 test('applyStep builds each step of the demo script', () => {
   const s = () => useDemo.getState()
+  const t = threadTabId('MH20-0001')
   s().applyStep(1)
-  expect([s().claimId, s().view, s().mode]).toEqual([null, 'product', 'normal'])
+  expect([s().groups.main.tabs.map((x) => x.id), s().layout.rail]).toEqual([['twin'], 'feed'])
   s().applyStep(2)
-  expect([s().claimId, s().activeTab, s().mode]).toEqual(['CLM-0012', 'thread', 'fault'])
+  expect([s().groups.main.active, s().product[t].claimId, s().product[t].mode]).toEqual([t, 'CLM-0012', 'fault'])
   s().applyStep(3, 'normal')
-  expect([s().focusNodeId, s().evidenceTab, s().mode]).toEqual(['LOT-B', 'lot', 'normal'])
+  expect([s().product[t].focusNodeId, s().evidence[t], s().product[t].mode]).toEqual(['LOT-B', 'lot', 'normal'])
   s().applyStep(4)
   expect(s().agentCmd).toMatchObject({ kind: 'ask', question: DEMO_QUESTION })
 })
