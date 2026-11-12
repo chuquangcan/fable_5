@@ -1,5 +1,3 @@
-import { useRef } from 'react'
-
 interface Props {
   axis: 'x' | 'y'
   value: number
@@ -18,14 +16,12 @@ const STEP = 16
 /** A draggable edge between two panes (mouse, or arrow keys when focused). */
 export function Resizer({ axis, value, min, max, invert = false, label, onChange, onToggle }: Props) {
   const clamp = (v: number) => Math.round(Math.min(max, Math.max(min, v)))
-  const live = useRef(value)
-  live.current = value
   const sign = invert ? -1 : 1
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
     const start = axis === 'x' ? e.clientX : e.clientY
-    const from = live.current
+    const from = value
     const move = (ev: MouseEvent) => onChange(clamp(from + sign * ((axis === 'x' ? ev.clientX : ev.clientY) - start)))
     const up = () => {
       window.removeEventListener('mousemove', move)
