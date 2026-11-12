@@ -17,7 +17,7 @@ vi.mock('../api/client')
 
 const claim: Claim = {
   id: 'CLM-0012', name: 'CLM-0012', status: 'open', symptom: 'noise', customer_id: 'CUS-C3',
-  customer_name: 'Customer C3', serial: 'MH20-0001', received: '2027-02-10',
+  customer_name: 'Customer C3', serial: 'MH20-0001', received: '2027-02-10', traceable: true,
 }
 
 beforeEach(() => {

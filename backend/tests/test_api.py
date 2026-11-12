@@ -186,3 +186,19 @@ def test_agent_provider_endpoint_reports_key_based_choice(client, monkeypatch):
     assert body["provider"] == "deepseek" and body["model"] == "deepseek-flash" and body["mode"] in {"live", "replay", "auto"}
     monkeypatch.setenv("DEEPSEEK_API_KEY", "")
     assert client.get("/api/agent/provider").json()["provider"] is None
+
+
+def test_search_finds_serial_by_fragment(client):
+    assert client.get("/api/search", params={"q": "0457"}).json()[0]["id"] == "MH20-0457"
+    hits = client.get("/api/search", params={"q": "MH20-00"}).json()
+    assert hits[0]["type"] == "serial"
+
+
+def test_search_puts_object_prefix_matches_before_documents(client):
+    hits = client.get("/api/search", params={"q": "SUP-S1"}).json()  # object SUP-S1 and document D-09 both match
+    assert hits[0]["id"] == "SUP-S1" and hits[-1]["kind"] == "document"
+
+
+def test_claims_traceable_flag(client):
+    by = {c["id"]: c for c in client.get("/api/claims").json()}
+    assert by["CLM-0012"]["traceable"] is True and by["CLM-0011"]["traceable"] is False

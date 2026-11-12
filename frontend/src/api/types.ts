@@ -10,6 +10,8 @@ export interface Claim {
   customer_name: string | null
   serial: string | null
   received: string | null
+  /** The claim's serial exists in the data, so its thread can be opened. */
+  traceable: boolean
 }
 
 export interface TraceNode {

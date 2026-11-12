@@ -228,6 +228,7 @@ def search(conn, q: str, limit: int = 20) -> list[SearchHit]:
            WHERE doc_id ILIKE %(l)s OR type ILIKE %(l)s OR text ILIKE %(l)s OR array_to_string(extracted_codes, ' ') ILIKE %(l)s
            ORDER BY doc_id, chunk_id LIMIT %(n)s""",
         {"l": like, "n": limit}).fetchall()
-    hits = [SearchHit(id=d["doc_id"], kind="document", type="document", name=d["type"]) for d in docs]
-    hits += [SearchHit(id=o["object_id"], kind="object", type=o["type"], name=o["name"]) for o in objs]
+    # objects (prefix matches first, from the SQL order) before documents, so a serial fragment finds the serial
+    hits = [SearchHit(id=o["object_id"], kind="object", type=o["type"], name=o["name"]) for o in objs]
+    hits += [SearchHit(id=d["doc_id"], kind="document", type="document", name=d["type"]) for d in docs]
     return hits[:limit]

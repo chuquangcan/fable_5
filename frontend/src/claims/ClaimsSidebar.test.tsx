@@ -9,9 +9,9 @@ import { ClaimsSidebar } from './ClaimsSidebar'
 vi.mock('../api/client')
 
 const claims: Claim[] = [
-  { id: 'CLM-0012', name: 'CLM-0012', status: 'open', symptom: 'Pump is abnormally noisy when running', customer_id: 'CUS-C3', customer_name: 'Customer C3', serial: 'MH20-0001', received: '2027-02-10' },
-  { id: 'CLM-0011', name: 'CLM-0011', status: 'open', symptom: 'Water leak', customer_id: 'CUS-C1', customer_name: 'Customer C1', serial: 'MH20-2457', received: '2027-02-03' },
-  { id: 'CLM-0009', name: 'CLM-0009', status: 'closed', symptom: 'Bearing 6203 noise', customer_id: null, customer_name: null, serial: null, received: null },
+  { id: 'CLM-0012', name: 'CLM-0012', status: 'open', symptom: 'Pump is abnormally noisy when running', customer_id: 'CUS-C3', customer_name: 'Customer C3', serial: 'MH20-0001', received: '2027-02-10', traceable: true },
+  { id: 'CLM-0011', name: 'CLM-0011', status: 'open', symptom: 'Water leak', customer_id: 'CUS-C1', customer_name: 'Customer C1', serial: 'MH20-2457', received: '2027-02-03', traceable: false },
+  { id: 'CLM-0009', name: 'CLM-0009', status: 'closed', symptom: 'Bearing 6203 noise', customer_id: null, customer_name: null, serial: null, received: null, traceable: false },
 ]
 
 const edge = (from_id: string, to_id: string, status: string, score = 1) => ({ from_id, to_id, relation: 'x', tier: 1, status, score })
