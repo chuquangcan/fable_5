@@ -59,7 +59,7 @@ test('clicking nodes switches evidence tab', async () => {
   expect(useDemo.getState().evidenceTab).toBe('lot')
   expect(useDemo.getState().focusNodeId).toBe('LOT-B')
   await userEvent.click(screen.getByText('Machine 02'))
-  expect(useDemo.getState().evidenceTab).toBe('m02')
+  expect(useDemo.getState().evidenceTab).toBe('machine')
   await userEvent.click(screen.getByText('LOT-B'))
   expect(useDemo.getState().evidenceTab).toBe('lot')
 })

@@ -14,7 +14,7 @@ from onethread.agent.replay import default_fixture_path, load_fixture
 from onethread.agent.stream import agent_event_stream
 from onethread.config import settings
 from onethread.db import connect
-from onethread.queries import (claims, docs, events, fault, impact, links, metrics, plant, repository, summary,
+from onethread.queries import (analysis, claims, docs, events, fault, impact, links, metrics, plant, repository, summary,
                                thread_flow, trace)
 from onethread.queries.common import NotFound
 from onethread.report import ReportDraft, build_report_draft
@@ -166,6 +166,16 @@ def api_review_queue(conn=Conn) -> review.ReviewQueue:
 def api_review_link(link_id: int, decision: review.Decision = Body(..., embed=True),
                     note: str | None = Body(None, embed=True), conn=Conn) -> review.ReviewRecord:
     return review.review_link(conn, link_id, decision, note)
+
+
+@app.get("/api/machines/{machine_id}/cycle-window")
+def api_machine_window(machine_id: str, conn=Conn) -> analysis.MachineWindow:
+    return analysis.machine_window(conn, machine_id)
+
+
+@app.get("/api/lots/{lot_id}/compare")
+def api_lot_compare(lot_id: str, conn=Conn) -> analysis.LotCompare:
+    return analysis.lot_compare(conn, lot_id)
 
 
 @app.get("/api/plant")

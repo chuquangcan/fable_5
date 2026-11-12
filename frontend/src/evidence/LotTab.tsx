@@ -1,86 +1,76 @@
-import { getDocs, getEvents, getMetric } from '../api/client'
-import type { DocView, TraceGraph, TraceNode } from '../api/types'
+import { getDocs, getLotCompare } from '../api/client'
+import type { DocView } from '../api/types'
+import { DocList } from '../docs/DocList'
+import { statusLabel } from '../lib/labels'
 import { formatPlantTime } from '../lib/time'
 import { useDemo } from '../store/demo'
-import { DocList } from '../docs/DocList'
-import { docTitle } from './DocBadge'
 import { Pending, useAsync } from './useAsync'
-import { useTrace } from './useTrace'
 
-const AT = '2026-11-03T14:05:00+07:00'
-const LOTS = ['LOT-A', 'LOT-B']
-
-async function load() {
-  const [cpk, receipts, lotDocs, similarDocs] = await Promise.all([
-    getMetric('cpk', LOTS),
-    Promise.all(LOTS.map((l) => getEvents(l, undefined, undefined, 'goods_receipt'))),
-    getDocs('LOT-B', AT),
-    getDocs('CLM-0009', AT),
-  ])
+async function load(id: string) {
+  const cmp = await getLotCompare(id)
+  const docLists = await Promise.all([getDocs(cmp.lot), ...cmp.similar.map((c) => getDocs(c.id))])
   const docs = new Map<string, DocView>()
-  for (const d of [...lotDocs, ...similarDocs]) if (!docs.has(d.doc_id)) docs.set(d.doc_id, d)
-  return { cpk, receipts, docs: [...docs.values()].sort((a, b) => b.tier - a.tier === 0 ? b.score! - a.score! : a.tier - b.tier) }
+  for (const d of docLists.flat()) if (!docs.has(d.doc_id)) docs.set(d.doc_id, d)
+  return { cmp, docs: [...docs.values()] }
 }
 
-const attr = (n: TraceNode | undefined, k: string) => (n?.attributes[k] ?? null) as string | number | null
+const lc = (v: string | null) => (v ? v.charAt(0).toLowerCase() + v.slice(1) : '')
+const short = (id: string | null) => (id ? id.replace(/^SUP-/, '') : '—')
 
-export function LotTab({ trace: given }: { trace?: TraceGraph }) {
+/** Incoming inspection of a lot next to the other lots of the same part, plus similar closed claims. */
+export function LotTab({ lotId }: { lotId: string }) {
   const dataVersion = useDemo((s) => s.dataVersion)
-  const trace = useTrace(given)
-  const s = useAsync(load, [dataVersion])
+  const goTo = useDemo((s) => s.goTo)
+  const s = useAsync(() => load(lotId), [lotId, dataVersion])
   if (s.status !== 'ok') return <Pending state={s} />
-  if (!trace) return <Pending state={{ status: 'loading' }} />
-  const { cpk, receipts, docs } = s.data
-  const iqc = (lot: string) => trace.nodes.find((n) => n.type === 'inspection' && n.attributes.lot === lot)
-  const similar = trace.nodes.find((n) => n.type === 'claim' && n.attributes.status === 'closed')
-  const similarDoc = docs.find((d) => trace.edges.some((e) => e.from_id === d.doc_id && e.to_id === similar?.id && e.relation === 'describes'))
-  const specEdge = trace.edges.find((e) => e.relation === 'specified_by' && e.from_id === iqc('LOT-B')?.id)
-  const specDoc = docs.find((d) => d.doc_id === specEdge?.to_id)
-  const specMin = attr(iqc('LOT-B'), 'spec_min')
-  const period = String(attr(similar, 'period') ?? '')
-  const lc = (v: string | number | null) => (typeof v === 'string' ? v.charAt(0).toLowerCase() + v.slice(1) : '')
+  const { cmp, docs } = s.data
+  const spec = cmp.rows.find((r) => r.spec_doc) ?? cmp.rows.find((r) => r.spec_min != null)
   return (
     <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex' }}>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line-faint)' }}>
         <div style={{ padding: '10px 14px 6px', display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontWeight: 600 }}>Kiểm tra đầu vào · Bearing 6203</span>
-          {specMin !== null && <span className="mut">spec Cpk ≥ {specMin}{specDoc ? ` theo ${docTitle(specDoc).replace(' · ', ' ')}` : ''}</span>}
+          <span style={{ fontWeight: 600 }}>{`Kiểm tra đầu vào · ${cmp.part_name ?? cmp.part ?? cmp.lot}`}</span>
+          {spec && <span className="mut">spec Cpk ≥ {spec.spec_min}{spec.spec_doc ? ` theo ${spec.spec_doc}${spec.spec_page ? ` p.${spec.spec_page}` : ''}` : ''}</span>}
         </div>
         <table className="g">
-          <thead><tr><th>Lô</th><th>Nhập kho</th><th>NCC</th><th>Cpk khe hở</th><th>Kết luận IQC</th><th>Nguồn</th></tr></thead>
+          <thead><tr><th>Lô</th><th>Nhập kho</th><th>NCC</th><th>Cpk</th><th>Kết luận IQC</th><th>Nguồn</th></tr></thead>
           <tbody>
-            {LOTS.map((lot, i) => {
-              const m = cpk.find((c) => c.object_id === lot)
-              const node = iqc(lot)
-              const fail = m?.value != null && specMin !== null && m.value < Number(specMin)
-              const r = receipts[i][0]
+            {cmp.rows.map((r) => {
+              const fail = r.cpk != null && r.spec_min != null && r.cpk < r.spec_min
+              const self = r.lot === cmp.lot
               return (
-                <tr key={lot} style={fail ? { background: 'var(--red-bg)' } : undefined}>
-                  <td className="mono" style={fail ? { fontWeight: 600, color: 'var(--amber-ink)' } : undefined}>{lot}</td>
-                  <td className="mono" style={fail ? { fontWeight: 600 } : undefined}>{r ? formatPlantTime(r.event_time, 'YYYY-MM-DD HH:mm').slice(0, 10) : '—'}</td>
-                  <td>S1</td>
-                  <td className="mono" style={fail ? { color: 'var(--red-ink)', fontWeight: 600 } : undefined}>{m?.value?.toFixed(2) ?? '—'}</td>
-                  <td style={fail ? { color: 'var(--red-ink)' } : undefined}>{attr(node, 'verdict') ?? '—'}</td>
-                  <td><span className="cite">{m?.source_record_id ?? lot}</span></td>
+                <tr key={r.lot} style={fail ? { background: 'var(--red-bg)' } : undefined}>
+                  <td className="mono" style={{ ...(fail ? { color: 'var(--amber-ink)' } : {}), ...(self ? { fontWeight: 600 } : {}) }}>{r.lot}</td>
+                  <td className="mono">{r.received_at ? formatPlantTime(r.received_at, 'YYYY-MM-DD HH:mm').slice(0, 10) : '—'}</td>
+                  <td>{short(r.supplier)}</td>
+                  <td className="mono" style={fail ? { color: 'var(--red-ink)', fontWeight: 600 } : undefined}>{r.cpk?.toFixed(2) ?? '—'}</td>
+                  <td style={fail ? { color: 'var(--red-ink)' } : undefined}>{r.verdict ?? '—'}</td>
+                  <td><span className="cite">{r.iqc ?? r.lot}</span></td>
                 </tr>
               )
             })}
           </tbody>
         </table>
-        {similar && (
+        {cmp.similar.length > 0 && (
           <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6, lineHeight: 1.45 }}>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.06em', color: 'var(--label)' }}>CA TƯƠNG TỰ</div>
-            <div>
-              <span className="mono" style={{ fontWeight: 600 }}>{similar.id}</span> · {period.slice(5)}/{period.slice(0, 4)} · {lc(attr(similar, 'symptom'))} cũng từ Supplier S1.
-              Đã xử lý bằng {lc(attr(similar, 'resolution'))} {similarDoc && <span className="cite">{similarDoc.doc_id}</span>}
-            </div>
-            <div className="mut">Nối bằng khoá chính xác (bậc 1) qua mã linh kiện 6203 và NCC S1.</div>
+            {cmp.similar.map((c) => (
+              <div key={c.id}>
+                <div>
+                  <button className="linkish mono" style={{ fontWeight: 600 }} onClick={() => goTo(c.id)}>{c.id}</button>
+                  {c.period ? ` · ${c.period.slice(5)}/${c.period.slice(0, 4)}` : ''} · {lc(c.symptom)} cũng liên quan {c.via}.
+                  {c.resolution ? ` Đã xử lý bằng ${lc(c.resolution)} ` : ' '}
+                  {c.docs.map((d) => <span key={d} className="cite">{d}</span>)}
+                </div>
+                <div className="mut">{`Nối qua ${c.via} · bậc ${c.tier} · ${statusLabel(c.status).toLowerCase()}`}</div>
+              </div>
+            ))}
           </div>
         )}
       </div>
       <div style={{ width: 340, flex: 'none', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <div style={{ padding: '10px 14px 6px', fontWeight: 600 }}>Tài liệu gắn với LOT-B / 6203</div>
-        <DocList docs={docs} />
+        <div style={{ padding: '10px 14px 6px', fontWeight: 600 }}>{`Tài liệu gắn với ${cmp.lot}${cmp.similar.length ? ' và ca tương tự' : ''}`}</div>
+        {docs.length ? <DocList docs={docs} /> : <div className="mut" style={{ padding: '0 14px' }}>Chưa có tài liệu</div>}
       </div>
     </div>
   )

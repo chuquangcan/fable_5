@@ -1,8 +1,6 @@
-import { getImpact } from '../api/client'
-import type { TraceGraph } from '../api/types'
+import { getClaims, getImpact } from '../api/client'
 import { formatPlantTime } from '../lib/time'
 import { Pending, useAsync } from './useAsync'
-import { useTrace } from './useTrace'
 
 const fmt = (n: number) => n.toLocaleString('en-US')
 const Tile = ({ label, value, bg, ink }: { label: string; value: string; bg: string; ink?: string }) => (
@@ -12,16 +10,13 @@ const Tile = ({ label, value, bg, ink }: { label: string; value: string; bg: str
   </div>
 )
 
-export function ImpactTab({ trace: given, lot = 'LOT-B' }: { trace?: TraceGraph; lot?: string }) {
-  const trace = useTrace(given)
-  const s = useAsync(() => getImpact(lot), [lot])
+/** Forward trace of a lot: parts, boxes, shipments, and which customers already have a claim. */
+export function ImpactTab({ lot }: { lot: string }) {
+  const s = useAsync(() => Promise.all([getImpact(lot), getClaims()]), [lot])
   if (s.status !== 'ok') return <Pending state={s} />
-  if (!trace) return <Pending state={{ status: 'loading' }} />
-  const imp = s.data
+  const [imp, claims] = s.data
   const held = imp.shipments.filter((x) => x.status !== 'delivered')
-  const claimByCustomer = new Map(
-    trace.nodes.filter((n) => n.type === 'claim' && n.attributes.customer).map((n) => [String(n.attributes.customer), n.id]),
-  )
+  const claimByCustomer = new Map(claims.filter((c) => c.customer_id).map((c) => [c.customer_id!, c.id]))
   return (
     <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>

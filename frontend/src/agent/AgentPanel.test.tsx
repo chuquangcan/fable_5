@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, expect, test } from 'vitest'
+import { beforeEach, expect, test, vi } from 'vitest'
+import fixture from '../../public/fixtures/agent_clm0012.json'
 import { useDemo } from '../store/demo'
-import { CiteChip } from './AgentPanel'
+import { AgentPanel, CiteChip } from './AgentPanel'
 
 beforeEach(() => {
   useDemo.getState().reset()
@@ -35,4 +36,19 @@ test('a node cite without a deep evidence tab opens the overview', async () => {
   await userEvent.click(screen.getByRole('button'))
   expect(useDemo.getState().focusNodeId).toBe('PO-4410')
   expect(useDemo.getState().evidenceTab).toBe('overview')
+})
+
+test('?step=4 asks the demo question; reset clears the answer', async () => {
+  // instant replay: no delays
+  const fast = { ...fixture, events: fixture.events.map((e: { event: unknown }) => ({ ...e, delay_ms: 0 })) }
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(fast))))
+  try {
+    render(<AgentPanel />)
+    act(() => useDemo.getState().applyStep(4))
+    expect(await screen.findByText(/Vì sao MH20-0001 của CLM-0012 kêu to/)).toBeInTheDocument()
+    act(() => useDemo.getState().reset())
+    expect(await screen.findByText(/Hỏi về claim này, hoặc bấm/)).toBeInTheDocument()
+  } finally {
+    vi.unstubAllGlobals()
+  }
 })

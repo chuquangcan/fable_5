@@ -88,6 +88,7 @@ export function Header() {
       await resetDemoData()
     } finally {
       setBusy(false)
+      window.history.replaceState(null, '', window.location.pathname)  // drop ?step= so a reload starts clean
       useDemo.getState().reset()
       useDemo.getState().bumpData()
     }

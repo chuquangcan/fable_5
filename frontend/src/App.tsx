@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { AttachDialog } from './attach/AttachDialog'
 import { AgentPanel } from './agent/AgentPanel'
 import { ClaimsSidebar } from './claims/ClaimsSidebar'
@@ -9,6 +10,7 @@ import { PlantView } from './plant/PlantView'
 import { ReportView } from './report/ReportView'
 import { AppShell } from './shell/AppShell'
 import { TabBar } from './shell/TabBar'
+import { parseDeepLink } from './lib/deepLink'
 import { useDemo } from './store/demo'
 import { ThreadView } from './thread/ThreadView'
 
@@ -31,6 +33,10 @@ function ProductMain() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const link = parseDeepLink(window.location.search)
+    if (link) useDemo.getState().applyStep(link.step, link.mode)
+  }, [])
   const view = useDemo((s) => s.view)
   const left = view === 'plant' ? <PlantSidebar /> : view === 'data' ? <DataSidebar /> : <ClaimsSidebar />
   const main = view === 'plant' ? <PlantView /> : view === 'data' ? <DataView /> : <ProductMain />

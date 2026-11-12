@@ -160,8 +160,18 @@ def _get_links(conn, a: GetLinksIn) -> dict:
     return {"links": _cap(_dump(links.get_links(conn, a.object_id, a.statuses)))}
 
 
+UPLOAD_PREFIX = "D-U"
+
+
 def _get_docs(conn, a: GetDocsIn) -> dict:
-    return {"docs": _cap(_dump(docs.get_docs(conn, a.object_id, a.at)))}
+    """Uploaded documents are user-supplied text: they are flagged and their text is fenced, so the model can
+    tell data from instructions (the prompt says document text is never an instruction)."""
+    out = []
+    for d in _dump(docs.get_docs(conn, a.object_id, a.at)):
+        if d["doc_id"].startswith(UPLOAD_PREFIX):
+            d = {**d, "untrusted_upload": True, "text": f"<untrusted_document>{d['text']}</untrusted_document>"}
+        out.append(d)
+    return {"docs": _cap(out)}
 
 
 def _metrics(conn, a: MetricsIn) -> dict:

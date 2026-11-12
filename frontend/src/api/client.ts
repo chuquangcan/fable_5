@@ -1,5 +1,5 @@
 import type {
-  AttachResult, Claim, DocDetail, DocRow, DocView, FaultTrace, FlowGraph, Impact, LinkView, LotStat, MetricValue, NodeSummary,
+  AttachResult, Claim, LotCompare, MachineWindow, DocDetail, DocRow, DocView, FaultTrace, FlowGraph, Impact, LinkView, LotStat, MetricValue, NodeSummary,
   PlantArea, PlantEvent, ProviderInfo, ReportDraft, ReviewDecision, ReviewQueue, ReviewRecord, SearchHit, TableInfo, TablePage, TraceGraph,
 } from './types'
 
@@ -78,3 +78,5 @@ export const getTable = (name: string, q?: string, limit = 50, offset = 0) =>
   getJSON<TablePage>(`/api/db/tables/${enc(name)}${qs({ q: q || undefined, limit, offset })}`)
 export const search = (q: string) => getJSON<SearchHit[]>(`/api/search${qs({ q })}`)
 export const getProvider = () => getJSON<ProviderInfo>('/api/agent/provider')
+export const getMachineWindow = (id: string) => getJSON<MachineWindow>(`/api/machines/${enc(id)}/cycle-window`)
+export const getLotCompare = (id: string) => getJSON<LotCompare>(`/api/lots/${enc(id)}/compare`)

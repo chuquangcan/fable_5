@@ -5,6 +5,7 @@ import { Pending, useAsync } from '../evidence/useAsync'
 import { docTypeLabel, methodLabel, objectTypeLabel, relationLabel, statusLabel } from '../lib/labels'
 import { formatPlantTime } from '../lib/time'
 import { ReviewActions } from '../review/ReviewActions'
+import { useFocusTrap } from '../lib/useFocusTrap'
 import { useDemo } from '../store/demo'
 
 function Meta({ d }: { d: DocDetail }) {
@@ -118,9 +119,11 @@ export function DocDrawer() {
   const id = useDemo((s) => s.docId)
   const closeDoc = useDemo((s) => s.closeDoc)
   const ref = useRef<HTMLDivElement>(null)
+  // inactive while the attach dialog is on top, so the two traps do not fight
+  const attachOpen = useDemo((s) => s.attachOpen)
+  useFocusTrap(ref, !!id && !attachOpen)
   useEffect(() => {
     if (!id) return
-    ref.current?.focus()
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !useDemo.getState().attachOpen) closeDoc() }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)

@@ -323,3 +323,51 @@ export interface ProviderInfo {
   model: string | null
   mode: string
 }
+
+// ---- generic analyses (backend: queries/analysis.py)
+
+export interface MachineWindow {
+  machine: string
+  name: string
+  day: string | null
+  start: string | null
+  end: string | null
+  cycle_source: string | null
+  target_s: number | null
+  line: string | null
+  hoppers: string[]
+  change: { time: string; lot: string; hopper: string; source: string; source_record_id: string | null } | null
+  offset_s: number | null
+}
+
+export interface LotRow {
+  lot: string
+  received_at: string | null
+  receipt: string | null
+  supplier: string | null
+  iqc: string | null
+  cpk: number | null
+  verdict: string | null
+  spec_min: number | null
+  spec_doc: string | null
+  spec_page: number | null
+}
+
+export interface SimilarClaim {
+  id: string
+  period: string | null
+  symptom: string | null
+  resolution: string | null
+  via: string
+  tier: number
+  status: EdgeStatus
+  docs: string[]
+}
+
+export interface LotCompare {
+  lot: string
+  part: string | null
+  part_name: string | null
+  rows: LotRow[]
+  similar: SimilarClaim[]
+}

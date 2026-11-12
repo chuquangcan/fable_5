@@ -3,6 +3,7 @@ import { attachSample, getSummary, listSamples, uploadDocument } from '../api/cl
 import type { AttachMethod, AttachResult } from '../api/types'
 import { NOT_ATTACHABLE } from '../evidence/OverviewTab'
 import { DEFAULT_ASSET } from '../plant/PlantView'
+import { useFocusTrap } from '../lib/useFocusTrap'
 import { useDemo } from '../store/demo'
 
 const METHOD_LABEL: Record<AttachMethod, string> = { code: 'Mã', rule: 'Quy tắc', llm: 'LLM', manual: 'Thủ công' }
@@ -67,8 +68,8 @@ function Dialog() {
   const hint = checked && checked.id === target ? checked : null
   const hintId = hint?.ok ? hint.id : undefined
 
+  useFocusTrap(ref)
   useEffect(() => {
-    ref.current?.focus()
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeAttach() }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
@@ -103,7 +104,7 @@ function Dialog() {
       style={{ position: 'fixed', inset: 0, background: 'rgba(27,31,36,.4)', display: 'grid', placeItems: 'center', zIndex: 50 }}
     >
       <div
-        ref={ref} role="dialog" aria-modal="true" aria-labelledby="attach-title" tabIndex={-1}
+        ref={ref} role="dialog" aria-modal="true" aria-labelledby="attach-title" aria-busy={busy} tabIndex={-1}
         style={{ width: 460, maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 32px)', overflowY: 'auto', background: '#fff', border: '1px solid var(--line)', borderRadius: 2, boxShadow: '0 8px 28px rgba(0,0,0,.25)', display: 'flex', flexDirection: 'column', outline: 'none' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid var(--line-soft)' }}>

@@ -2,10 +2,11 @@ import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { type AgentEvent, type AgentState, agentReducer, idleAgentState, initialAgentState } from './reducer'
 import { type AgentSource, defaultSource } from './sources'
 
-type Action = AgentEvent | { type: 'start'; question: string } | { type: 'stop' }
+type Action = AgentEvent | { type: 'start'; question: string } | { type: 'stop' } | { type: 'clear' }
 
 function reducer(state: AgentState, a: Action): AgentState {
   if (a.type === 'start') return initialAgentState(a.question)
+  if (a.type === 'clear') return idleAgentState
   if (a.type === 'stop') return state.status === 'running' ? { ...state, status: 'idle' } : state
   return agentReducer(state, a)
 }
@@ -40,6 +41,13 @@ export function useAgent(source: AgentSource = defaultSource) {
     [source],
   )
 
+  /** Cancel and forget the answer (demo reset). */
+  const clear = useCallback(() => {
+    ctrl.current?.abort()
+    ctrl.current = null
+    dispatch({ type: 'clear' })
+  }, [])
+
   useEffect(() => () => ctrl.current?.abort(), [])
-  return { state, ask, cancel }
+  return { state, ask, cancel, clear }
 }

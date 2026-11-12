@@ -3,6 +3,7 @@ import { getClaim, getClaimFault, getFault, getFlow, getTrace } from '../api/cli
 import type { Claim, FaultTrace, FlowGraph, TraceGraph } from '../api/types'
 import { useDemo } from '../store/demo'
 import { EvidencePanel } from '../evidence/EvidencePanel'
+import { Skeleton } from '../evidence/useAsync'
 import { EntityHeader } from './EntityHeader'
 import { flowLayout } from './flowLayout'
 import { NODE_W } from './layout'
@@ -23,6 +24,7 @@ export function ThreadView() {
   const [faultError, setFaultError] = useState(false)
   const [data, setData] = useState<{ claim: Claim; trace: TraceGraph; flow: FlowGraph } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
   const graphRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function ThreadView() {
       .then((d) => { if (!stale) setData(d) })
       .catch((e: Error) => { if (!stale) setError(e.message) })
     return () => { stale = true }
-  }, [claimId])
+  }, [claimId, attempt])
 
   const root = data?.flow.root ?? null
   useEffect(() => { setThreadRoot(root) }, [root, setThreadRoot])
@@ -103,8 +105,14 @@ export function ThreadView() {
       el.scrollTo?.({ left: Math.max(0, p.x + NODE_W / 2 - el.clientWidth / 2), behavior: 'smooth' })
   }, [focusNodeId, layout, fit])
 
-  if (error) return <div className="mut" style={{ padding: 16 }}>Không tải được thread: {error}</div>
-  if (!data) return <div className="mut" style={{ padding: 16 }}>Đang tải thread…</div>
+  if (error)
+    return (
+      <div role="alert" style={{ padding: 16, color: 'var(--red-ink)', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <span>Không tải được thread: {error}</span>
+        <button className="btn" onClick={() => setAttempt((a) => a + 1)}>Thử lại</button>
+      </div>
+    )
+  if (!data) return <Skeleton rows={6} label="Đang tải thread…" />
   const { claim, trace, flow } = data
   const overflows = !!layout && boxWidth > 0 && layout.width > boxWidth
   return (
@@ -127,7 +135,7 @@ export function ThreadView() {
           </button>
         )}
       </div>
-      <EvidencePanel nodeId={focusNodeId ?? trace.root} trace={trace} />
+      <EvidencePanel nodeId={focusNodeId ?? trace.root} />
     </div>
   )
 }
