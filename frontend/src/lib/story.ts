@@ -3,3 +3,5 @@ export const STORY_CLAIM = 'CLM-0012'
 export const STORY_LOT = 'LOT-B'
 export const STORY_SERIAL = 'MH20-0001'
 export const DEMO_QUESTION = 'Why is MH20-0001 from CLM-0012 noisy? Find the root cause and the impact scope.'
+/** Department of the demo user: feed cards from other departments are marked. */
+export const USER_DEPT = 'quality'

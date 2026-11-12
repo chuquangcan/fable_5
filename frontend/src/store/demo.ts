@@ -3,12 +3,16 @@ import { createJSONStorage, persist, type PersistStorage, type StateStorage } fr
 import { DEMO_QUESTION, STORY_CLAIM, STORY_LOT, STORY_SERIAL } from '../lib/story'
 import { NODE_EVIDENCE } from '../thread/layout'
 import { closeIn, type Group, type GroupId, keepIn, moveIn, type NewTab, openIn, type Tab } from './tabs'
+import type { FeedItem } from '../api/types'
+import { reachOf } from './feedReach'
 import { goTo, viewOnThread } from './navigate'
 
 export type { GroupId, Tab, TabKind } from './tabs'
 export type EvidenceTab = 'overview' | 'events' | 'machine' | 'lot' | 'impact'
 export type Mode = 'normal' | 'fault'
 export type Rail = 'feed' | 'assets' | 'data'
+export type FeedFilter = 'all' | 'alert' | '4m' | 'link' | 'doc' | 'claim'
+export interface FeedState { selected: string | null; kind: FeedFilter; dept: string | null; read: string[] }
 /** Deep-link steps of the demo script: 1 plant + feed · 2 CLM-0012 thread · 3 lot evidence · 4 agent RCA. */
 export type Step = 1 | 2 | 3 | 4
 export interface AgentCmd { kind: 'none' | 'ask' | 'clear'; question?: string; n: number }
@@ -53,6 +57,7 @@ export interface DemoState {
   hoverIds: string[]
   /** Reach of the selected feed card on the twin: red (fault trace) and orange (impact). */
   reach: { red: string[]; orange: string[] }
+  feed: FeedState
   /** "View on thread" found several product tabs: ask which. */
   picker: { id: string; tabIds: string[] } | null
   /** Bumped after a write (fault origin, attachment, review) so views refetch. */
@@ -75,6 +80,10 @@ export interface DemoState {
   setAsOf: (at: string) => void
   setHover: (ids: string[]) => void
   setReach: (r: { red: string[]; orange: string[] }) => void
+  /** Select a feed card: mark it read, move the clock to it, show its details in the dock and its reach on the twin. */
+  selectCard: (item: FeedItem) => Promise<void>
+  setFeedFilter: (kind: FeedFilter) => void
+  setDept: (dept: string | null) => void
   openProduct: (serial: string, opts?: { claimId?: string }) => string
   openClaim: (claimId: string, serial: string) => void
   openReport: (claimId: string) => void
@@ -120,6 +129,7 @@ const initial = () => ({
   asOf: DEFAULT_AS_OF,
   hoverIds: [] as string[],
   reach: { red: [] as string[], orange: [] as string[] },
+  feed: { selected: null, kind: 'all', dept: null, read: [] } as FeedState,
   picker: null as DemoState['picker'],
   dataVersion: 0,
   flashNodeId: null as string | null,
@@ -163,6 +173,8 @@ function detailTab(threadId: string, serial: string): NewTab {
 }
 
 let flashTimer: ReturnType<typeof setTimeout> | undefined
+/** Bumped per selected feed card, so only the latest card's reach is kept. */
+let reachToken = 0
 
 /** localStorage that never throws (private windows, blocked storage). */
 const safeStorage: StateStorage = {
@@ -171,7 +183,7 @@ const safeStorage: StateStorage = {
   removeItem: (k) => { try { localStorage.removeItem(k) } catch { /* nothing */ } },
 }
 
-type Saved = Pick<DemoState, 'groups' | 'product' | 'evidence' | 'twin' | 'dockActive' | 'layout' | 'asOf'>
+type Saved = Pick<DemoState, 'groups' | 'product' | 'evidence' | 'twin' | 'dockActive' | 'layout' | 'asOf'> & { feed?: Pick<FeedState, 'read'> }
 const jsonStorage = createJSONStorage<Saved>(() => safeStorage)!
 const storage: PersistStorage<Saved> = {
   getItem: (name) => { try { return jsonStorage.getItem(name) } catch { return null } },  // bad JSON → defaults
@@ -258,6 +270,18 @@ export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((se
     setAsOf: (asOf) => set({ asOf }),
     setHover: (hoverIds) => set({ hoverIds }),
     setReach: (reach) => set({ reach }),
+    selectCard: async (item) => {
+      const token = ++reachToken
+      set((s) => ({
+        feed: { ...s.feed, selected: item.id, read: s.feed.read.includes(item.id) ? s.feed.read : [...s.feed.read, item.id] },
+        asOf: item.at,
+      }))
+      get().openTab('bottom', { id: `feed:${item.id}`, kind: 'feed', target: item.id, title: `${item.badge} · ${item.id}` }, { preview: true })
+      const reach = await reachOf(item)
+      if (token === reachToken) set({ reach })  // an older card answering late is dropped
+    },
+    setFeedFilter: (kind) => set((s) => ({ feed: { ...s.feed, kind } })),
+    setDept: (dept) => set((s) => ({ feed: { ...s.feed, dept } })),
 
     openProduct: (serial, opts = {}) => {
       const id = threadTabId(serial)
@@ -345,7 +369,12 @@ export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((se
   storage,
   partialize: (s): Saved => ({
     groups: s.groups, product: s.product, evidence: s.evidence, twin: s.twin, dockActive: s.dockActive, layout: s.layout, asOf: s.asOf,
+    feed: { read: s.feed.read },
   }),
   migrate: () => ({}) as Saved,  // an older shape is dropped: the defaults are a better start than a half-valid workspace
-  merge: (saved, current) => (isUsable(saved) ? { ...current, ...saved } : current),
+  merge: (saved, current) => {
+    if (!isUsable(saved)) return current
+    const read = Array.isArray(saved.feed?.read) ? saved.feed.read.filter((r) => typeof r === 'string') : []
+    return { ...current, ...saved, feed: { ...current.feed, read } }
+  },
 }))

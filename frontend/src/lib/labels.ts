@@ -143,3 +143,5 @@ export const deptLabel = pick({
 })
 
 export const channelLabel = (c: Channel) => (c.system ? `${deptLabel(c.dept)} · ${c.system}` : deptLabel(c.dept))
+
+export const feedStatusLabel = pick({ proposed: 'Proposed', watching: 'Watching', approved: 'Approved', closed: 'Closed' })

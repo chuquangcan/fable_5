@@ -11,6 +11,15 @@
   --muted: #5F6670;
   --label: #4A515B;
   --teal: #0E7C86;
+  /* department colours: feed sender pills, foreign-card edge, department strip */
+  --dept-purchasing: #8E5A1E;
+  --dept-quality: #0E7C86;
+  --dept-production: #3949AB;
+  --dept-warehouse: #6D4C41;
+  --dept-logistics: #00897B;
+  --dept-design: #7B1FA2;
+  --dept-maintenance: #C77700;
+  --dept-meeting: #5F6B7A;
   --teal-ink: #0B6770;
   --teal-bg: #E8F4F5;
   --red: #C62828;
@@ -162,3 +171,26 @@ a.btn{text-decoration:none}
 
 /* 1280-wide screens: drop secondary chips so the thread header never clips its buttons */
 @media (max-width:1400px){.hide-narrow{display:none!important}}
+
+/* feed rail */
+.fchips{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;border-bottom:1px solid var(--line-soft);flex:none}
+.fchip{height:20px;padding:0 6px;border:1px solid #C9CDD3;border-radius:10px;background:#FFFFFF;font:inherit;font-size:11px;cursor:pointer;display:inline-flex;gap:3px;align-items:center}
+.fchip.on{border-color:var(--teal);color:var(--teal);font-weight:600}
+.feed{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:6px 8px}
+.fcard{border:1px solid var(--line-soft);background:#FFFFFF;padding:6px 8px;display:flex;flex-direction:column;gap:3px;cursor:pointer;min-width:0}
+.fcard:hover{border-color:#B9BFC7}
+.fcard.on{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal)}
+.fcard.foreign{border-left:3px solid var(--dept)}
+.fcard-head{display:flex;align-items:center;gap:6px}
+.fbadge{font-size:10px;font-weight:700;padding:0 4px;border-radius:2px;background:#E9ECEF;color:#3A4049}
+.fb-alert{background:var(--red);color:#FFFFFF}
+.fb-4m{background:#FFE9C2;color:#7A4A00}
+.fb-claim{background:#E3E7FB;color:#283593}
+.unread-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex:none}
+.pills{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px}
+.pill{height:18px;padding:0 6px;border-radius:9px;font:inherit;font-size:11px;display:inline-flex;align-items:center;gap:4px;border:1px solid #C9CDD3;background:#FFFFFF;color:#3A4049;white-space:nowrap}
+button.pill{cursor:pointer}
+.pill.filled{background:var(--dept);border-color:var(--dept);color:#FFFFFF}
+.pill.outline{border-color:var(--dept);color:var(--dept)}
+.pill.obj{background:#F4F5F7}
+.pill-x{border:0;background:none;color:inherit;cursor:pointer;padding:0;font-size:10px}

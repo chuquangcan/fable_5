@@ -373,3 +373,23 @@ export interface LotCompare {
   rows: LotRow[]
   similar: SimilarClaim[]
 }
+
+export interface FeedRef { doc_id: string | null; link_id: number | null; claim_id: string | null }
+
+/** One card of the notifications & changes feed (/api/feed), newest first. */
+export interface FeedItem {
+  id: string
+  kind: 'alert' | '4m' | 'doc' | 'link' | 'claim'
+  badge: string
+  /** Plant time (UTC+7) the item happened. */
+  at: string
+  title: string
+  reason: string
+  /** Department that sent it; null when no department is known. */
+  sender: string | null
+  /** Departments that must act. */
+  acting: string[]
+  objects: string[]
+  status: 'proposed' | 'watching' | 'approved' | 'closed'
+  ref: FeedRef
+}

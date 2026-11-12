@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { AttachDialog } from './attach/AttachDialog'
 import { AgentPanel } from './agent/AgentPanel'
 import { DataSidebar } from './data/DataView'
+import { FeedSidebar } from './feed/FeedSidebar'
 import { PlantSidebar } from './plant/PlantSidebar'
 import { AppShell } from './shell/AppShell'
 import { parseDeepLink } from './lib/deepLink'
@@ -11,7 +12,7 @@ function LeftRail() {
   const rail = useDemo((s) => s.layout.rail)
   if (rail === 'assets') return <PlantSidebar />
   if (rail === 'data') return <DataSidebar />
-  return <div className="side-title">Notifications & changes</div>
+  return <FeedSidebar />
 }
 
 export default function App() {

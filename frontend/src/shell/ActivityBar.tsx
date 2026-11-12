@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { activeProduct, type Rail, useDemo } from '../store/demo'
+import { useFeed } from '../feed/useFeed'
 import { useReviewCount } from './useReviewCount'
 
 function Icon({ children }: { children: ReactNode }) {
@@ -24,7 +25,10 @@ const RAILS: { id: Rail; label: string; icon: ReactNode }[] = [
 ]
 
 /** Swaps the left rail only; open tabs stay as they are. */
-export function ActivityBar({ unread = 0 }: { unread?: number }) {
+export function ActivityBar() {
+  const feed = useFeed()
+  const read = useDemo((s) => s.feed.read)
+  const unread = feed.status === 'ok' ? feed.data.filter((i) => !read.includes(i.id)).length : 0
   const rail = useDemo((s) => s.layout.rail)
   const setRail = useDemo((s) => s.setRail)
   const agentOpen = useDemo((s) => s.agentOpen)

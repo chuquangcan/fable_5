@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
 import { useDemo } from '../store/demo'
@@ -15,7 +15,7 @@ beforeEach(() => {
   vi.mocked(api.getReviewQueue).mockResolvedValue({ pending: [], decided: [] })
   // tab content is real now: its loads stay pending, these tests are about the shell
   const pending = () => new Promise<never>(() => {})
-  for (const f of ['getFlow', 'getTrace', 'getClaim', 'getClaimFault', 'getSummary', 'getReportDraft', 'getDocument', 'getTable', 'listDocuments'] as const) vi.mocked(api[f]).mockImplementation(pending)
+  for (const f of ['getFlow', 'getTrace', 'getClaim', 'getClaimFault', 'getSummary', 'getReportDraft', 'getDocument', 'getTable', 'listDocuments', 'getFeed'] as const) vi.mocked(api[f]).mockImplementation(pending)
 })
 
 test('header shows the as-of time and the demo badge; the status line says read-only', () => {
@@ -79,4 +79,11 @@ test('the status line review button reopens the review queue in the dock', () =>
   render(<AppShell left={null} right={null} />)
   fireEvent.click(screen.getByRole('button', { name: /Review queue/ }))
   expect(s().groups.bottom.active).toBe('review')
+})
+
+test('the notifications button shows how many feed cards are unread', async () => {
+  vi.mocked(api.getFeed).mockResolvedValue([{ id: 'AL-0001' }, { id: 'D-07' }, { id: 'D-03' }] as never)
+  useDemo.setState({ feed: { ...s().feed, read: ['D-07'] }, dataVersion: 1 })  // a new data version refetches the shared feed
+  render(<AppShell left={null} right={null} />)
+  expect(await within(screen.getByRole('button', { name: 'Notifications' })).findByText('2')).toBeInTheDocument()
 })
