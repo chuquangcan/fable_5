@@ -1,5 +1,6 @@
 import type {
   FeedItem,
+  PlantState,
   AttachResult, Claim, LotCompare, MachineWindow, DocDetail, DocRow, DocView, FaultTrace, FlowGraph, Impact, LinkView, LotStat, MetricValue, NodeSummary,
   PlantArea, PlantEvent, ProviderInfo, ReportDraft, ReviewDecision, ReviewQueue, ReviewRecord, SearchHit, TableInfo, TablePage, TraceGraph,
 } from './types'
@@ -45,6 +46,8 @@ export const getMetric = (kpi: 'cpk' | 'cycle_time', objects: string[], start?: 
   getJSON<MetricValue[]>(`/api/metrics/${kpi}${qs({ objects: objects.join(','), start, end })}`)
 export const getCompare = (machine: string, day: string) =>
   getJSON<LotStat[]>(`/api/compare/${enc(machine)}${qs({ day })}`)
+export const getPlantState = (at?: string) => getJSON<PlantState>(`/api/plant/state${qs({ at })}`)
+export const getShipmentSerials = (shipment: string) => getJSON<string[]>(`/api/shipments/${enc(shipment)}/serials`)
 export const getFeed = () => getJSON<FeedItem[]>('/api/feed')
 export const getImpact = (lot: string) => getJSON<Impact>(`/api/impact/${enc(lot)}`)
 export const getReportDraft = (claimId: string) => getJSON<ReportDraft>(`/api/reports/${enc(claimId)}/draft`)

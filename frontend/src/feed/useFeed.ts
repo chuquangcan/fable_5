@@ -24,3 +24,10 @@ export function useFeed(): Async<FeedItem[]> {
 export function feedFilter(items: FeedItem[], kind: FeedFilter, dept: string | null): FeedItem[] {
   return items.filter((i) => (kind === 'all' || i.kind === kind) && (!dept || i.sender === dept || i.acting.includes(dept)))
 }
+
+/** Unread feed items each channel sent. */
+export function unreadBySender(items: FeedItem[], read: string[]): Record<string, FeedItem[]> {
+  const out: Record<string, FeedItem[]> = {}
+  for (const i of items) if (i.sender && !read.includes(i.id)) (out[i.sender] ??= []).push(i)
+  return out
+}

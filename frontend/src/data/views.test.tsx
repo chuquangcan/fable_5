@@ -39,6 +39,9 @@ beforeEach(() => {
   vi.mocked(api.getPlant).mockResolvedValue(plant)
   vi.mocked(api.getReviewQueue).mockResolvedValue({ pending: [], decided: [] })
   vi.mocked(api.search).mockResolvedValue([])
+  // the pinned twin is the active main tab at first: its loads stay pending here
+  vi.mocked(api.getPlantState).mockImplementation(() => new Promise(() => {}))
+  vi.mocked(api.getFeed).mockImplementation(() => new Promise(() => {}))
 })
 
 const st = () => useDemo.getState()

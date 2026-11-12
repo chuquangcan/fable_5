@@ -229,3 +229,15 @@ test('flash marks a node briefly', () => {
   expect(s().flashNodeId).toBeNull()
   vi.useRealTimers()
 })
+
+test('twin layers toggle and survive selecting an object; an old save without layers gets the defaults', async () => {
+  expect(s().twin.layers).toEqual({ machines: true, lots: false, alerts: true, flow: true })
+  s().toggleLayer('machines')
+  s().selectTwin('M02')
+  expect(s().twin).toMatchObject({ selected: 'M02', layers: { machines: false } })
+  const saved = JSON.parse(localStorage.getItem('onethread.workspace') ?? '{}')
+  saved.state.twin = { selected: 'M01' }
+  localStorage.setItem('onethread.workspace', JSON.stringify(saved))
+  await useDemo.persist.rehydrate()
+  expect(s().twin).toEqual({ selected: 'M01', layers: { machines: true, lots: false, alerts: true, flow: true } })
+})

@@ -1,0 +1,176 @@
+{
+ "at": "2026-11-03T14:05:00+07:00",
+ "nodes": {
+  "HOP-1": {
+   "state": "watch4m",
+   "value": "LOT-B",
+   "sub": null
+  },
+  "HOP-2": {
+   "state": "running",
+   "value": "LOT-C",
+   "sub": null
+  },
+  "IQC-5507": {
+   "state": "idle",
+   "value": "Cpk 1.45",
+   "sub": null
+  },
+  "IQC-5531": {
+   "state": "watch4m",
+   "value": "Cpk 0.92",
+   "sub": null
+  },
+  "LINE-1": {
+   "state": "warning",
+   "value": "701 pcs · 42 s",
+   "sub": "MH-20"
+  },
+  "LINE-2": {
+   "state": "running",
+   "value": "1,407 pcs · 33 s",
+   "sub": "MH-25"
+  },
+  "LOT-A": {
+   "state": "idle",
+   "value": "682 used",
+   "sub": null
+  },
+  "LOT-B": {
+   "state": "watch4m",
+   "value": "4,981 pcs",
+   "sub": null
+  },
+  "LOT-C": {
+   "state": "running",
+   "value": "2,593 pcs",
+   "sub": null
+  },
+  "M01": {
+   "state": "running",
+   "value": "33 s / 32 s",
+   "sub": null
+  },
+  "M02": {
+   "state": "warning",
+   "value": "42 s / 30 s",
+   "sub": null
+  },
+  "M03": {
+   "state": "running",
+   "value": "29 s / 29 s",
+   "sub": null
+  },
+  "RCV-1410": {
+   "state": "idle",
+   "value": "",
+   "sub": null
+  },
+  "RCV-2810": {
+   "state": "idle",
+   "value": "2026-10-28",
+   "sub": null
+  },
+  "SHP-1112": {
+   "state": "idle",
+   "value": "delivered · 2026-11-12",
+   "sub": null
+  },
+  "SHP-1115": {
+   "state": "idle",
+   "value": "delivered · 2026-11-15",
+   "sub": null
+  },
+  "SHP-1120": {
+   "state": "idle",
+   "value": "in_warehouse",
+   "sub": null
+  }
+ },
+ "edges": [
+  {
+   "from_id": "LOT-B",
+   "to_id": "HOP-1",
+   "relation": "fed_into",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "HOP-1",
+   "to_id": "M02",
+   "relation": "fed_into",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "LOT-B",
+   "to_id": "RCV-2810",
+   "relation": "received_under",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "IQC-5531",
+   "to_id": "LOT-B",
+   "relation": "inspected",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "IQC-5507",
+   "to_id": "LOT-A",
+   "relation": "inspected",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "LOT-A",
+   "to_id": "RCV-1410",
+   "relation": "received_under",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "M02",
+   "to_id": "LINE-1",
+   "relation": "part_of",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "HOP-1",
+   "to_id": "LINE-1",
+   "relation": "part_of",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "HOP-2",
+   "to_id": "LINE-2",
+   "relation": "part_of",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "M01",
+   "to_id": "LINE-2",
+   "relation": "part_of",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "M03",
+   "to_id": "LINE-2",
+   "relation": "part_of",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "HOP-2",
+   "to_id": "M01",
+   "relation": "fed_into",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "HOP-2",
+   "to_id": "M03",
+   "relation": "fed_into",
+   "status": "confirmed"
+  },
+  {
+   "from_id": "LOT-C",
+   "to_id": "HOP-2",
+   "relation": "fed_into",
+   "status": "confirmed"
+  }
+ ]
+}

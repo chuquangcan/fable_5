@@ -15,7 +15,7 @@ from onethread.agent.stream import agent_event_stream
 from onethread.config import settings
 from onethread.db import connect
 from onethread.queries import (analysis, claims, docs, events, fault, feed, impact, links, metrics, plant, plant_state,
-                               repository, summary, thread_flow, trace)
+                               repository, serials, summary, thread_flow, trace)
 from onethread.queries.common import NotFound
 from onethread.report import ReportDraft, build_report_draft
 
@@ -110,6 +110,11 @@ def api_compare(machine: str, day: date, conn=Conn) -> list[impact.LotStat]:
 @app.get("/api/impact/{lot}")
 def api_impact(lot: str, conn=Conn) -> impact.Impact:
     return impact.trace_forward(conn, lot)
+
+
+@app.get("/api/shipments/{shipment_id}/serials")
+def api_shipment_serials(shipment_id: str, limit: int = Query(50, ge=1, le=1000), conn=Conn) -> list[str]:
+    return serials.shipment_serials(conn, shipment_id, limit)
 
 
 @app.get("/api/reports/{claim_id}/draft")

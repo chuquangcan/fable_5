@@ -393,3 +393,9 @@ export interface FeedItem {
   status: 'proposed' | 'watching' | 'approved' | 'closed'
   ref: FeedRef
 }
+
+export type TwinState = 'running' | 'stopped' | 'warning' | 'watch4m' | 'idle'
+export interface NodeState { state: TwinState; value: string; sub: string | null }
+export interface TwinEdge { from_id: string; to_id: string; relation: string; status: EdgeStatus }
+/** Live state of the plant at one moment (/api/plant/state?at=). */
+export interface PlantState { at: string; nodes: Record<string, NodeState>; edges: TwinEdge[] }

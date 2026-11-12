@@ -202,3 +202,14 @@ def test_search_puts_object_prefix_matches_before_documents(client):
 def test_claims_traceable_flag(client):
     by = {c["id"]: c for c in client.get("/api/claims").json()}
     assert by["CLM-0012"]["traceable"] is True and by["CLM-0011"]["traceable"] is False
+
+
+def test_shipment_serials(client):
+    r = client.get("/api/shipments/SHP-1112/serials")
+    assert r.status_code == 200
+    serials = r.json()
+    assert serials and all(s.startswith("MH20-") for s in serials)
+    assert serials == sorted(serials) and len(serials) <= 50
+    box = {l["from_id"] for l in client.get("/api/objects/BOX-001/links").json() if l["relation"] == "packed_in"}
+    assert box <= set(client.get("/api/shipments/SHP-1112/serials", params={"limit": 1000}).json())  # BOX-001 ships in SHP-1112
+    assert client.get("/api/shipments/SHP-9999/serials").status_code == 404

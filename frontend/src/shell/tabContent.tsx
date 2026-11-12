@@ -1,6 +1,7 @@
 import { DataView } from '../data/DataView'
 import { DocTab } from '../docs/DocTab'
 import { EvidencePanel } from '../evidence/EvidencePanel'
+import { TwinView } from '../plant/TwinView'
 import { ReportView } from '../report/ReportView'
 import { ReviewQueueList } from '../review/ReviewQueueList'
 import type { Tab } from '../store/demo'
@@ -14,6 +15,7 @@ const Placeholder = ({ text }: { text: string }) => (
 /** What a main-pane tab shows, by kind. Thread tabs are rendered by the workspace itself (kept mounted). */
 export function MainContent({ tab }: { tab: Tab | null }) {
   if (!tab) return <Placeholder text="Open a serial, a claim or a document" />
+  if (tab.kind === 'twin') return <TwinView />
   if (tab.kind === 'doc') return <DocTab key={tab.target} id={tab.target} />
   if (tab.kind === 'report') return <ReportView key={tab.target} claimId={tab.target} />
   if (tab.kind === 'table') return <DataView key={tab.target} target={tab.target} />

@@ -11,6 +11,7 @@ export type { GroupId, Tab, TabKind } from './tabs'
 export type EvidenceTab = 'overview' | 'events' | 'machine' | 'lot' | 'impact'
 export type Mode = 'normal' | 'fault'
 export type Rail = 'feed' | 'assets' | 'data'
+export type TwinLayer = 'machines' | 'lots' | 'alerts' | 'flow'
 export type FeedFilter = 'all' | 'alert' | '4m' | 'link' | 'doc' | 'claim'
 export interface FeedState { selected: string | null; kind: FeedFilter; dept: string | null; read: string[] }
 /** Deep-link steps of the demo script: 1 plant + feed · 2 CLM-0012 thread · 3 lot evidence · 4 agent RCA. */
@@ -47,7 +48,7 @@ export interface DemoState {
   product: Record<string, ProductTab>
   /** Evidence sub-tab per owner: a thread tab id (its details tab) or an object tab id. */
   evidence: Record<string, EvidenceTab>
-  twin: { selected: string | null }
+  twin: { selected: string | null; layers: Record<TwinLayer, boolean> }
   /** Bottom tab last shown for each main tab, so switching main tabs restores the dock. */
   dockActive: Record<string, string>
   layout: Layout
@@ -91,6 +92,7 @@ export interface DemoState {
   /** The review queue lives in the dock. */
   openReview: () => void
   selectTwin: (id: string | null, title?: string) => void
+  toggleLayer: (layer: TwinLayer) => void
   focusNode: (tabId: string, id: string | null) => void
   selectNode: (tabId: string, id: string) => void
   setMode: (tabId: string, m: Mode) => void
@@ -113,6 +115,8 @@ export interface DemoState {
   toggleAgent: () => void
 }
 
+const DEFAULT_LAYERS: Record<TwinLayer, boolean> = { machines: true, lots: false, alerts: true, flow: true }
+
 const initialGroups = (): Record<GroupId, Group> => ({
   main: { tabs: [TWIN], active: 'twin' },
   bottom: { tabs: [OVERVIEW, SOURCES, REVIEW], active: 'overview' },
@@ -123,7 +127,7 @@ const initial = () => ({
   groups: initialGroups(),
   product: {} as Record<string, ProductTab>,
   evidence: {} as Record<string, EvidenceTab>,
-  twin: { selected: null as string | null },
+  twin: { selected: null as string | null, layers: DEFAULT_LAYERS },
   dockActive: {} as Record<string, string>,
   layout: { rail: 'feed', leftW: 280, agentW: 340, dockH: 300, dockCollapsed: false, split: false } as Layout,
   asOf: DEFAULT_AS_OF,
@@ -212,6 +216,7 @@ export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((se
   return {
     ...initial(),
 
+    toggleLayer: (layer) => set((s) => ({ twin: { ...s.twin, layers: { ...s.twin.layers, [layer]: !s.twin.layers[layer] } } })),
     openTab: (g, tab, opts) => {
       let groups = withGroup(g, openIn(get().groups[g], tab, opts))
       if (g === 'main' && opts?.activate !== false) groups = followMain(get(), groups)
@@ -304,10 +309,10 @@ export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((se
     openDoc: (id) => get().openTab('main', { id: `doc:${id}`, kind: 'doc', target: id, title: id }, { preview: true }),
     selectTwin: (id, title) => {
       if (id === null) {
-        set({ twin: { selected: null } })
+        set((s) => ({ twin: { ...s.twin, selected: null } }))
         return get().activate('bottom', 'overview')
       }
-      set({ twin: { selected: id } })
+      set((s) => ({ twin: { ...s.twin, selected: id } }))
       get().openTab('bottom', { id: objectTabId(id), kind: 'object', target: id, title: title ?? id }, { preview: true })
     },
 
@@ -375,6 +380,7 @@ export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((se
   merge: (saved, current) => {
     if (!isUsable(saved)) return current
     const read = Array.isArray(saved.feed?.read) ? saved.feed.read.filter((r) => typeof r === 'string') : []
-    return { ...current, ...saved, feed: { ...current.feed, read } }
+    const twin = { ...current.twin, ...saved.twin, layers: { ...DEFAULT_LAYERS, ...saved.twin?.layers } }  // saves from before layers existed
+    return { ...current, ...saved, twin, feed: { ...current.feed, read } }
   },
 }))
