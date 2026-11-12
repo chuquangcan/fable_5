@@ -1,5 +1,6 @@
 import type {
   FeedItem,
+  PlantOverview,
   PlantState,
   AttachResult, Claim, LotCompare, MachineWindow, DocDetail, DocRow, DocView, FaultTrace, FlowGraph, Impact, LinkView, LotStat, MetricValue, NodeSummary,
   PlantArea, PlantEvent, ProviderInfo, ReportDraft, ReviewDecision, ReviewQueue, ReviewRecord, SearchHit, TableInfo, TablePage, TraceGraph,
@@ -46,6 +47,7 @@ export const getMetric = (kpi: 'cpk' | 'cycle_time', objects: string[], start?: 
   getJSON<MetricValue[]>(`/api/metrics/${kpi}${qs({ objects: objects.join(','), start, end })}`)
 export const getCompare = (machine: string, day: string) =>
   getJSON<LotStat[]>(`/api/compare/${enc(machine)}${qs({ day })}`)
+export const getPlantOverview = (at?: string) => getJSON<PlantOverview>(`/api/plant/overview${qs({ at })}`)
 export const getPlantState = (at?: string) => getJSON<PlantState>(`/api/plant/state${qs({ at })}`)
 export const getShipmentSerials = (shipment: string) => getJSON<string[]>(`/api/shipments/${enc(shipment)}/serials`)
 export const getFeed = () => getJSON<FeedItem[]>('/api/feed')

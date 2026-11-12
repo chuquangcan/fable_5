@@ -2,6 +2,8 @@ import type { PlantEvent } from '../api/types'
 import { formatPlantTime } from '../lib/time'
 
 export interface ChartMarker { time: string; label: string; kind: 'load' | 'serial' }
+export interface ChartNotice { time: string; label: string; kind: 'alert' | '4m' }
+const BAND_FILL = ['#F1F5F9', '#E8F4F5']
 
 const X0 = 36, X1 = 446, Y_TOP = 16, Y_BOT = 176
 const WINDOW_MIN = 8
@@ -36,9 +38,13 @@ function yRange(values: number[], target: number | null): [number, number] {
   return [lo, hi]
 }
 
-export function CycleChart({ events, markers, start, end, target, machineName }: {
+export function CycleChart({ events, markers, start, end, target, machineName, bands = [], notices = [] }: {
   events: PlantEvent[]
   markers: ChartMarker[]
+  /** Lot in the hopper over time (lotBands). */
+  bands?: { from: string; to: string; label: string }[]
+  /** Feed alerts and 4M changes about this machine. */
+  notices?: ChartNotice[]
   start: string
   end: string
   target: number | null
@@ -63,8 +69,15 @@ export function CycleChart({ events, markers, start, end, target, machineName }:
   const label = load && before.length && after.length
     ? `${machineName} cycle time rose from ${avg(before)} s to ${avg(after)} s after ${load.label} at ${formatPlantTime(load.time, 'HH:mm')}`
     : `Cycle time ${machineName}`
+  const clampX = (iso: string) => xOf(Math.min(spanMin, Math.max(0, minutes(iso))))
   return (
     <svg width="448" height="210" role="img" aria-label={label}>
+      {bands.map((b, i) => (
+        <g key={`${b.label}-${b.from}`} data-testid="lot-band">
+          <rect x={clampX(b.from)} y={Y_TOP} width={Math.max(0, clampX(b.to) - clampX(b.from))} height={Y_BOT - Y_TOP} fill={BAND_FILL[i % 2]} />
+          <text x={clampX(b.from) + 3} y={Y_BOT - 4} fontSize="9" fill="#5F6670" fontFamily="IBM Plex Mono, monospace">{b.label}</text>
+        </g>
+      ))}
       <g stroke="#E3E5E8">
         {ticksY.map((v) => <line key={v} x1={X0} y1={yOf(v)} x2={X1} y2={yOf(v)} />)}
       </g>
@@ -98,6 +111,12 @@ export function CycleChart({ events, markers, start, end, target, machineName }:
           </text>
         </g>
       )}
+      {notices.map((n) => (
+        <g key={`${n.label}-${n.time}`} data-testid="notice-marker">
+          <title>{`${n.label} · ${formatPlantTime(n.time, 'HH:mm')}`}</title>
+          <path d={`M${clampX(n.time) - 5},${Y_TOP - 10} h10 l-5,7 z`} fill={n.kind === 'alert' ? '#C62828' : '#C77700'} />
+        </g>
+      ))}
       <polyline points={pts} fill="none" stroke="#0E7C86" strokeWidth="2" />
     </svg>
   )

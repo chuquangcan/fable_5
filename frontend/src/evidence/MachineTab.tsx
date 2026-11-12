@@ -3,7 +3,9 @@ import type { LotStat, MachineWindow, PlantEvent } from '../api/types'
 import { formatPlantTime } from '../lib/time'
 import { useDemo } from '../store/demo'
 import { useProductTab } from '../thread/ProductTabContext'
-import { CycleChart } from './CycleChart'
+import { useFeed } from '../feed/useFeed'
+import { CycleChart, type ChartNotice } from './CycleChart'
+import { lotBands } from './lotBands'
 import { Pending, useAsync } from './useAsync'
 
 const dayBounds = (day: string) => [`${day}T00:00:00+07:00`, `${day}T23:59:59+07:00`] as const
@@ -41,6 +43,7 @@ export function MachineTab({ machineId }: { machineId: string }) {
   const tabId = useProductTab()
   const root = useDemo((s) => (tabId ? s.product[tabId]?.root ?? null : null))
   const s = useAsync(() => load(machineId, root), [machineId, root])
+  const feed = useFeed()
   if (s.status !== 'ok') return <Pending state={s} />
   const { win, data } = s.data
   if (!data) return <div className="mut" style={{ padding: 14 }}>{`${win.name} has no press cycle data yet.`}</div>
@@ -55,6 +58,11 @@ export function MachineTab({ machineId }: { machineId: string }) {
   const shiftChanged = !!shift?.payload.changed
   const tempStable = temps.length > 0 && Math.max(...temps) - Math.min(...temps) < 2
   const ruledOut = [!pmInWindow && pm && 'maintenance', shift && !shiftChanged && 'operator', tempStable && 'temperature'].filter(Boolean) as string[]
+  // alerts and 4M changes about this machine inside the charted window
+  const notices: ChartNotice[] = feed.status !== 'ok' ? [] : feed.data
+    .filter((i) => (i.kind === 'alert' || i.kind === '4m') && i.objects.includes(machineId)
+      && Date.parse(i.at) >= Date.parse(win.start!) && Date.parse(i.at) <= Date.parse(win.end!))
+    .map((i) => ({ time: i.at, label: i.id, kind: i.kind as ChartNotice['kind'] }))
   const range = `${win.day} ${formatPlantTime(win.start!, 'HH:mm')}–${formatPlantTime(win.end!, 'HH:mm')}`
   return (
     <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex' }}>
@@ -65,6 +73,7 @@ export function MachineTab({ machineId }: { machineId: string }) {
         </div>
         <CycleChart
           events={cycles} start={win.start!} end={win.end!} target={win.target_s} machineName={win.name}
+          bands={lotBands(cycles)} notices={notices}
           markers={[
             ...(win.change ? [{ time: win.change.time, label: `${win.change.lot} loaded into ${win.change.hopper.replace('HOP-', 'Hopper ')}`, kind: 'load' as const }] : []),
             ...(serial ? [{ time: serial.at, label: serial.id, kind: 'serial' as const }] : []),

@@ -16,6 +16,7 @@ const inTab = (id: string, tab = T) => <ProductTabContext.Provider value={tab}><
 
 beforeEach(() => {
   useDemo.getState().reset()
+  vi.mocked(api.getFeed).mockResolvedValue([])
   vi.mocked(api.getSummary).mockImplementation(async (id) => (id === 'M01' ? m01 : id.startsWith('AGG-') ? { ...m02, id, type: 'aggregate', name: id } : m02) as never)
 })
 

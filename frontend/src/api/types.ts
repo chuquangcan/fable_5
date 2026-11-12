@@ -399,3 +399,13 @@ export interface NodeState { state: TwinState; value: string; sub: string | null
 export interface TwinEdge { from_id: string; to_id: string; relation: string; status: EdgeStatus }
 /** Live state of the plant at one moment (/api/plant/state?at=). */
 export interface PlantState { at: string; nodes: Record<string, NodeState>; edges: TwinEdge[] }
+
+export interface Kpis { output: number; cycle_s: number | null; target_s: number | null; open_alerts: number; watch_4m: number; pending_links: number }
+export interface OverviewRow {
+  id: string; kind: 'line' | 'machine'; name: string; line: string | null; state: TwinState
+  cycle_s: number | null; target_s: number | null; output: number; lot: string | null; trend: number[]
+}
+export interface ShipmentRisk { id: string; status: string | null; date: string | null; customer: string | null; parts: number; risk: 'high' | 'none'; reason: string }
+export interface SourceRow { source: string; dept: string | null; events: number; last_at: string | null; delay_s: number | null }
+/** Plant overview at one moment (/api/plant/overview?at=). */
+export interface PlantOverview { at: string; kpis: Kpis; rows: OverviewRow[]; shipments: ShipmentRisk[]; sources: SourceRow[] }

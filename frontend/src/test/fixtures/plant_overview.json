@@ -1,0 +1,267 @@
+{
+ "at": "2026-11-03T14:05:00+07:00",
+ "kpis": {
+  "output": 2108,
+  "cycle_s": 34.6,
+  "target_s": 30.3,
+  "open_alerts": 1,
+  "watch_4m": 2,
+  "pending_links": 3
+ },
+ "rows": [
+  {
+   "id": "LINE-1",
+   "kind": "line",
+   "name": "Line 1",
+   "line": null,
+   "state": "warning",
+   "cycle_s": 41.78,
+   "target_s": 30.0,
+   "output": 701,
+   "lot": null,
+   "trend": []
+  },
+  {
+   "id": "M02",
+   "kind": "machine",
+   "name": "Machine 02",
+   "line": "LINE-1",
+   "state": "warning",
+   "cycle_s": 41.78,
+   "target_s": 30.0,
+   "output": 701,
+   "lot": "LOT-B",
+   "trend": [
+    30.86,
+    30.96,
+    31.1,
+    30.96,
+    30.92,
+    31.22,
+    31.06,
+    31.01,
+    31.09,
+    31.16,
+    31.08,
+    31.13,
+    30.82,
+    31.0,
+    31.21,
+    30.89,
+    31.05,
+    30.74,
+    31.12,
+    31.05,
+    31.18,
+    31.04,
+    30.8,
+    31.13,
+    30.91,
+    30.85,
+    31.05,
+    31.17,
+    37.31,
+    41.95
+   ]
+  },
+  {
+   "id": "LINE-2",
+   "kind": "line",
+   "name": "Line 2",
+   "line": null,
+   "state": "running",
+   "cycle_s": 33.05,
+   "target_s": 32.0,
+   "output": 1407,
+   "lot": null,
+   "trend": []
+  },
+  {
+   "id": "M01",
+   "kind": "machine",
+   "name": "Machine 01",
+   "line": "LINE-2",
+   "state": "running",
+   "cycle_s": 33.05,
+   "target_s": 32.0,
+   "output": 664,
+   "lot": "LOT-C",
+   "trend": [
+    32.8,
+    33.11,
+    33.04,
+    33.04,
+    32.66,
+    32.98,
+    32.93,
+    32.98,
+    32.92,
+    32.97,
+    33.2,
+    33.0,
+    32.99,
+    32.95,
+    32.82,
+    32.99,
+    32.96,
+    32.92,
+    32.9,
+    32.83,
+    33.24,
+    32.86,
+    32.98,
+    32.96,
+    33.13,
+    32.85,
+    33.13,
+    32.9,
+    32.82,
+    33.04
+   ]
+  },
+  {
+   "id": "M03",
+   "kind": "machine",
+   "name": "Machine 03",
+   "line": "LINE-2",
+   "state": "running",
+   "cycle_s": 29.26,
+   "target_s": 29.0,
+   "output": 743,
+   "lot": "LOT-C",
+   "trend": [
+    29.45,
+    29.56,
+    29.44,
+    29.51,
+    29.43,
+    29.5,
+    29.27,
+    29.54,
+    29.54,
+    29.57,
+    29.52,
+    29.47,
+    29.35,
+    29.52,
+    29.37,
+    29.64,
+    29.38,
+    29.55,
+    29.64,
+    29.32,
+    29.61,
+    29.67,
+    29.62,
+    29.39,
+    29.31,
+    29.42,
+    29.32,
+    29.52,
+    29.4,
+    29.49
+   ]
+  }
+ ],
+ "shipments": [
+  {
+   "id": "SHP-1112",
+   "status": "delivered",
+   "date": "2026-11-12",
+   "customer": "CUS-C3",
+   "parts": 400,
+   "risk": "high",
+   "reason": "400 parts from LOT-B (IQC IQC-5531 Cpk 0.92 < 1.33)"
+  },
+  {
+   "id": "SHP-1115",
+   "status": "delivered",
+   "date": "2026-11-15",
+   "customer": "CUS-C5",
+   "parts": 240,
+   "risk": "high",
+   "reason": "240 parts from LOT-B (IQC IQC-5531 Cpk 0.92 < 1.33)"
+  },
+  {
+   "id": "SHP-1120",
+   "status": "in_warehouse",
+   "date": null,
+   "customer": null,
+   "parts": 360,
+   "risk": "high",
+   "reason": "360 parts from LOT-B (IQC IQC-5531 Cpk 0.92 < 1.33)"
+  }
+ ],
+ "sources": [
+  {
+   "source": "CMMS",
+   "dept": "maintenance",
+   "events": 1,
+   "last_at": "2026-10-20T02:00:00Z",
+   "delay_s": null
+  },
+  {
+   "source": "ENV-L1",
+   "dept": "production",
+   "events": 5,
+   "last_at": "2026-11-03T07:00:00Z",
+   "delay_s": null
+  },
+  {
+   "source": "HR",
+   "dept": "production",
+   "events": 1,
+   "last_at": "2026-11-03T05:00:00Z",
+   "delay_s": null
+  },
+  {
+   "source": "Meeting",
+   "dept": "meeting",
+   "events": 1,
+   "last_at": "2026-10-28T17:00:00Z",
+   "delay_s": null
+  },
+  {
+   "source": "PLC1",
+   "dept": "production",
+   "events": 1310,
+   "last_at": "2026-11-03T07:04:39Z",
+   "delay_s": null
+  },
+  {
+   "source": "PLC2",
+   "dept": "production",
+   "events": 1682,
+   "last_at": "2026-11-03T07:04:36Z",
+   "delay_s": 38.0
+  },
+  {
+   "source": "PLC3",
+   "dept": "production",
+   "events": 1465,
+   "last_at": "2026-11-03T07:04:49Z",
+   "delay_s": null
+  },
+  {
+   "source": "PLM",
+   "dept": "design",
+   "events": 1,
+   "last_at": "2025-12-31T17:00:00Z",
+   "delay_s": null
+  },
+  {
+   "source": "QMS",
+   "dept": "quality",
+   "events": 2,
+   "last_at": "2026-09-29T17:00:00Z",
+   "delay_s": null
+  },
+  {
+   "source": "WMS",
+   "dept": "warehouse",
+   "events": 3,
+   "last_at": "2026-11-03T06:52:00Z",
+   "delay_s": null
+  }
+ ]
+}

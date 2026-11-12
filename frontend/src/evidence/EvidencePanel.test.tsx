@@ -37,6 +37,7 @@ beforeEach(() => {
   vi.mocked(api.getClaims).mockResolvedValue([{ id: 'CLM-0012', customer_id: 'CUS-C3' } as Claim])
   vi.mocked(api.getDocs).mockImplementation(async (id) => (id === 'CLM-0009' ? docsClm9 : docsLotB) as never)
   vi.mocked(api.getImpact).mockResolvedValue(impact as never)
+  vi.mocked(api.getFeed).mockResolvedValue([])
   vi.mocked(api.getSummary).mockImplementation(async (id) => (id === 'M02' ? summaryM02
     : { ...summaryM02, id, type: 'lot', name: id, params: [], counts: { links: 3, events: 2 } }) as never)
 })
@@ -116,4 +117,18 @@ test('lot tab cites the spec document from the data', async () => {
   show('lot')
   expect(await screen.findByText('spec Cpk ≥ 1.33 theo D-12 p.7')).toBeInTheDocument()
   expect(api.getLotCompare).toHaveBeenCalledWith('LOT-B')
+})
+
+test('the press cycle shows which lot ran when, and the feed notices about the machine', async () => {
+  vi.mocked(api.getFeed).mockResolvedValue([
+    { id: 'AL-0001', kind: 'alert', at: '2026-11-03T14:00:00+07:00', objects: ['M02', 'LINE-1'] },
+    { id: '4M-0002', kind: '4m', at: '2026-11-03T13:52:00+07:00', objects: ['HOP-1', 'LOT-B', 'M02'] },
+    { id: '4M-0001', kind: '4m', at: '2026-10-28T15:00:00+07:00', objects: ['LOT-B'] },
+    { id: 'D-07', kind: 'doc', at: '2026-10-29T00:00:00+07:00', objects: ['M02'] },
+  ] as never)
+  useDemo.setState({ dataVersion: 1 })  // the feed is shared per data version: a new version fetches it again
+  show('machine')
+  await screen.findByRole('img', { name: /Machine 02 cycle time rose/ })
+  expect(screen.getAllByTestId('lot-band').map((b) => b.textContent)).toEqual(['LOT-A', 'LOT-B'])
+  await vi.waitFor(() => expect(screen.getAllByTestId('notice-marker').map((m) => m.textContent)).toEqual(['AL-0001 · 14:00', '4M-0002 · 13:52']))
 })

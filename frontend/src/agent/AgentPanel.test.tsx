@@ -16,6 +16,8 @@ const p = () => useDemo.getState().product[T]
 
 beforeEach(() => {
   useDemo.getState().reset()
+  vi.mocked(api.getFeed).mockResolvedValue([])
+  vi.mocked(api.getPlantOverview).mockImplementation(() => new Promise(() => {}))  // the dock opens on the overview
   vi.mocked(api.getSummary).mockImplementation(async (id) => {
     if (id === 'PM-0241') return pm0241 as never
     if (id === 'GHOST-1') throw new Error('404 object GHOST-1 not found')

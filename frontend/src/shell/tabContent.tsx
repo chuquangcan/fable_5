@@ -1,6 +1,9 @@
 import { DataView } from '../data/DataView'
 import { DocTab } from '../docs/DocTab'
 import { EvidencePanel } from '../evidence/EvidencePanel'
+import { FeedDetail } from '../feed/FeedDetail'
+import { DataSources } from '../plant/DataSources'
+import { PlantOverview } from '../plant/PlantOverview'
 import { TwinView } from '../plant/TwinView'
 import { ReportView } from '../report/ReportView'
 import { ReviewQueueList } from '../review/ReviewQueueList'
@@ -38,6 +41,9 @@ export function DockContent({ tab }: { tab: Tab | null }) {
   if (!tab) return <Placeholder text="Nothing open in this panel" />
   if (tab.kind === 'thread') return <ThreadDetails tabId={tab.target} />
   if (tab.kind === 'object') return <EvidencePanel nodeId={tab.target} owner={tab.id} />
+  if (tab.kind === 'overview') return <PlantOverview />
+  if (tab.kind === 'table' && tab.target === 'sources') return <DataSources />
+  if (tab.kind === 'feed') return <FeedDetail key={tab.target} id={tab.target} />
   if (tab.kind === 'review') return <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}><ReviewQueueList /></div>
   return <Placeholder text={tab.title} />
 }
