@@ -41,6 +41,7 @@ class Channel(BaseModel):
 CHANNELS: list[Channel] = [
     Channel(id="purchasing", dept="purchasing", system="ERP"),
     Channel(id="quality", dept="quality", system="QMS"),
+    Channel(id="production", dept="production", system="MES"),
     Channel(id="design", dept="design", system="PLM"),
     Channel(id="warehouse", dept="warehouse", system="WMS"),
     Channel(id="maintenance", dept="maintenance", system="CMMS"),

@@ -12,7 +12,7 @@ def test_mapping_values():
     assert dept_of_source("PLM") == "design" and dept_of_source("HR") == "production"
     assert dept_of_stage("dinh_kem") == "quality" and dept_of_stage("khach_hang") == "logistics"
     assert dept_of_source("XYZ") is None and dept_of_source(None) is None
-    assert [c.id for c in CHANNELS] == ["purchasing", "quality", "design", "warehouse", "maintenance", "logistics", "meeting"]
+    assert [c.id for c in CHANNELS] == ["purchasing", "quality", "production", "design", "warehouse", "maintenance", "logistics", "meeting"]
 
 
 def test_labels_ts_mirrors_backend():

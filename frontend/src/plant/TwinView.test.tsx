@@ -58,6 +58,9 @@ test('feed, department strip and twin agree', async () => {
   const quality = await screen.findByRole('button', { name: /^Quality · QMS/ })
   expect(await within(quality).findByTitle('Unread from this department')).toHaveTextContent('1')
   expect(within(screen.getByRole('button', { name: /^Maintenance · CMMS/ })).queryByTitle('Unread from this department')).toBeNull()
+  // the P1 alert comes from production: its chip carries the badge too (spec: card, chip and twin agree)
+  expect(within(screen.getByRole('button', { name: /^Production · MES/ })).getByTitle('Unread from this department')).toHaveTextContent('1')
+  await vi.waitFor(() => expect(document.querySelectorAll('[data-flow="production"]').length).toBeGreaterThan(0))
   // the flow layer runs a dotted line from the chip to each object of its unread items
   await vi.waitFor(() => expect(document.querySelectorAll('[data-flow="quality"]')).toHaveLength(2))
   await userEvent.click(quality)

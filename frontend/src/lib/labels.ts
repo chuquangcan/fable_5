@@ -124,6 +124,7 @@ export interface Channel { id: string; dept: string; system: string | null }
 export const CHANNELS: Channel[] = [
   { id: 'purchasing', dept: 'purchasing', system: 'ERP' },
   { id: 'quality', dept: 'quality', system: 'QMS' },
+  { id: 'production', dept: 'production', system: 'MES' },
   { id: 'design', dept: 'design', system: 'PLM' },
   { id: 'warehouse', dept: 'warehouse', system: 'WMS' },
   { id: 'maintenance', dept: 'maintenance', system: 'CMMS' },
