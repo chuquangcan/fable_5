@@ -91,3 +91,55 @@ export function formatPayload(p: Record<string, unknown>): string {
     .map(([k, v]) => `${PAYLOAD[k] ?? k} ${value(v)}${UNIT[k] ? ` ${UNIT[k]}` : ''}`)
     .join(' · ')
 }
+
+/** Departments: mirror of backend/onethread/departments.py (test_departments.py checks they agree). */
+export const DEPT_OF_STAGE: Record<string, string> = {
+  cung_ung: 'purchasing',
+  kho: 'warehouse',
+  san_xuat: 'production',
+  dinh_kem: 'quality',
+  logistics: 'logistics',
+  khach_hang: 'logistics',
+  hau_mai: 'quality',
+}
+
+export const DEPT_OF_SOURCE: Record<string, string> = {
+  ERP: 'purchasing',
+  WMS: 'warehouse',
+  QMS: 'quality',
+  PLM: 'design',
+  CMMS: 'maintenance',
+  PLC1: 'production',
+  PLC2: 'production',
+  PLC3: 'production',
+  MES: 'production',
+  'ENV-L1': 'production',
+  HR: 'production',
+  Meeting: 'meeting',
+}
+
+export interface Channel { id: string; dept: string; system: string | null }
+
+/** One chip per department and system on the plant twin's department strip. */
+export const CHANNELS: Channel[] = [
+  { id: 'purchasing', dept: 'purchasing', system: 'ERP' },
+  { id: 'quality', dept: 'quality', system: 'QMS' },
+  { id: 'design', dept: 'design', system: 'PLM' },
+  { id: 'warehouse', dept: 'warehouse', system: 'WMS' },
+  { id: 'maintenance', dept: 'maintenance', system: 'CMMS' },
+  { id: 'logistics', dept: 'logistics', system: null },
+  { id: 'meeting', dept: 'meeting', system: null },
+]
+
+export const deptLabel = pick({
+  purchasing: 'Purchasing',
+  quality: 'Quality',
+  production: 'Production',
+  warehouse: 'Warehouse',
+  logistics: 'Logistics',
+  design: 'Design',
+  maintenance: 'Maintenance',
+  meeting: 'Meeting',
+})
+
+export const channelLabel = (c: Channel) => (c.system ? `${deptLabel(c.dept)} · ${c.system}` : deptLabel(c.dept))
