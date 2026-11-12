@@ -176,8 +176,8 @@ a.btn{text-decoration:none}
 
 /* feed rail */
 .fchips{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;border-bottom:1px solid var(--line-soft);flex:none}
-.fchip{height:20px;padding:0 6px;border:1px solid #C9CDD3;border-radius:10px;background:#FFFFFF;font:inherit;font-size:11px;cursor:pointer;display:inline-flex;gap:3px;align-items:center}
-.fchip.on{border-color:var(--teal);color:var(--teal);font-weight:600}
+.kchip{height:20px;padding:0 6px;border:1px solid #C9CDD3;border-radius:10px;background:#FFFFFF;font:inherit;font-size:11px;cursor:pointer;display:inline-flex;gap:3px;align-items:center}
+.kchip.on{border-color:var(--teal);color:var(--teal);font-weight:600}
 .feed{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:6px 8px}
 .fcard{border:1px solid var(--line-soft);background:#FFFFFF;padding:6px 8px;display:flex;flex-direction:column;gap:3px;cursor:pointer;min-width:0}
 .fcard:hover{border-color:#B9BFC7}

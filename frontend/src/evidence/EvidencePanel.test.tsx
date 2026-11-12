@@ -132,3 +132,13 @@ test('the press cycle shows which lot ran when, and the feed notices about the m
   expect(screen.getAllByTestId('lot-band').map((b) => b.textContent)).toEqual(['LOT-A', 'LOT-B'])
   await vi.waitFor(() => expect(screen.getAllByTestId('notice-marker').map((m) => m.textContent)).toEqual(['AL-0001 · 14:00', '4M-0002 · 13:52']))
 })
+
+test('moving from a machine to a lot never renders the machine tab for the lot', async () => {
+  useDemo.getState().setEvidence(OWNER, 'machine')
+  const { rerender } = render(<EvidencePanel nodeId="M02" owner={OWNER} />)
+  await screen.findByRole('img', { name: /Machine 02 cycle time rose/ })
+  vi.mocked(api.getMachineWindow).mockClear()
+  rerender(<EvidencePanel nodeId="LOT-B" owner={OWNER} />)
+  await screen.findByRole('tab', { name: /IQC/ })
+  expect(api.getMachineWindow).not.toHaveBeenCalled()
+})

@@ -91,6 +91,10 @@ test('data sidebar opens tables and the document store in main, the review queue
   st().closeTab('bottom', 'review')
   await userEvent.click(screen.getByRole('button', { name: 'Review queue' }))
   expect(st().groups.bottom.active).toBe('review')
+  st().closeTab('bottom', 'table:sources')
+  await userEvent.click(screen.getByRole('button', { name: 'Data sources' }))
+  expect(st().groups.bottom.tabs.find((t) => t.id === 'table:sources')).toMatchObject({ kind: 'table', title: 'Data sources' })
+  expect(st().groups.bottom.active).toBe('table:sources')
 })
 
 test('plant sidebar: areas, volume counts and review badges; picking an asset selects it on the twin', async () => {

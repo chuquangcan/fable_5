@@ -18,7 +18,9 @@ export function DataSidebar() {
   const dataVersion = useDemo((s) => s.dataVersion)
   const mainActive = useDemo((s) => s.groups.main.active)
   const reviewActive = useDemo((s) => s.groups.bottom.active === 'review')
+  const sourcesActive = useDemo((s) => s.groups.bottom.active === 'table:sources')
   const openReview = useDemo((s) => s.openReview)
+  const openSources = useDemo((s) => s.openSources)
   const tables = useAsync(getTables, [dataVersion])
   const item = (key: string, on: boolean, open: () => void, label: string, extra?: string, mono = false) => (
     <button key={key} className={`asset${on ? ' on' : ''}`} aria-current={on || undefined} onClick={open}>
@@ -32,6 +34,7 @@ export function DataSidebar() {
         <div className="sec"><span>Documents</span></div>
         {item('docs', mainActive === 'table:docs', () => openData('docs', 'Document repository'), 'Document repository')}
         {item('review', reviewActive, openReview, 'Review queue')}
+        {item('sources', sourcesActive, openSources, 'Data sources')}
         <div className="sec"><span>Data tables · read-only</span></div>
         {tables.status === 'ok' && tables.data.map((t) =>
           item(t.name, mainActive === `table:${t.name}`, () => openData(t.name, t.name), t.name, t.rows.toLocaleString('en-US'), true))}

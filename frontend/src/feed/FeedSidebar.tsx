@@ -27,7 +27,7 @@ export function FeedSidebar() {
       <div className="side-title">Notifications & changes</div>
       <div className="fchips">
         {CHIPS.map((c) => (
-          <button key={c.kind} className={`fchip${kind === c.kind ? ' on' : ''}`} aria-pressed={kind === c.kind} onClick={() => setFeedFilter(c.kind)}>
+          <button key={c.kind} className={`kchip${kind === c.kind ? ' on' : ''}`} aria-pressed={kind === c.kind} onClick={() => setFeedFilter(c.kind)}>
             {c.label} <span className="mut">{feedFilter(byDept, c.kind, null).length}</span>
           </button>
         ))}

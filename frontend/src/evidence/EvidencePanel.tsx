@@ -14,7 +14,9 @@ export function EvidencePanel({ nodeId, owner }: { nodeId: string; owner: string
   const wanted = useDemo((s) => s.evidence[owner])
   const setEvidence = useDemo((s) => s.setEvidence)
   // keyed by node: a refetch after a data write keeps the open tab mounted (no flicker, no double fetch)
-  const s = useAsync(() => getSummary(nodeId), [nodeId, dataVersion], nodeId)
+  const loaded = useAsync(() => getSummary(nodeId), [nodeId, dataVersion], nodeId)
+  // the render right after nodeId changes still holds the previous node's summary: treat it as loading
+  const s = loaded.status === 'ok' && loaded.key !== nodeId ? ({ status: 'loading' } as const) : loaded
 
   if (s.status === 'error' && s.message.startsWith('404'))
     return <div className="mut" style={{ padding: 14 }}>{`No summary for ${nodeId}`}</div>

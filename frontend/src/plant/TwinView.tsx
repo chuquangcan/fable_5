@@ -1,5 +1,5 @@
 import '@xyflow/react/dist/style.css'
-import { type Edge, type Node, ReactFlow, ReactFlowProvider, useReactFlow } from '@xyflow/react'
+import { type Edge, type Node, ReactFlow, ReactFlowProvider, useReactFlow, useStore } from '@xyflow/react'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { getPlant, getPlantState } from '../api/client'
 import type { FeedItem, PlantArea, PlantState } from '../api/types'
@@ -96,7 +96,9 @@ function Canvas({ plant, state, feed }: { plant: PlantArea[]; state: PlantState;
   const frame = useRef<HTMLDivElement>(null)
   const chipRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const [lines, setLines] = useState<Line[]>([])
-  const [moved, setMoved] = useState(0)
+  const [ready, setReady] = useState(0)
+  // re-measure whenever the viewport moves (fit-view, zoom, pan), so lines end on their nodes
+  const viewport = useStore((st) => st.transform.join(','))
   useLayoutEffect(() => {
     const measure = () => {
       const box = frame.current?.getBoundingClientRect()
@@ -118,14 +120,14 @@ function Canvas({ plant, state, feed }: { plant: PlantArea[]; state: PlantState;
     const ro = new ResizeObserver(measure)
     if (frame.current) ro.observe(frame.current)
     return () => { cancelAnimationFrame(raf); ro.disconnect() }
-  }, [unread, layers.flow, nodes, moved])
+  }, [unread, layers.flow, nodes, ready, viewport])
 
   return (
     <div ref={frame} className="twin">
       <DeptStrip unread={unread} chipRefs={chipRefs} />
       <div className="twin-toolbar" role="toolbar" aria-label="Twin">
         {LAYERS.map((l) => (
-          <button key={l.id} className={`fchip${layers[l.id] ? ' on' : ''}`} aria-pressed={layers[l.id]} onClick={() => toggleLayer(l.id)}>{l.label}</button>
+          <button key={l.id} className={`kchip${layers[l.id] ? ' on' : ''}`} aria-pressed={layers[l.id]} onClick={() => toggleLayer(l.id)}>{l.label}</button>
         ))}
         <span style={{ flex: 1 }} />
         <button className="btn" aria-label="Zoom out" onClick={() => void rf.zoomOut()}>−</button>
@@ -138,7 +140,7 @@ function Canvas({ plant, state, feed }: { plant: PlantArea[]; state: PlantState;
           nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView minZoom={0.3} maxZoom={2}
           onNodeClick={(_, n) => { if (n.type === 'twin' && n.id !== 'VOL') selectTwin(n.id, title((n.data as TwinNodeProps).n)) }}
           onNodeDoubleClick={(_, n) => { const t = n.type === 'twin' && (n.data as TwinNodeProps).n.type; if (t === 'volume' || t === 'shipment') setSerialsOf(n.id) }}
-          onPaneClick={() => selectTwin(null)} onInit={() => setMoved((m) => m + 1)} onMoveEnd={() => setMoved((m) => m + 1)}
+          onPaneClick={() => selectTwin(null)} onInit={() => setReady((r) => r + 1)}
           nodesDraggable={false} nodesConnectable={false} elementsSelectable={false} zoomOnDoubleClick={false}
           proOptions={{ hideAttribution: true }}
         />
