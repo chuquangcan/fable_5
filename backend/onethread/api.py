@@ -14,8 +14,8 @@ from onethread.agent.replay import default_fixture_path, load_fixture
 from onethread.agent.stream import agent_event_stream
 from onethread.config import settings
 from onethread.db import connect
-from onethread.queries import (analysis, claims, docs, events, fault, impact, links, metrics, plant, repository, summary,
-                               thread_flow, trace)
+from onethread.queries import (analysis, claims, docs, events, fault, feed, impact, links, metrics, plant, repository,
+                               summary, thread_flow, trace)
 from onethread.queries.common import NotFound
 from onethread.report import ReportDraft, build_report_draft
 
@@ -181,6 +181,11 @@ def api_lot_compare(lot_id: str, conn=Conn) -> analysis.LotCompare:
 @app.get("/api/plant")
 def api_plant(conn=Conn) -> list[plant.Area]:
     return plant.plant_tree(conn)
+
+
+@app.get("/api/feed")
+def api_feed(conn=Conn) -> list[feed.FeedItem]:
+    return feed.list_feed(conn)
 
 
 @app.get("/api/db/tables")
