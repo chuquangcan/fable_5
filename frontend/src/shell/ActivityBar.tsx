@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { type View, useDemo } from '../store/demo'
+import { activeProduct, type Rail, useDemo } from '../store/demo'
 import { useReviewCount } from './useReviewCount'
 
 function Icon({ children }: { children: ReactNode }) {
@@ -14,40 +14,39 @@ function Badge({ n, bg }: { n: number; bg: string }) {
   return <span className="ab-badge" style={{ background: bg }}>{n}</span>
 }
 
-const VIEWS: { id: View; label: string; icon: ReactNode }[] = [
-  {
-    id: 'product', label: 'Product tracing',
-    icon: <><circle cx="6" cy="6" r="2.2" /><circle cx="18" cy="8" r="2.2" /><circle cx="9" cy="18" r="2.2" /><path d="M8.2 6.3l7.6 1.3M6.6 8.2l1.8 7.6M16.6 9.8l-6.2 6.6" /></>,
-  },
-  { id: 'plant', label: 'Plant', icon: <path d="M3 20V10l5 3v-3l5 3v-3l5 3V4h3v16z" /> },
+const RAILS: { id: Rail; label: string; icon: ReactNode }[] = [
+  { id: 'feed', label: 'Notifications', icon: <><path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 004 0" /></> },
+  { id: 'assets', label: 'Assets', icon: <path d="M3 20V10l5 3v-3l5 3v-3l5 3V4h3v16z" /> },
   {
     id: 'data', label: 'Data repository',
     icon: <><ellipse cx="12" cy="6" rx="7" ry="2.6" /><path d="M5 6v12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6" /></>,
   },
 ]
 
-export function ActivityBar() {
-  const view = useDemo((s) => s.view)
-  const setView = useDemo((s) => s.setView)
+/** Swaps the left rail only; open tabs stay as they are. */
+export function ActivityBar({ unread = 0 }: { unread?: number }) {
+  const rail = useDemo((s) => s.layout.rail)
+  const setRail = useDemo((s) => s.setRail)
   const agentOpen = useDemo((s) => s.agentOpen)
   const toggleAgent = useDemo((s) => s.toggleAgent)
-  const claimId = useDemo((s) => s.claimId)
-  const reportOn = useDemo((s) => s.view === 'product' && s.activeTab === 'report')
+  const claimId = useDemo((s) => activeProduct(s)?.p.claimId ?? null)
+  const reportOn = useDemo((s) => s.groups.main.active?.startsWith('report:') ?? false)
   const reviews = useReviewCount()
   return (
     <nav aria-label="Views" className="activity">
-      {VIEWS.map((v) => (
+      {RAILS.map((r) => (
         <button
-          key={v.id} className={`ab${view === v.id ? ' on' : ''}`} title={v.label} aria-label={v.label}
-          aria-current={view === v.id ? 'page' : undefined} onClick={() => setView(v.id)}
+          key={r.id} className={`ab${rail === r.id ? ' on' : ''}`} title={r.label} aria-label={r.label}
+          aria-pressed={rail === r.id} onClick={() => setRail(r.id)}
         >
-          <Icon>{v.icon}</Icon>
-          {v.id === 'data' && !!reviews && <Badge n={reviews} bg="var(--teal)" />}
+          <Icon>{r.icon}</Icon>
+          {r.id === 'feed' && unread > 0 && <Badge n={unread} bg="var(--red)" />}
+          {r.id === 'data' && !!reviews && <Badge n={reviews} bg="var(--teal)" />}
         </button>
       ))}
       <button
-        className={`ab${reportOn ? ' on' : ''}`} title={claimId ? 'RCA report draft' : 'Open a claim to create a report'} aria-label="Report"
-        disabled={!claimId} onClick={() => useDemo.getState().setTab('report')}
+        className={`ab${reportOn ? ' on' : ''}`} title={claimId ? `RCA report draft · ${claimId}` : 'Open a product tab with a claim to create a report'}
+        aria-label="Report" disabled={!claimId} onClick={() => claimId && useDemo.getState().openReport(claimId)}
       >
         <Icon><path d="M5 3h14v18H5z" /><path d="M8 8h8M8 12h8M8 16h5" /></Icon>
       </button>

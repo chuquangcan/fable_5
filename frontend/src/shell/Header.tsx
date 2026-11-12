@@ -2,11 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { resetDemoData, search } from '../api/client'
 import type { SearchHit } from '../api/types'
 import { docTypeLabel, objectTypeLabel } from '../lib/labels'
-import { DEMO_NOW, formatPlantTime } from '../lib/time'
+import { formatPlantTime } from '../lib/time'
 import { useDemo } from '../store/demo'
-
-/** Claims whose serial is traceable in the demo data: picking one opens its thread. */
-const TRACEABLE_CLAIMS = new Set(['CLM-0012'])
 
 function Search() {
   const [q, setQ] = useState('')
@@ -35,9 +32,7 @@ function Search() {
   }, [q])
 
   const pick = (h: SearchHit) => {
-    const s = useDemo.getState()
-    if (h.type === 'claim' && TRACEABLE_CLAIMS.has(h.id)) s.openClaim(h.id)
-    else s.goTo(h.id)
+    void useDemo.getState().goTo(h.id)  // a serial opens its product tab, a claim its thread in fault mode
     setQ('')
     setOpen(false)
     ref.current?.blur()
@@ -81,6 +76,7 @@ function Search() {
 
 export function Header() {
   const [busy, setBusy] = useState(false)
+  const asOf = useDemo((s) => s.asOf)
   const reset = async () => {
     if (!window.confirm('Reset demo: remove attached documents, undo every review decision and return to the first screen?')) return
     setBusy(true)
@@ -99,11 +95,12 @@ export function Header() {
         <span style={{ width: 12, height: 12, border: '2px solid #3FB6C0' }} />
         One Thread
       </div>
-      <span style={{ color: '#9AA3AF' }}>Plant 1 · Line 1 · MH-20 water pump</span>
+      <span style={{ color: '#9AA3AF' }}>Plant 1 · Line 1 MH-20 · Line 2 MH-25</span>
       <span style={{ flex: 1 }} />
       <Search />
       <span style={{ flex: 1 }} />
-      <span className="mono" style={{ color: '#FFFFFF' }}>{formatPlantTime(DEMO_NOW, 'YYYY-MM-DD HH:mm')}</span>
+      <span className="mut" style={{ color: '#9AA3AF' }}>As of</span>
+      <span className="mono" style={{ color: '#FFFFFF' }} title="Demo clock: the plant view shows the plant as of this time">{formatPlantTime(asOf, 'YYYY-MM-DD HH:mm')}</span>
       <span className="demo-tag">DEMO · SAMPLE DATA</span>
       <button className="hbtn" disabled={busy} onClick={() => void reset()} title="Remove everything the demo has written">Reset demo</button>
       <span style={{ color: '#C9CFD6' }}>Quality · QA engineer</span>

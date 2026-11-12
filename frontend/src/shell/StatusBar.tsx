@@ -1,7 +1,7 @@
 import { getProvider } from '../api/client'
 import { useAsync } from '../evidence/useAsync'
 import { formatPlantTime } from '../lib/time'
-import { useDemo } from '../store/demo'
+import { activeMain, activeProduct, useDemo } from '../store/demo'
 import { useReviewCount } from './useReviewCount'
 
 const CURSOR = '2026-11-03T14:05:00+07:00'
@@ -15,8 +15,6 @@ const ticks: { label: string; style: React.CSSProperties }[] = [
 
 const abs = (style: React.CSSProperties): React.CSSProperties => ({ position: 'absolute', ...style })
 const diamond = (style: React.CSSProperties): React.CSSProperties => abs({ background: 'var(--teal)', transform: 'rotate(45deg)', ...style })
-
-const VIEW_LABEL = { product: 'Product tracing', plant: 'Plant', data: 'Data repository' } as const
 
 /** The claim's journey (story timeline); only meaningful next to its thread. */
 function Journey() {
@@ -47,10 +45,12 @@ function Journey() {
   )
 }
 
+const openReview = () => useDemo.getState().openTab('bottom', { id: 'review', kind: 'review', target: 'queue', title: 'Review queue' })
+
 export function StatusBar() {
-  const view = useDemo((s) => s.view)
-  const journey = useDemo((s) => s.view === 'product' && s.claimId === 'CLM-0012' && s.activeTab === 'thread')
-  const setDataTab = useDemo((s) => s.setDataTab)
+  const title = useDemo((s) => activeMain(s)?.title ?? '')
+  // the claim's journey only means something next to a product tab that has a claim
+  const journey = useDemo((s) => activeProduct(s)?.p.claimId === 'CLM-0012')
   const reviews = useReviewCount()
   const p = useAsync(getProvider, [])
   const agent = p.status !== 'ok' ? 'Agent: …'
@@ -59,9 +59,9 @@ export function StatusBar() {
     <div style={{ flex: 'none', display: 'flex', flexDirection: 'column' }}>
       {journey && <Journey />}
       <div className="statusline">
-        <span>{VIEW_LABEL[view]}</span>
-        <span>Line 1 · MH-20 · Bearing 6203</span>
-        <button className="sbtn" onClick={() => setDataTab('review')}>{`Review queue ${reviews ?? '…'}`}</button>
+        <span>{title}</span>
+        <span>DEMO · sample data · read-only</span>
+        <button className="sbtn" onClick={openReview}>{`Review queue ${reviews ?? '…'}`}</button>
         <span style={{ marginLeft: 'auto' }}>{agent}</span>
         <span>UTC+7</span>
         <span>One Thread demo v0.2</span>
