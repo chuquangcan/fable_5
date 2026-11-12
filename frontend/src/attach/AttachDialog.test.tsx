@@ -4,7 +4,11 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
 import type { AttachResult, NodeSummary } from '../api/types'
 import attachCoa from '../test/fixtures/attach_coa.json'
-import { useDemo } from '../store/demo'
+import { threadTabId, useDemo } from '../store/demo'
+
+const T = threadTabId('MH20-0001')
+/** A product tab is open on MH20-0001, optionally with a focused node. */
+const onThread = (focus?: string) => { useDemo.getState().openProduct('MH20-0001'); if (focus) useDemo.getState().focusNode(T, focus) }
 import { AttachDialog } from './AttachDialog'
 
 vi.mock('../api/client')
@@ -42,8 +46,8 @@ test('sample button attaches: result card, dataVersion +1, flash on target', asy
   expect(useDemo.getState().flashNodeId).toBe('LOT-B')
 })
 
-test('upload sends the file with the focused node as hint', async () => {
-  useDemo.setState({ focusNodeId: 'LOT-B' })
+test('upload sends the file with the focused node of the product tab as hint', async () => {
+  onThread('LOT-B')
   vi.mocked(api.uploadDocument).mockResolvedValue(attachCoa as AttachResult)
   render(<AttachDialog />)
   const file = new File(['x'], 'a.pdf', { type: 'application/pdf' })
@@ -54,7 +58,7 @@ test('upload sends the file with the focused node as hint', async () => {
 })
 
 test('without a focused node the hint defaults to the thread root, like the overview', async () => {
-  useDemo.setState({ threadRoot: 'MH20-0001' })
+  onThread()
   vi.mocked(api.uploadDocument).mockResolvedValue(attachCoa as AttachResult)
   render(<AttachDialog />)
   expect(await screen.findByText('Suggested target when no code is recognised: MH20-0001')).toBeInTheDocument()
@@ -63,8 +67,18 @@ test('without a focused node the hint defaults to the thread root, like the over
   expect(api.uploadDocument).toHaveBeenCalledWith(file, 'MH20-0001')
 })
 
+test('on the plant the hint is the selected object; nothing selected sends none', async () => {
+  useDemo.getState().selectTwin('M02')
+  const { unmount } = render(<AttachDialog />)
+  expect(await screen.findByText('Suggested target when no code is recognised: M02')).toBeInTheDocument()
+  unmount()
+  useDemo.getState().selectTwin(null)
+  render(<AttachDialog />)
+  expect(screen.getByText('No node selected — documents without a code will be rejected')).toBeInTheDocument()
+})
+
 test.each(['AGG-LOT-B', 'D-07', 'PM-0241'])('non-object target %s is not sent as a hint', async (id) => {
-  useDemo.setState({ focusNodeId: id, threadRoot: 'MH20-0001' })
+  onThread(id)
   vi.mocked(api.uploadDocument).mockResolvedValue(attachCoa as AttachResult)
   render(<AttachDialog />)
   expect(await screen.findByText(`${id} is not an object — documents without a code will be rejected`)).toBeInTheDocument()

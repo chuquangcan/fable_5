@@ -1,11 +1,9 @@
-import { useEffect, useRef } from 'react'
 import { documentFileUrl, getDocument } from '../api/client'
 import type { DocDetail, ReviewItem } from '../api/types'
 import { Pending, useAsync } from '../evidence/useAsync'
 import { docTypeLabel, methodLabel, objectTypeLabel, relationLabel, statusLabel } from '../lib/labels'
 import { formatPlantTime } from '../lib/time'
 import { ReviewActions } from '../review/ReviewActions'
-import { useFocusTrap } from '../lib/useFocusTrap'
 import { useDemo } from '../store/demo'
 
 function Meta({ d }: { d: DocDetail }) {
@@ -39,14 +37,13 @@ function Meta({ d }: { d: DocDetail }) {
 
 function LinkRow({ l, docId }: { l: ReviewItem; docId: string }) {
   const goTo = useDemo((s) => s.goTo)
-  const closeDoc = useDemo((s) => s.closeDoc)
   const out = l.from_id === docId
   const other = out ? { id: l.to_id, name: l.to_name, type: l.to_type } : { id: l.from_id, name: l.from_name, type: l.from_type }
   return (
     <div className={`it doc-${l.status}`} style={{ margin: 0, gap: 6 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span className="mut">{relationLabel(l.relation)}</span>
-        <button className="cite" style={{ cursor: 'pointer' }} onClick={() => { closeDoc(); goTo(other.id) }} title="Open object">
+        <button className="cite" style={{ cursor: 'pointer' }} onClick={() => void goTo(other.id)} title="Open object">
           {other.id}
         </button>
         <span className="mut" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -63,7 +60,7 @@ function LinkRow({ l, docId }: { l: ReviewItem; docId: string }) {
   )
 }
 
-function Body({ id }: { id: string }) {
+function DocBody({ id }: { id: string }) {
   const dataVersion = useDemo((s) => s.dataVersion)
   const s = useAsync(() => getDocument(id), [id, dataVersion])
   if (s.status !== 'ok') return <Pending state={s} />
@@ -114,33 +111,15 @@ function Body({ id }: { id: string }) {
   )
 }
 
-/** Right-hand drawer with one document: metadata, original file, links (with review) and full text. */
-export function DocDrawer() {
-  const id = useDemo((s) => s.docId)
-  const closeDoc = useDemo((s) => s.closeDoc)
-  const ref = useRef<HTMLDivElement>(null)
-  // inactive while the attach dialog is on top, so the two traps do not fight
-  const attachOpen = useDemo((s) => s.attachOpen)
-  useFocusTrap(ref, !!id && !attachOpen)
-  useEffect(() => {
-    if (!id) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !useDemo.getState().attachOpen) closeDoc() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [id, closeDoc])
-  if (!id) return null
+/** A document in a main tab: metadata, original file, links (with review) and full text. */
+export function DocTab({ id }: { id: string }) {
   return (
-    <>
-      <div className="scrim" onMouseDown={closeDoc} />
-      <aside ref={ref} role="dialog" aria-modal="true" aria-labelledby="doc-title" tabIndex={-1} className="drawer">
-        <div style={{ height: 40, flex: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderBottom: '1px solid var(--line-soft)' }}>
-          <span id="doc-title" className="mono" style={{ fontWeight: 600, fontSize: 14 }}>{id}</span>
-          <span className="mut">Document details</span>
-          <span style={{ flex: 1 }} />
-          <button className="btn" aria-label="Close" onClick={closeDoc}>✕</button>
-        </div>
-        <Body id={id} />
-      </aside>
-    </>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ height: 40, flex: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderBottom: '1px solid var(--line-soft)' }}>
+        <h2 className="mono" style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>{id}</h2>
+        <span className="mut">Document details</span>
+      </div>
+      <DocBody id={id} />
+    </div>
   )
 }

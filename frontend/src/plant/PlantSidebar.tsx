@@ -5,8 +5,8 @@ import { useDemo } from '../store/demo'
 /** Plant assets by area. Volume nodes (serials, boxes) are counted, not listed. */
 export function PlantSidebar() {
   const dataVersion = useDemo((s) => s.dataVersion)
-  const selected = useDemo((s) => s.plantAsset)
-  const selectAsset = useDemo((s) => s.selectAsset)
+  const selected = useDemo((s) => s.twin.selected)
+  const goTo = useDemo((s) => s.goTo)
   const s = useAsync(getPlant, [dataVersion])
   return (
     <>
@@ -21,7 +21,7 @@ export function PlantSidebar() {
                 {g.items.map((i) => (
                   <button
                     key={i.id} className={`asset${selected === i.id ? ' on' : ''}`} aria-current={selected === i.id || undefined}
-                    onClick={() => selectAsset(i.id)}
+                    onClick={() => void goTo(i.id)}
                   >
                     <span className="mono" style={{ fontWeight: 500 }}>{i.name}</span>
                     {i.name !== i.id && <span className="mut mono" style={{ fontSize: 11 }}>{i.id}</span>}

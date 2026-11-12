@@ -55,8 +55,24 @@ test('passes reset through so a partial answer can be discarded', async () => {
   expect((await p).map((e) => e.type)).toEqual(['text', 'reset', 'done'])
 })
 
-test('uses the open claim and forces mode=replay when toggled', async () => {
-  useDemo.getState().openClaim('CLM-0012')
+test('asks about the claim of the active product tab; the story claim on the twin', async () => {
+  const ask = async () => {
+    const p = collect(makeServerSource()('q', new AbortController().signal))
+    await tick()
+    const claim = new URL(last().url, 'http://x').searchParams.get('claim')
+    last().emit({ type: 'done', elapsed_s: 1 })
+    await p
+    return claim
+  }
+  useDemo.getState().openClaim('CLM-0009', 'MH20-0457')
+  expect(await ask()).toBe('CLM-0009')
+  useDemo.getState().openClaim('CLM-0012', 'MH20-0001')
+  expect(await ask()).toBe('CLM-0012')
+  useDemo.getState().activate('main', 'twin')
+  expect(await ask()).toBe('CLM-0012')
+})
+
+test('forces mode=replay when toggled', async () => {
   useAgentMode.setState({ replay: true })
   const p = collect(makeServerSource()('q', new AbortController().signal))
   await tick()

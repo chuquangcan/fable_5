@@ -1,4 +1,5 @@
-import { useDemo } from '../store/demo'
+import { STORY_CLAIM } from '../lib/story'
+import { activeProduct, useDemo } from '../store/demo'
 import { useAgentMode } from './mode'
 import type { AgentEvent } from './reducer'
 
@@ -39,7 +40,7 @@ export const scriptedSource = makeScriptedSource(1)
 export const makeServerSource =
   (): AgentSource =>
   async function* (question, signal) {
-    const params = new URLSearchParams({ q: question, claim: useDemo.getState().claimId ?? 'CLM-0012' })
+    const params = new URLSearchParams({ q: question, claim: activeProduct(useDemo.getState())?.p.claimId ?? STORY_CLAIM })
     if (useAgentMode.getState().replay) params.set('mode', 'replay')
     const es = new EventSource(`/api/agent/ask?${params}`)
 

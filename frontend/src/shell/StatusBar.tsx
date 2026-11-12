@@ -45,7 +45,7 @@ function Journey() {
   )
 }
 
-const openReview = () => useDemo.getState().openTab('bottom', { id: 'review', kind: 'review', target: 'queue', title: 'Review queue' })
+const openReview = () => useDemo.getState().openReview()
 
 export function StatusBar() {
   const title = useDemo((s) => activeMain(s)?.title ?? '')

@@ -2,9 +2,8 @@ import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { attachSample, getSummary, listSamples, uploadDocument } from '../api/client'
 import type { AttachMethod, AttachResult } from '../api/types'
 import { NOT_ATTACHABLE } from '../evidence/OverviewTab'
-import { DEFAULT_ASSET } from '../plant/PlantView'
 import { useFocusTrap } from '../lib/useFocusTrap'
-import { useDemo } from '../store/demo'
+import { activeMain, activeProduct, useDemo } from '../store/demo'
 
 const METHOD_LABEL: Record<AttachMethod, string> = { code: 'Code', rule: 'Rule', llm: 'LLM', manual: 'Manual' }
 
@@ -40,8 +39,12 @@ function ResultCard({ r }: { r: AttachResult }) {
 
 function Dialog() {
   const closeAttach = useDemo((s) => s.closeAttach)
-  // The node on screen: the plant view's asset, else the focused thread node, else the thread's root serial.
-  const target = useDemo((s) => (s.view === 'plant' ? s.plantAsset ?? DEFAULT_ASSET : s.view === 'data' ? null : s.focusNodeId ?? s.threadRoot))
+  // The node in context: the product tab's focused node (else its serial), the object selected on the twin, else none.
+  const target = useDemo((s) => {
+    const prod = activeProduct(s)
+    if (prod) return prod.p.focusNodeId ?? prod.p.root
+    return activeMain(s)?.kind === 'twin' ? s.twin.selected : null
+  })
   const [checked, setChecked] = useState<{ id: string; ok: boolean } | null>(null)
   const [samples, setSamples] = useState<string[]>([])
   const [busy, setBusy] = useState(false)

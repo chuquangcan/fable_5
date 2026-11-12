@@ -1,20 +1,16 @@
 import { Fragment, type ReactNode, useEffect, useState } from 'react'
-import { useDemo } from '../store/demo'
+import { activeProduct, useDemo } from '../store/demo'
 import { useAgentMode } from './mode'
 import type { AgentState, Segment } from './reducer'
+import { STORY_CLAIM } from '../lib/story'
 import { DEMO_QUESTION } from './sources'
 import { useAgent } from './useAgent'
 
 export function CiteChip({ label, target_id }: { label: string; target_id: string | null }) {
-  const selectNode = useDemo((s) => s.selectNode)
-  const openDoc = useDemo((s) => s.openDoc)
+  const goTo = useDemo((s) => s.goTo)
   if (target_id === null) return <span className="cite">{label}</span>
-  // documents open in the detail drawer; everything else focuses the thread node
-  const open = () => {
-    if (/^D-/.test(target_id)) return openDoc(target_id)
-    if (useDemo.getState().claimId) useDemo.getState().setTab('thread')
-    selectNode(target_id)
-  }
+  // one navigation entry: documents open a tab, nodes on the open thread are focused, other objects open in the dock
+  const open = () => void goTo(target_id)
   return (
     <button
       className="cite"
@@ -78,8 +74,9 @@ export function AgentPanel() {
     if (cmd.kind === 'clear') clear()
     else if (cmd.kind === 'ask' && cmd.question) ask(cmd.question)
   }, [cmd, ask, clear])
-  const claimId = useDemo((s) => s.claimId)
-  const setTab = useDemo((s) => s.setTab)
+  const claimId = useDemo((s) => activeProduct(s)?.p.claimId ?? null)
+  const productTab = useDemo((s) => activeProduct(s)?.tabId ?? null)
+  const openReport = useDemo((s) => s.openReport)
   const setEvidence = useDemo((s) => s.setEvidence)
   const [draft, setDraft] = useState('')
   const replay = useAgentMode((s) => s.replay)
@@ -118,8 +115,8 @@ export function AgentPanel() {
         {state.status === 'error' && <div style={{ color: 'var(--red-ink)' }}>Agent error: {state.error}</div>}
         {state.actions.length > 0 && (
           <div style={{ display: 'flex', gap: 6 }}>
-            {state.actions.includes('open_report') && <button className="btn pri" onClick={() => setTab('report')}>Create report draft</button>}
-            {state.actions.includes('open_impact') && <button className="btn" onClick={() => setEvidence('impact')}>View impact scope</button>}
+            {state.actions.includes('open_report') && <button className="btn pri" onClick={() => openReport(claimId ?? STORY_CLAIM)}>Create report draft</button>}
+            {state.actions.includes('open_impact') && productTab && <button className="btn" onClick={() => setEvidence(productTab, 'impact')}>View impact scope</button>}
           </div>
         )}
       </div>

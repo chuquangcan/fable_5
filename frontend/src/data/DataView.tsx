@@ -4,36 +4,37 @@ import type { DocStatus } from '../api/types'
 import { Pending, useAsync } from '../evidence/useAsync'
 import { docTypeLabel, statusLabel } from '../lib/labels'
 import { formatPlantTime } from '../lib/time'
-import { ReviewQueueList } from '../review/ReviewQueueList'
-import { type DataTab, useDemo } from '../store/demo'
+import { useDemo } from '../store/demo'
 
 const STATUSES: DocStatus[] = ['confirmed', 'inferred', 'pending', 'suggested', 'unlinked']
 const PAGE = 50
 
-/** Left rail of the data view: the document store, the review queue and the raw tables with row counts. */
+/** Main tab of the document store (`docs`) or of one raw table. */
+const openData = (target: string, title: string) =>
+  useDemo.getState().openTab('main', { id: `table:${target}`, kind: 'table', target, title })
+
+/** Left rail of the data repository: the document store, the review queue and the raw tables, each opening a tab. */
 export function DataSidebar() {
   const dataVersion = useDemo((s) => s.dataVersion)
-  const tab = useDemo((s) => s.dataTab)
-  const table = useDemo((s) => s.dataTable)
-  const setDataTab = useDemo((s) => s.setDataTab)
+  const mainActive = useDemo((s) => s.groups.main.active)
+  const reviewActive = useDemo((s) => s.groups.bottom.active === 'review')
+  const openReview = useDemo((s) => s.openReview)
   const tables = useAsync(getTables, [dataVersion])
-  const item = (t: DataTab, label: string, extra?: string, name?: string) => {
-    const on = tab === t && (t !== 'tables' || name === table)
-    return (
-      <button key={name ?? t} className={`asset${on ? ' on' : ''}`} aria-current={on || undefined} onClick={() => setDataTab(t, name)}>
-        <span className={name ? 'mono' : undefined}>{label}</span><span style={{ flex: 1 }} />{extra && <span className="mut mono">{extra}</span>}
-      </button>
-    )
-  }
+  const item = (key: string, on: boolean, open: () => void, label: string, extra?: string, mono = false) => (
+    <button key={key} className={`asset${on ? ' on' : ''}`} aria-current={on || undefined} onClick={open}>
+      <span className={mono ? 'mono' : undefined}>{label}</span><span style={{ flex: 1 }} />{extra && <span className="mut mono">{extra}</span>}
+    </button>
+  )
   return (
     <>
       <div className="side-title">Data repository</div>
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
         <div className="sec"><span>Documents</span></div>
-        {item('docs', 'Document repository')}
-        {item('review', 'Review queue')}
+        {item('docs', mainActive === 'table:docs', () => openData('docs', 'Document repository'), 'Document repository')}
+        {item('review', reviewActive, openReview, 'Review queue')}
         <div className="sec"><span>Data tables · read-only</span></div>
-        {tables.status === 'ok' && tables.data.map((t) => item('tables', t.name, t.rows.toLocaleString('en-US'), t.name))}
+        {tables.status === 'ok' && tables.data.map((t) =>
+          item(t.name, mainActive === `table:${t.name}`, () => openData(t.name, t.name), t.name, t.rows.toLocaleString('en-US'), true))}
       </div>
     </>
   )
@@ -149,22 +150,16 @@ function Table({ name }: { name: string }) {
   )
 }
 
-const TITLE: Record<DataTab, string> = { docs: 'Document repository', review: 'Review queue', tables: 'Data tables' }
-
-export function DataView() {
-  const tab = useDemo((s) => s.dataTab)
-  const table = useDemo((s) => s.dataTable)
+/** A data tab: `docs` is the document store, any other target is a raw table. */
+export function DataView({ target }: { target: string }) {
+  const docs = target === 'docs'
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <div className="viewbar">
-        <span style={{ fontWeight: 600 }}>{TITLE[tab]}</span>
-        <span className="mut">
-          {tab === 'docs' ? '· every document and the nodes it is attached to' : tab === 'review' ? '· machine-generated links awaiting human review' : '· raw data in PostgreSQL, read-only'}
-        </span>
+        <span style={{ fontWeight: 600 }}>{docs ? 'Document repository' : 'Data tables'}</span>
+        <span className="mut">{docs ? '· every document and the nodes it is attached to' : '· raw data in PostgreSQL, read-only'}</span>
       </div>
-      {tab === 'docs' && <Documents />}
-      {tab === 'review' && <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px', maxWidth: 720 }}><ReviewQueueList /></div>}
-      {tab === 'tables' && <Table name={table} />}
+      {docs ? <Documents /> : <Table name={target} />}
     </div>
   )
 }

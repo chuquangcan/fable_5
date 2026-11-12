@@ -143,8 +143,6 @@ table.g.sticky thead th{position:sticky;top:0;z-index:1}
 table.g.hover tbody tr:hover td{background:#F7F8F9}
 .cellv{max-width:320px;overflow:hidden;text-overflow:ellipsis}
 /* ---- document drawer ---- */
-.scrim{position:fixed;inset:32px 0 22px 0;background:rgba(27,31,36,.18);z-index:40}
-.drawer{position:fixed;top:32px;right:0;bottom:22px;width:520px;max-width:100vw;background:#FFFFFF;border-left:1px solid var(--line);box-shadow:-8px 0 28px rgba(0,0,0,.18);display:flex;flex-direction:column;z-index:41;outline:none;font-size:12px}
 .dsec{padding-bottom:10px;border-bottom:1px solid var(--line-faint)}
 .dsec h3{margin:0}
 table.kv th{width:110px;background:transparent;border-bottom:1px solid var(--line-faint);font-weight:500;color:var(--label)}

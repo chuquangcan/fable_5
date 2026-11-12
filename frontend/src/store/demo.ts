@@ -79,6 +79,8 @@ export interface DemoState {
   openClaim: (claimId: string, serial: string) => void
   openReport: (claimId: string) => void
   openDoc: (id: string) => void
+  /** The review queue lives in the dock. */
+  openReview: () => void
   selectTwin: (id: string | null, title?: string) => void
   focusNode: (tabId: string, id: string | null) => void
   selectNode: (tabId: string, id: string) => void
@@ -274,6 +276,7 @@ export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((se
     },
     openClaim: (claimId, serial) => { get().openProduct(serial, { claimId }) },
     openReport: (claimId) => get().openTab('main', { id: `report:${claimId}`, kind: 'report', target: claimId, title: `RCA report · ${claimId}` }),
+    openReview: () => get().openTab('bottom', REVIEW),
     openDoc: (id) => get().openTab('main', { id: `doc:${id}`, kind: 'doc', target: id, title: id }, { preview: true }),
     selectTwin: (id, title) => {
       if (id === null) {

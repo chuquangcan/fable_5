@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { getReportDraft } from '../api/client'
 import type { ReportDraft, ReportSegment } from '../api/types'
 import { CiteChip } from '../agent/AgentPanel'
-import { useDemo } from '../store/demo'
 
 const fmt = (n: number) => n.toLocaleString('en-US')
 const TONE = {
@@ -26,15 +25,13 @@ const Tile = ({ label, value, bg, ink }: { label: string; value: string; bg: str
   </div>
 )
 
-export function ReportView() {
-  const claimId = useDemo((s) => s.claimId)
+export function ReportView({ claimId }: { claimId: string }) {
   const [draft, setDraft] = useState<ReportDraft | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   useEffect(() => {
-    if (!claimId) return
     let stale = false
     setDraft(null); setError(null)
     getReportDraft(claimId).then((d) => { if (!stale) setDraft(d) }, (e: Error) => { if (!stale) setError(e.message) })

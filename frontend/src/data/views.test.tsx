@@ -1,11 +1,12 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
-import type { DocRow, PlantArea } from '../api/types'
+import type { Claim, DocRow, PlantArea } from '../api/types'
 import { PlantSidebar } from '../plant/PlantSidebar'
 import { Header } from '../shell/Header'
-import { useDemo } from '../store/demo'
+import { MainContent } from '../shell/tabContent'
+import { threadTabId, useDemo } from '../store/demo'
 import { DataSidebar, DataView } from './DataView'
 
 vi.mock('../api/client')
@@ -40,9 +41,17 @@ beforeEach(() => {
   vi.mocked(api.search).mockResolvedValue([])
 })
 
-test('document store: filters by text, type and status; a row opens the drawer; a link chip navigates', async () => {
-  useDemo.getState().setDataTab('docs')
-  render(<DataView />)
+const st = () => useDemo.getState()
+const T = threadTabId('MH20-0001')
+
+/** The active main tab's content, as the workspace renders it. */
+function ActiveMain() {
+  const tab = useDemo((s) => s.groups.main.tabs.find((t) => t.id === s.groups.main.active) ?? null)
+  return <MainContent tab={tab} />
+}
+
+test('document store: filters by text, type and status; a row opens a document tab; a link chip navigates', async () => {
+  render(<DataView target="docs" />)
   expect(await screen.findByText('4 / 4 documents')).toBeInTheDocument()
   await userEvent.selectOptions(screen.getByLabelText('Link status'), 'pending')
   expect(screen.getByText('1 / 4 documents')).toBeInTheDocument()
@@ -55,15 +64,17 @@ test('document store: filters by text, type and status; a row opens the drawer; 
   await userEvent.type(screen.getByLabelText('Search documents'), 'meeting')  // matches the type label
   expect(screen.getByText('1 / 4 documents')).toBeInTheDocument()
   await userEvent.click(screen.getByText('D-07 content'))
-  expect(useDemo.getState().docId).toBe('D-07')
+  expect(st().groups.main.active).toBe('doc:D-07')
   await userEvent.click(screen.getByRole('button', { name: 'LOT-B' }))
-  expect(useDemo.getState().plantAsset).toBe('LOT-B')
+  expect(st().groups.bottom.active).toBe('object:LOT-B')
 })
 
-test('raw tables: sidebar lists tables with counts; paging moves the offset; JSON cells are shown as text', async () => {
-  render(<><DataSidebar /><DataView /></>)
+test('data sidebar opens tables and the document store in main, the review queue in the dock', async () => {
+  render(<><DataSidebar /><ActiveMain /></>)
   await userEvent.click(await screen.findByRole('button', { name: /links\s*4,069/ }))
-  expect([useDemo.getState().dataTab, useDemo.getState().dataTable]).toEqual(['tables', 'links'])
+  expect(st().groups.main.tabs.find((t) => t.id === 'table:links')).toMatchObject({ kind: 'table', target: 'links' })
+  expect(st().groups.main.active).toBe('table:links')
+  expect(screen.getByRole('button', { name: /links\s*4,069/ })).toHaveAttribute('aria-current', 'true')
   expect(await screen.findByText('1–50 / 120')).toBeInTheDocument()
   expect(screen.getByText('{"stage":"kho"}')).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
@@ -71,37 +82,33 @@ test('raw tables: sidebar lists tables with counts; paging moves the offset; JSO
   expect(api.getTable).toHaveBeenLastCalledWith('links', '', 50, 50)
   await userEvent.type(screen.getByLabelText('Filter table links'), 'D-07{Enter}')
   expect(api.getTable).toHaveBeenLastCalledWith('links', 'D-07', 50, 0)
+  await userEvent.click(screen.getByRole('button', { name: 'Document repository' }))
+  expect(st().groups.main.active).toBe('table:docs')
+  expect(await screen.findByText('4 / 4 documents')).toBeInTheDocument()
+  st().closeTab('bottom', 'review')
+  await userEvent.click(screen.getByRole('button', { name: 'Review queue' }))
+  expect(st().groups.bottom.active).toBe('review')
 })
 
-test('plant sidebar: areas, volume counts and review badges; picking an asset selects it in the plant view', async () => {
+test('plant sidebar: areas, volume counts and review badges; picking an asset selects it on the twin', async () => {
   render(<PlantSidebar />)
   expect(await screen.findByText('1,000 serial')).toBeInTheDocument()
   const lot = screen.getByRole('button', { name: /LOT-B/ })
   expect(within(lot).getByTitle('Links pending review')).toHaveTextContent('1')
   await userEvent.click(screen.getByRole('button', { name: /Machine 01/ }))
-  expect([useDemo.getState().view, useDemo.getState().plantAsset]).toEqual(['plant', 'M01'])
+  expect([st().twin.selected, st().groups.bottom.active]).toEqual(['M01', 'object:M01'])
+  expect(screen.getByRole('button', { name: /Machine 01/ })).toHaveAttribute('aria-current', 'true')
 })
 
-test('goTo keeps a node on the open thread in the product view, sends others to the plant view', () => {
-  const s = useDemo.getState()
-  s.openClaim('CLM-0012')
-  s.setThreadIds(['MH20-0001', 'M02'])
-  s.setView('data')
-  useDemo.getState().goTo('M02')
-  expect([useDemo.getState().view, useDemo.getState().focusNodeId]).toEqual(['product', 'M02'])
-  useDemo.getState().goTo('M03')
-  expect([useDemo.getState().view, useDemo.getState().plantAsset]).toEqual(['plant', 'M03'])
-  useDemo.getState().goTo('D-12')
-  expect(useDemo.getState().docId).toBe('D-12')
-})
-
-test('closing tabs: closing the last one closes the claim', () => {
-  const s = useDemo.getState()
-  s.openClaim('CLM-0012')
-  s.closeTab('thread')
-  expect([useDemo.getState().openTabs, useDemo.getState().activeTab]).toEqual([['claim'], 'claim'])
-  useDemo.getState().closeTab('claim')
-  expect(useDemo.getState().claimId).toBeNull()
+test('goTo keeps a node on the open thread there, sends others to the dock, documents to main', async () => {
+  st().openClaim('CLM-0012', 'MH20-0001')
+  st().setThreadIds(T, ['MH20-0001', 'M02'])
+  await st().goTo('M02')
+  expect([st().groups.main.active, st().product[T].focusNodeId]).toEqual([T, 'M02'])
+  await st().goTo('M03')
+  expect(st().groups.bottom.active).toBe('object:M03')
+  await st().goTo('D-12')
+  expect(st().groups.main.active).toBe('doc:D-12')
 })
 
 test('header search: a hit for a document opens it, a traceable claim opens its thread', async () => {
@@ -109,13 +116,15 @@ test('header search: a hit for a document opens it, a traceable claim opens its 
     { id: 'D-12', kind: 'document', type: 'document', name: 'drawing' },
     { id: 'CLM-0012', kind: 'object', type: 'claim', name: 'CLM-0012' },
   ])
+  vi.mocked(api.getClaim).mockResolvedValue({ id: 'CLM-0012', serial: 'MH20-0001', traceable: true } as Claim)
   render(<Header />)
   const box = screen.getByRole('combobox')
   await userEvent.type(box, 'D-1')
   await userEvent.click(await screen.findByText('Document · Drawing'))
-  expect(useDemo.getState().docId).toBe('D-12')
+  expect(st().groups.main.active).toBe('doc:D-12')
   await userEvent.type(box, 'CLM')
   await screen.findByText('Claim')
   await userEvent.keyboard('{ArrowDown}{Enter}')
-  expect([useDemo.getState().claimId, useDemo.getState().activeTab]).toEqual(['CLM-0012', 'thread'])
+  await waitFor(() => expect(st().groups.main.active).toBe(T))
+  expect(st().product[T].claimId).toBe('CLM-0012')
 })

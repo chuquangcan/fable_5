@@ -15,9 +15,9 @@ function Item({ i, actions }: { i: ReviewItem; actions: boolean }) {
   const openDoc = useDemo((s) => s.openDoc)
   const goTo = useDemo((s) => s.goTo)
   const label = `${i.from_id} → ${i.to_id}`
-  const setDataTab = useDemo((s) => s.setDataTab)
+  const openReview = useDemo((s) => s.openReview)
   // compact (sidebar): a doc opens its drawer to review there; a non-doc link opens the full queue
-  const open = () => (i.doc_id ? openDoc(i.doc_id) : actions ? goTo(i.from_id) : setDataTab('review'))
+  const open = () => (i.doc_id ? openDoc(i.doc_id) : actions ? goTo(i.from_id) : openReview())
   return (
     <div className={`it doc-${i.status}`} style={{ gap: 5 }}>
       <button className="linkish" onClick={open} title={i.doc_id ? 'View details and review' : actions ? 'Open object' : 'Review in the queue'}>

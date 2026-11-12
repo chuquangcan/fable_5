@@ -4,7 +4,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
 import type { DocDetail } from '../api/types'
 import { useDemo } from '../store/demo'
-import { DocDrawer } from './DocDrawer'
+import { DocTab } from './DocTab'
 
 vi.mock('../api/client')
 
@@ -28,12 +28,8 @@ beforeEach(() => {
   vi.mocked(api.reviewLink).mockResolvedValue({} as never)
 })
 
-test('closed by default; shows metadata, full text and the link to review', async () => {
-  const { container, unmount } = render(<DocDrawer />)
-  expect(container).toBeEmptyDOMElement()
-  unmount()
-  useDemo.getState().openDoc('D-07')
-  render(<DocDrawer />)
+test('shows metadata, full text and the link to review', async () => {
+  render(<DocTab id="D-07" />)
   expect(await screen.findByText('Meeting minutes 29/10: lot B is slightly loose, keep monitoring.')).toBeInTheDocument()
   expect(screen.getByText('Meeting minutes')).toBeInTheDocument()
   expect(screen.getByText('1 to review')).toBeInTheDocument()
@@ -43,8 +39,7 @@ test('closed by default; shows metadata, full text and the link to review', asyn
 })
 
 test('approve sends the decision with the note and refetches everything', async () => {
-  useDemo.getState().openDoc('D-07')
-  render(<DocDrawer />)
+  render(<DocTab id="D-07" />)
   await userEvent.type(await screen.findByLabelText('Review note D-07 → LOT-B'), 'read')
   const before = useDemo.getState().dataVersion
   await userEvent.click(screen.getByRole('button', { name: 'Approve D-07 → LOT-B' }))
@@ -58,22 +53,18 @@ test('a confirmed link has no review buttons; an uploaded file can be opened; hi
     history: [{ review_id: 1, link_id: 17, decision: 'approve', from_status: 'pending', reviewer: 'QA engineer (demo)', note: 'ok',
       reviewed_at: '2027-02-12T02:00:00Z', from_id: 'D-U01', to_id: 'LOT-B', relation: 'mentions' }],
   }))
-  useDemo.getState().openDoc('D-U01')
-  render(<DocDrawer />)
+  render(<DocTab id="D-U01" />)
   expect(await screen.findByRole('link', { name: /Open original/ })).toHaveAttribute('href', '/api/documents/D-U01/file')
   expect(screen.queryByRole('button', { name: /^Approve/ })).toBeNull()
   expect(screen.getByText('Approved')).toBeInTheDocument()
   expect(screen.getByText('“ok”')).toBeInTheDocument()
 })
 
-test('clicking a linked node closes the drawer and navigates there; Escape closes', async () => {
+test('clicking a linked node opens it in the dock; the document tab stays open', async () => {
   useDemo.getState().openDoc('D-07')
-  render(<DocDrawer />)
+  render(<DocTab id="D-07" />)
   await userEvent.click(await screen.findByRole('button', { name: 'LOT-B' }))
-  expect(useDemo.getState().docId).toBeNull()
-  expect([useDemo.getState().view, useDemo.getState().plantAsset]).toEqual(['plant', 'LOT-B'])
-  useDemo.getState().openDoc('D-07')
-  await screen.findByText('1 to review')
-  await userEvent.keyboard('{Escape}')
-  expect(useDemo.getState().docId).toBeNull()
+  const g = useDemo.getState().groups
+  expect(g.bottom.active).toBe('object:LOT-B')
+  expect(g.main.active).toBe('doc:D-07')
 })
