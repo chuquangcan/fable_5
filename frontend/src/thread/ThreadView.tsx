@@ -2,60 +2,58 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { getClaim, getClaimFault, getFault, getFlow, getTrace } from '../api/client'
 import type { Claim, FaultTrace, FlowGraph, TraceGraph } from '../api/types'
 import { useDemo } from '../store/demo'
-import { EvidencePanel } from '../evidence/EvidencePanel'
 import { Skeleton } from '../evidence/useAsync'
 import { EntityHeader } from './EntityHeader'
 import { flowLayout } from './flowLayout'
 import { NODE_W } from './layout'
 import { formatPlantTime } from '../lib/time'
+import { ProductTabContext } from './ProductTabContext'
 import { ThreadGraph } from './ThreadGraph'
 
-export function ThreadView() {
-  const claimId = useDemo((s) => s.claimId)
-  const mode = useDemo((s) => s.mode)
-  const focusNodeId = useDemo((s) => s.focusNodeId)
-  const faultOrigin = useDemo((s) => s.faultOrigin)
+/** One product tab: the thread of one serial. With a claim it can colour the fault; without, it is the plain thread. */
+export function ThreadView({ tabId }: { tabId: string }) {
+  const root = useDemo((s) => s.product[tabId]?.root ?? null)
+  const claimId = useDemo((s) => s.product[tabId]?.claimId ?? null)
+  const mode = useDemo((s) => s.product[tabId]?.mode ?? 'normal')
+  const focusNodeId = useDemo((s) => s.product[tabId]?.focusNodeId ?? null)
+  const faultOrigin = useDemo((s) => s.product[tabId]?.faultOrigin ?? null)
   const dataVersion = useDemo((s) => s.dataVersion)
-  const setThreadRoot = useDemo((s) => s.setThreadRoot)
-  const setThreadIds = useDemo((s) => s.setThreadIds)
   const [fit, setFit] = useState(false)
   const [boxWidth, setBoxWidth] = useState(0)
   const [faultData, setFaultData] = useState<{ claimId: string; origin: string | null; trace: FaultTrace } | null>(null)
   const [faultError, setFaultError] = useState(false)
-  const [data, setData] = useState<{ claim: Claim; trace: TraceGraph; flow: FlowGraph } | null>(null)
+  const [data, setData] = useState<{ claim: Claim | null; trace: TraceGraph; flow: FlowGraph } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
   const graphRef = useRef<HTMLDivElement>(null)
+  const subject = claimId ?? root  // /api/flow takes a claim or a serial
 
   useEffect(() => {
-    if (!claimId) return
+    if (!subject || !root) return
     let stale = false
     setError(null)
     Promise.all([
-      getClaim(claimId).then(async (claim) => ({ claim, trace: await getTrace(claim.serial ?? '') })),
-      getFlow(claimId),
+      claimId ? getClaim(claimId) : Promise.resolve(null),
+      getFlow(subject),
     ])
-      .then(([ct, flow]) => ({ ...ct, flow }))
+      .then(async ([claim, flow]) => ({ claim, flow, trace: await getTrace(claim?.serial ?? root) }))
       .then((d) => { if (!stale) setData(d) })
       .catch((e: Error) => { if (!stale) setError(e.message) })
     return () => { stale = true }
-  }, [claimId, attempt])
+  }, [subject, claimId, root, attempt])
 
-  const root = data?.flow.root ?? null
-  useEffect(() => { setThreadRoot(root) }, [root, setThreadRoot])
-
-  // A write (e.g. an attachment) refetches just the flow; the initial load above already covers version 0 / claim changes.
+  // A write (e.g. an attachment) refetches just the flow; the initial load above already covers version 0.
   const seenVersion = useRef(dataVersion)
   useEffect(() => {
     if (seenVersion.current === dataVersion) return
     seenVersion.current = dataVersion
-    if (!claimId) return
+    if (!subject) return
     let stale = false
-    getFlow(claimId)
+    getFlow(subject)
       .then((flow) => { if (!stale) setData((d) => (d ? { ...d, flow } : d)) })
       .catch(() => {})
     return () => { stale = true }
-  }, [claimId, dataVersion])
+  }, [subject, dataVersion])
 
   // Fault colouring: the claim's own fault gives the reference time; an explicit origin is traced at that time
   // on this claim's thread (the backend resolves the claim to the same root serial as /api/flow), so the
@@ -73,7 +71,7 @@ export function ThreadView() {
   }, [claimId, mode, faultOrigin])
 
   const { marks, reasons } = useMemo(() => {
-    if (mode !== 'fault' || !faultData || faultData.claimId !== claimId || faultData.origin !== faultOrigin) return { marks: undefined, reasons: undefined }
+    if (!claimId || mode !== 'fault' || !faultData || faultData.claimId !== claimId || faultData.origin !== faultOrigin) return { marks: undefined, reasons: undefined }
     const t = faultData.trace
     const marks: Record<string, 'red' | 'orange'> = {}
     const reasons: Record<string, string> = {}
@@ -83,9 +81,14 @@ export function ThreadView() {
   }, [mode, faultData, claimId, faultOrigin])
 
   const layout = useMemo(() => (data ? flowLayout(data.flow) : null), [data])
+  const flowRoot = data?.flow.root ?? null
   useEffect(() => {
-    if (data) setThreadIds([...data.flow.spine, ...data.flow.branches].map((n) => n.id))
-  }, [data, setThreadIds])
+    const s = useDemo.getState()
+    if (flowRoot && flowRoot !== s.product[tabId]?.root) s.setRoot(tabId, flowRoot)
+  }, [flowRoot, tabId])
+  useEffect(() => {
+    if (data) useDemo.getState().setThreadIds(tabId, [...data.flow.spine, ...data.flow.branches].map((n) => n.id))
+  }, [data, tabId])
   // Width available to the graph, for "fit to width".
   useLayoutEffect(() => {
     const el = graphRef.current
@@ -108,7 +111,7 @@ export function ThreadView() {
   if (error)
     return (
       <div role="alert" style={{ padding: 16, color: 'var(--red-ink)', display: 'flex', gap: 8, alignItems: 'center' }}>
-        <span>Could not load thread: {error}</span>
+        <span>Could not load thread {root}: {error}</span>
         <button className="btn" onClick={() => setAttempt((a) => a + 1)}>Retry</button>
       </div>
     )
@@ -116,26 +119,27 @@ export function ThreadView() {
   const { claim, trace, flow } = data
   const overflows = !!layout && boxWidth > 0 && layout.width > boxWidth
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-      <EntityHeader serial={trace.root} claim={claim} trace={trace} asOf={formatPlantTime(flow.at, 'YYYY-MM-DD HH:mm')} />
-      {mode === 'fault' && faultError && <div role="alert" className="banner red">Could not load fault-trace data</div>}
-      <div style={{ position: 'relative', flex: 'none', borderBottom: '1px solid var(--line)' }}>
-        <div ref={graphRef} data-testid="graph-scroll" style={{ overflowX: fit ? 'hidden' : 'auto' }}>
-          {layout && scale < 1 ? (
-            <div style={{ width: layout.width * scale, height: layout.height * scale }}>
-              <div style={{ transform: `scale(${scale})`, transformOrigin: '0 0' }}>
-                <ThreadGraph flow={flow} marks={marks} reasons={reasons} />
+    <ProductTabContext.Provider value={tabId}>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <EntityHeader serial={trace.root} claim={claim} trace={trace} asOf={formatPlantTime(flow.at, 'YYYY-MM-DD HH:mm')} />
+        {claimId && mode === 'fault' && faultError && <div role="alert" className="banner red">Could not load fault-trace data</div>}
+        <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+          <div ref={graphRef} data-testid="graph-scroll" style={{ overflow: fit ? 'hidden' : 'auto', height: '100%' }}>
+            {layout && scale < 1 ? (
+              <div style={{ width: layout.width * scale, height: layout.height * scale }}>
+                <div style={{ transform: `scale(${scale})`, transformOrigin: '0 0' }}>
+                  <ThreadGraph flow={flow} marks={marks} reasons={reasons} />
+                </div>
               </div>
-            </div>
-          ) : <ThreadGraph flow={flow} marks={marks} reasons={reasons} />}
+            ) : <ThreadGraph flow={flow} marks={marks} reasons={reasons} />}
+          </div>
+          {(overflows || fit) && (
+            <button className="btn graph-fit" aria-pressed={fit} onClick={() => setFit(!fit)} title={fit ? 'Show actual size, scroll horizontally' : 'Shrink to fit the frame'}>
+              {fit ? 'Actual size' : 'Fit to frame'}
+            </button>
+          )}
         </div>
-        {(overflows || fit) && (
-          <button className="btn graph-fit" aria-pressed={fit} onClick={() => setFit(!fit)} title={fit ? 'Show actual size, scroll horizontally' : 'Shrink to fit the frame'}>
-            {fit ? 'Actual size' : 'Fit to frame'}
-          </button>
-        )}
       </div>
-      <EvidencePanel nodeId={focusNodeId ?? trace.root} />
-    </div>
+    </ProductTabContext.Provider>
   )
 }

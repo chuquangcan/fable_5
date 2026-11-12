@@ -15,7 +15,8 @@ import shift from '../test/fixtures/m02_shift.json'
 import m02Window from '../test/fixtures/m02_window.json'
 import serialEvents from '../test/fixtures/serial_events.json'
 import summaryM02 from '../test/fixtures/summary_m02.json'
-import { type EvidenceTab, useDemo } from '../store/demo'
+import { type EvidenceTab, threadTabId, useDemo } from '../store/demo'
+import { ProductTabContext } from '../thread/ProductTabContext'
 import { EvidencePanel } from './EvidencePanel'
 
 vi.mock('../api/client')
@@ -29,7 +30,6 @@ const events: Record<string, Record<string, unknown>> = {
 
 beforeEach(() => {
   useDemo.getState().reset()
-  useDemo.setState({ mode: 'fault' })
   vi.mocked(api.getEvents).mockImplementation(async (id, _s, _e, type) => (events[id]?.[type ?? ''] ?? []) as PlantEvent[])
   vi.mocked(api.getCompare).mockResolvedValue(compare as never)
   vi.mocked(api.getMachineWindow).mockResolvedValue(m02Window as never)
@@ -42,9 +42,10 @@ beforeEach(() => {
 })
 
 const NODE: Partial<Record<EvidenceTab, string>> = { machine: 'M02', lot: 'LOT-B', impact: 'LOT-B' }
+const OWNER = 'object:test'
 const show = (tab: EvidenceTab) => {
-  useDemo.getState().setEvidence(tab)
-  render(<EvidencePanel nodeId={NODE[tab] ?? 'M02'} />)
+  useDemo.getState().setEvidence(OWNER, tab)
+  render(<EvidencePanel nodeId={NODE[tab] ?? 'M02'} owner={OWNER} />)
 }
 
 test('machine tab shows cycle jump, force delta and exclusions', async () => {
@@ -89,13 +90,15 @@ test('tab strip switches the evidence tab; a lot offers IQC and impact', async (
   await screen.findByText('0.92')
   expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Overview', 'Events · 2', 'IQC · lot comparison', 'Impact scope'])
   act(() => screen.getByRole('tab', { name: 'Impact scope' }).click())
-  expect(useDemo.getState().evidenceTab).toBe('impact')
+  expect(useDemo.getState().evidence[OWNER]).toBe('impact')
   expect(await screen.findByText('1,000')).toBeInTheDocument()
 })
 
 test('machine tab derives the window, the lot change and what is ruled out; marks the open serial', async () => {
-  useDemo.setState({ threadRoot: 'MH20-0001' })
-  show('machine')
+  useDemo.getState().openClaim('CLM-0012', 'MH20-0001')
+  const T = threadTabId('MH20-0001')
+  useDemo.getState().setEvidence(T, 'machine')
+  render(<ProductTabContext.Provider value={T}><EvidencePanel nodeId="M02" owner={T} /></ProductTabContext.Provider>)
   expect(await screen.findByText('2026-11-03 12:00–16:00 · plant time')).toBeInTheDocument()
   expect(screen.getByText('Lot changed from LOT-A to LOT-B at 13:52; maintenance, operator, temperature unchanged → 3 factors ruled out.')).toBeInTheDocument()
   expect(screen.getByText('the 13:52 mark matches thanks to the PLC2 clock offset +38 s')).toBeInTheDocument()
@@ -104,8 +107,8 @@ test('machine tab derives the window, the lot change and what is ruled out; mark
 
 test('a machine without press cycles says so instead of showing story numbers', async () => {
   vi.mocked(api.getMachineWindow).mockResolvedValue({ ...m02Window, machine: 'M03', name: 'Machine 03', day: null, start: null, end: null, change: null } as never)
-  useDemo.getState().setEvidence('machine')
-  render(<EvidencePanel nodeId="M02" />)
+  useDemo.getState().setEvidence(OWNER, 'machine')
+  render(<EvidencePanel nodeId="M02" owner={OWNER} />)
   expect(await screen.findByText('Machine 03 has no press cycle data yet.')).toBeInTheDocument()
 })
 

@@ -4,13 +4,15 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import * as api from '../api/client'
 import m01 from '../test/fixtures/summary_m01.json'
 import m02 from '../test/fixtures/summary_m02.json'
-import pm0241 from '../test/fixtures/summary_pm0241.json'
-import { useDemo } from '../store/demo'
-import { CiteChip } from '../agent/AgentPanel'
+import { threadTabId, useDemo } from '../store/demo'
+import { ProductTabContext } from '../thread/ProductTabContext'
 import { EvidencePanel } from './EvidencePanel'
 import { OverviewTab } from './OverviewTab'
 
 vi.mock('../api/client')
+
+const T = threadTabId('MH20-0001')
+const inTab = (id: string, tab = T) => <ProductTabContext.Provider value={tab}><OverviewTab id={id} /></ProductTabContext.Provider>
 
 beforeEach(() => {
   useDemo.getState().reset()
@@ -37,26 +39,39 @@ test('node without params or docs shows empty states', async () => {
 })
 
 test('fault button sets the origin; attach button opens the dialog; both hidden for aggregates', async () => {
-  useDemo.setState({ claimId: 'CLM-0012', view: 'product' })  // the fault trace needs an open claim
-  const { unmount } = render(<OverviewTab id="M02" />)
+  useDemo.getState().openClaim('CLM-0012', 'MH20-0001')  // the fault trace needs a claim on the tab
+  useDemo.getState().setMode(T, 'normal')
+  const { unmount } = render(inTab('M02'))
   await screen.findByText('Avg cycle · LOT-B')
   expect(screen.getByRole('button', { name: 'Set as fault origin' })).toBeEnabled()
   await userEvent.click(screen.getByRole('button', { name: 'Set as fault origin' }))
-  expect([useDemo.getState().faultOrigin, useDemo.getState().mode]).toEqual(['M02', 'fault'])
+  expect([useDemo.getState().product[T].faultOrigin, useDemo.getState().product[T].mode]).toEqual(['M02', 'fault'])
   await userEvent.click(screen.getByRole('button', { name: 'Attach document' }))
   expect(useDemo.getState().attachOpen).toBe(true)
   unmount()
-  render(<OverviewTab id="AGG-LOT-B" />)
+  render(inTab('AGG-LOT-B'))
   await screen.findByText('AGG-LOT-B · Lot aggregate')
   expect(screen.queryByRole('button', { name: 'Set as fault origin' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'Attach document' })).toBeNull()
 })
 
-test('no fault button outside an open claim (plant view)', async () => {
-  useDemo.setState({ claimId: 'CLM-0012', view: 'plant' })
-  render(<OverviewTab id="M02" />)
+test('no fault button outside a product tab, nor on a product tab without a claim', async () => {
+  useDemo.getState().openClaim('CLM-0012', 'MH20-0001')
+  const { unmount } = render(<OverviewTab id="M02" />)
   await screen.findByText('Avg cycle · LOT-B')
   expect(screen.queryByRole('button', { name: 'Set as fault origin' })).toBeNull()
+  unmount()
+  const plain = useDemo.getState().openProduct('MH20-0457')
+  render(inTab('M02', plain))
+  await screen.findByText('Avg cycle · LOT-B')
+  expect(screen.queryByRole('button', { name: 'Set as fault origin' })).toBeNull()
+})
+
+test('"View on plant" on a thread node selects that object on the twin', async () => {
+  useDemo.getState().openClaim('CLM-0012', 'MH20-0001')
+  render(inTab('M02'))
+  await userEvent.click(await screen.findByRole('button', { name: 'View on plant' }))
+  expect([useDemo.getState().groups.main.active, useDemo.getState().twin.selected]).toEqual(['twin', 'M02'])
 })
 
 test('docs render with status badges', async () => {
@@ -79,7 +94,7 @@ test('docs render with status badges', async () => {
   expect(screen.getByText('D-02 · p.3')).toBeInTheDocument()
 })
 
-test('uploaded docs carry a "new" badge and sort first; a card opens the drawer; empty state', async () => {
+test('uploaded docs carry a "new" badge and sort first; a card opens a document tab; empty state', async () => {
   vi.mocked(api.getSummary).mockResolvedValueOnce({
     ...m01,
     docs: [
@@ -92,7 +107,7 @@ test('uploaded docs carry a "new" badge and sort first; a card opens the drawer;
   const cards = screen.getAllByTitle('View document details')
   expect(within(cards[0]).getByText('D-U01')).toBeInTheDocument()
   await userEvent.click(cards[1])
-  expect(useDemo.getState().docId).toBe('D-01')
+  expect(useDemo.getState().groups.main.active).toBe('doc:D-01')
   unmount()
   render(<OverviewTab id="M01" />)
   expect(await screen.findByText('No documents yet')).toBeInTheDocument()
@@ -123,53 +138,39 @@ test('refetches when dataVersion changes', async () => {
 })
 
 test('selectNode: normal mode always overview; fault mode keeps deep tabs', () => {
-  useDemo.setState({ mode: 'normal' })
-  useDemo.getState().selectNode('M02')
-  expect(useDemo.getState().evidenceTab).toBe('overview')
-  expect(useDemo.getState().focusNodeId).toBe('M02')
-  useDemo.setState({ mode: 'fault' })
-  useDemo.getState().selectNode('M02')
-  expect(useDemo.getState().evidenceTab).toBe('machine')
-  useDemo.getState().selectNode('PO-4410')
-  expect(useDemo.getState().evidenceTab).toBe('overview')
+  useDemo.getState().openClaim('CLM-0012', 'MH20-0001')
+  useDemo.getState().setMode(T, 'normal')
+  useDemo.getState().selectNode(T, 'M02')
+  expect([useDemo.getState().evidence[T], useDemo.getState().product[T].focusNodeId]).toEqual(['overview', 'M02'])
+  useDemo.getState().setMode(T, 'fault')
+  useDemo.getState().selectNode(T, 'M02')
+  expect(useDemo.getState().evidence[T]).toBe('machine')
+  useDemo.getState().selectNode(T, 'PO-4410')
+  expect(useDemo.getState().evidence[T]).toBe('overview')
 })
 
 test('EvidencePanel offers the tabs of the node type, not a fixed set', async () => {
-  const { unmount } = render(<EvidencePanel nodeId="M02" />)
+  useDemo.getState().setEvidence('o', 'overview')
+  const { unmount } = render(<EvidencePanel nodeId="M02" owner="o" />)
   expect(await screen.findByText('Avg cycle · LOT-B')).toBeInTheDocument()
-  expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Overview', 'Events · 1,684', 'Press cycle'])
+  // a machine shows its press cycle first (spec §5)
+  expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Press cycle', 'Overview', 'Events · 1,684'])
   unmount()
-  render(<EvidencePanel nodeId="M01" />)
+  render(<EvidencePanel nodeId="M01" owner="o" />)
   expect(await screen.findByText('No parameters yet')).toBeInTheDocument()
   expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Overview'])
 })
 
-test('a stale deep tab falls back to the overview on a node without it', async () => {
-  useDemo.getState().setEvidence('impact')
-  render(<EvidencePanel nodeId="M02" />)
-  expect(await screen.findByText('Avg cycle · LOT-B')).toBeInTheDocument()
+test('a stale deep tab falls back to the first tab of a node without it', async () => {
+  useDemo.getState().setEvidence('o', 'impact')
+  render(<EvidencePanel nodeId="M01" owner="o" />)
+  expect(await screen.findByText('No parameters yet')).toBeInTheDocument()
   expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
 })
 
-function FocusedPanel() {
-  const id = useDemo((s) => s.focusNodeId) ?? 'MH20-0001'
-  return <EvidencePanel nodeId={id} />
-}
-
-test('a cite to an event record shows its summary, not the error panel', async () => {
-  vi.mocked(api.getSummary).mockImplementation(async (id) => {
-    if (id === 'PM-0241') return pm0241 as never
-    if (id === 'GHOST-1') throw new Error('404 object GHOST-1 not found')
-    return m02 as never
-  })
-  render(<><CiteChip label="PM-0241" target_id="PM-0241" /><CiteChip label="GHOST-1" target_id="GHOST-1" /><FocusedPanel /></>)
-  await userEvent.click(screen.getByRole('button', { name: 'PM-0241' }))
-  expect(await screen.findByText('maintenance · 2026-10-20 09:00 · Event')).toBeInTheDocument()
-  expect(screen.getByText('normal')).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Set as fault origin' })).toBeNull()
-  await userEvent.click(screen.getByRole('button', { name: 'GHOST-1' }))
-  expect(await screen.findByText('No summary for GHOST-1')).toBeInTheDocument()
-  expect(screen.queryByText(/Could not load data/)).toBeNull()
+test('with no sub-tab chosen yet, a machine opens on its press cycle', async () => {
+  render(<EvidencePanel nodeId="M02" owner="object:M02" />)
+  await vi.waitFor(() => expect(screen.getByRole('tab', { name: 'Press cycle' })).toHaveAttribute('aria-selected', 'true'))
 })
 
 test('param rows with the same label keep distinct keys', async () => {

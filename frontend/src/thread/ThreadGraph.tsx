@@ -4,7 +4,9 @@ import { useMemo } from 'react'
 import type { FlowGraph, FlowNode } from '../api/types'
 import { useDemo } from '../store/demo'
 import { flowLayout } from './flowLayout'
+import { LinkLegend } from './LinkLegend'
 import { pathEdges } from './path'
+import { useProductTab } from './ProductTabContext'
 import { edgeStyle, faultEdgeStyle, NODE_H, NODE_W, neutralEdgeStyle, pickSides, type Side } from './layout'
 
 const POS: Record<Side, Position> = { l: Position.Left, r: Position.Right, t: Position.Top, b: Position.Bottom }
@@ -17,13 +19,15 @@ interface GraphNodeData extends Record<string, unknown> { node: FlowNode; attach
 
 function GraphNode({ data }: NodeProps<Node<GraphNodeData>>) {
   const { node, attachments, tone, reason, claimMark } = data
-  const focused = useDemo((s) => s.focusNodeId === node.id)
+  const tabId = useProductTab()
+  const focused = useDemo((s) => !!tabId && s.product[tabId]?.focusNodeId === node.id)
   const flashing = useDemo((s) => s.flashNodeId === node.id)
+  const hovered = useDemo((s) => s.hoverIds.includes(node.id))
   const head = title(node)
   return (
     <>
       <button
-        className={`${tone ? `gn gn-${tone}` : 'gn'}${flashing ? ' gn-flash' : ''}`}
+        className={`${tone ? `gn gn-${tone}` : 'gn'}${flashing ? ' gn-flash' : ''}${hovered ? ' gn-hover' : ''}`}
         title={reason ?? (claimMark ? 'reported fault point' : undefined)}
         style={{
           position: 'relative', padding: '2px 4px', whiteSpace: 'nowrap', overflow: 'hidden',
@@ -55,11 +59,12 @@ function GraphNode({ data }: NodeProps<Node<GraphNodeData>>) {
 const nodeTypes = { thread: GraphNode }
 
 export function ThreadGraph({ flow, marks, reasons }: { flow: FlowGraph; marks?: Record<string, Tone>; reasons?: Record<string, string> }) {
-  const mode = useDemo((s) => s.mode)
+  const tabId = useProductTab()
+  const mode = useDemo((s) => (tabId ? s.product[tabId]?.mode : undefined) ?? 'normal')
   const selectNode = useDemo((s) => s.selectNode)
-  const focusNodeId = useDemo((s) => s.focusNodeId)
+  const focusNodeId = useDemo((s) => (tabId ? s.product[tabId]?.focusNodeId : null) ?? null)
   const onPath = useMemo(() => pathEdges(flow, focusNodeId), [flow, focusNodeId])
-  const onNodeClick = (_: unknown, n: Node) => selectNode(n.id)
+  const onNodeClick = (_: unknown, n: Node) => { if (tabId) selectNode(tabId, n.id) }
 
   const layout = useMemo(() => flowLayout(flow), [flow])
   const { nodes, edges } = useMemo(() => {
@@ -92,7 +97,6 @@ export function ThreadGraph({ flow, marks, reasons }: { flow: FlowGraph; marks?:
   }, [flow, layout, mode, marks, reasons, onPath])
 
   const { width, height, bands } = layout
-  const ink = mode === 'fault' ? '#0E7C86' : '#8E959F'
   return (
     <div style={{ position: 'relative', width, height, flex: 'none', background: '#FCFCFD' }}>
       {bands.map((b, i) => (
@@ -110,12 +114,8 @@ export function ThreadGraph({ flow, marks, reasons }: { flow: FlowGraph; marks?:
         panOnDrag={false} zoomOnScroll={false} zoomOnPinch={false} zoomOnDoubleClick={false} preventScrolling={false}
         elementsSelectable={false} proOptions={{ hideAttribution: true }} style={{ background: 'transparent' }}
       />
-      <div className="mut" style={{ position: 'absolute', left: 16, top: height - 22, display: 'flex', gap: 12, fontSize: 11 }}>
-        <span><span className="ln" style={{ borderTop: `2px solid ${ink}` }} />confirmed</span>
-        <span><span className="ln" style={{ borderTop: `2px dashed ${ink}` }} />inferred</span>
-        <span><span className="ln" style={{ borderTop: `2px dotted ${ink}` }} />pending review</span>
-        <span><span className="ln" style={{ borderTop: '2px dotted #8E959F' }} />suggested</span>
-        {marks && <span>Red: fault origin and upstream · Orange: downstream possibly affected</span>}
+      <div style={{ position: 'absolute', left: 16, top: height - 22 }}>
+        <LinkLegend neutral={mode !== 'fault'} note={marks && 'Red: fault origin and upstream · Orange: downstream possibly affected'} />
       </div>
     </div>
   )

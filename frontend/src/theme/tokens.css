@@ -40,6 +40,8 @@ body{margin:0}
 @keyframes gn-flash{0%,100%{outline-color:transparent}25%,75%{outline-color:#0E7C86}50%{outline-color:transparent}}
 .gn.gn-flash{outline:3px solid #0E7C86;outline-offset:2px;animation:gn-flash 1.2s ease-in-out}
 .gn.gn-red{border:2px solid var(--red);background:var(--red-bg);color:var(--red-ink)}
+.gn.gn-hover{box-shadow:0 0 0 3px rgba(14,124,134,.35)}
+.legend{display:flex;gap:12px;font-size:11px;align-items:center;flex-wrap:wrap}
 .gn.gn-orange{border:2px solid var(--amber);background:var(--amber-bg);color:var(--amber-ink)}
 .ln{display:inline-block;width:22px;vertical-align:middle;margin-right:5px}
 table.g{border-collapse:collapse;width:100%}
@@ -84,6 +86,7 @@ table.g td{padding:4px 8px;border-bottom:1px solid #E3E5E8;vertical-align:middle
 .workspace{flex:1;min-height:0;display:flex;flex-direction:column}
 .main-group{flex:1;min-height:80px;display:flex;flex-direction:column}
 .pane{flex:1;min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:#FFFFFF}
+.pane[hidden]{display:none}
 .dock{flex:none;min-height:32px;display:flex;border-top:1px solid var(--line);background:#FFFFFF}
 .dock-group{flex:1;min-width:0;display:flex;flex-direction:column}
 .dock-group+.dock-group{border-left:1px solid var(--line)}

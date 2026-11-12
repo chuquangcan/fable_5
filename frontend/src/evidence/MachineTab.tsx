@@ -2,6 +2,7 @@ import { getCompare, getEvents, getMachineWindow } from '../api/client'
 import type { LotStat, MachineWindow, PlantEvent } from '../api/types'
 import { formatPlantTime } from '../lib/time'
 import { useDemo } from '../store/demo'
+import { useProductTab } from '../thread/ProductTabContext'
 import { CycleChart } from './CycleChart'
 import { Pending, useAsync } from './useAsync'
 
@@ -37,7 +38,8 @@ function beforeAfter(win: MachineWindow, stats: LotStat[]): [LotStat | undefined
 
 /** Cycle time of any machine around its lot change (window from /api/machines/{id}/cycle-window). */
 export function MachineTab({ machineId }: { machineId: string }) {
-  const root = useDemo((s) => s.threadRoot)
+  const tabId = useProductTab()
+  const root = useDemo((s) => (tabId ? s.product[tabId]?.root ?? null : null))
   const s = useAsync(() => load(machineId, root), [machineId, root])
   if (s.status !== 'ok') return <Pending state={s} />
   const { win, data } = s.data

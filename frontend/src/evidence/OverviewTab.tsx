@@ -4,10 +4,13 @@ import { DocList } from '../docs/DocList'
 import { objectTypeLabel } from '../lib/labels'
 import { useDemo } from '../store/demo'
 import { STAGES } from '../thread/flowLayout'
+import { useProductTab } from '../thread/ProductTabContext'
 import { Pending, useAsync } from './useAsync'
 
 /** Summary types that /api/fault-trace cannot take as an origin (not objects in the flow). */
 const NOT_FAULT_ORIGIN = new Set(['aggregate', 'event', 'source'])
+/** Object types the plant twin shows, so "View on plant" can select them there. */
+const ON_PLANT = new Set(['receipt', 'lot', 'line', 'hopper', 'machine', 'inspection', 'shipment'])
 /** Summary types a document cannot be attached to (the backend rejects them as a target). */
 export const NOT_ATTACHABLE = new Set(['aggregate', 'document', 'event', 'source'])
 
@@ -33,9 +36,12 @@ function Params({ params }: { params: Param[] }) {
 
 /** Overview of one node: cited params on the left, its documents on the right. */
 export function OverviewBody({ d }: { d: NodeSummary }) {
+  const tabId = useProductTab()
   const setFaultOrigin = useDemo((s) => s.setFaultOrigin)
+  const viewOnPlant = useDemo((s) => s.viewOnPlant)
   const openAttach = useDemo((s) => s.openAttach)
-  const canFault = useDemo((s) => s.view === 'product' && !!s.claimId) && !NOT_FAULT_ORIGIN.has(d.type)
+  const canFault = useDemo((s) => !!tabId && !!s.product[tabId]?.claimId) && !NOT_FAULT_ORIGIN.has(d.type)
+  const onPlant = !!tabId && ON_PLANT.has(d.type)
   const canAttach = !NOT_ATTACHABLE.has(d.type)
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
@@ -45,7 +51,8 @@ export function OverviewBody({ d }: { d: NodeSummary }) {
           <span className="mut">{STAGES[d.stage as FlowStage] ?? d.stage}</span>
           {d.aliases.map((a) => <span key={a} className="chip" title="Merged alias">{`≡ ${a}`}</span>)}
           <span style={{ flex: 1 }} />
-          {canFault && <button className="btn" onClick={() => setFaultOrigin(d.id)}>Set as fault origin</button>}
+          {onPlant && <button className="btn" onClick={() => viewOnPlant(d.id)}>View on plant</button>}
+          {canFault && tabId && <button className="btn" onClick={() => setFaultOrigin(tabId, d.id)}>Set as fault origin</button>}
         </div>
         <Params params={d.params} />
       </div>

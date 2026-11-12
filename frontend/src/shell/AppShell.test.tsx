@@ -13,6 +13,9 @@ beforeEach(() => {
   s().reset()
   vi.mocked(api.getProvider).mockResolvedValue({ provider: null, mode: 'replay' } as never)
   vi.mocked(api.getReviewQueue).mockResolvedValue({ pending: [], decided: [] })
+  // tab content is real now: its loads stay pending, these tests are about the shell
+  const pending = () => new Promise<never>(() => {})
+  for (const f of ['getFlow', 'getTrace', 'getClaim', 'getClaimFault', 'getSummary'] as const) vi.mocked(api[f]).mockImplementation(pending)
 })
 
 test('header shows the as-of time and the demo badge; the status line says read-only', () => {
