@@ -36,7 +36,7 @@
 
 ## Đợt A · Dữ liệu và backend
 
-### Task A1: Line 2, cycle M01/M03 và bảng `notices`
+### Task 1 (A1): Line 2, cycle M01/M03 và bảng `notices`
 
 **Files:**
 - Modify: `data/story.yaml`, `backend/onethread/schema.sql`, `backend/onethread/seed/story.py`, `backend/onethread/seed/generate.py`, `backend/onethread/seed/__init__.py`
@@ -103,7 +103,7 @@ def test_clm0012_fault_reach_excludes_line2(seeded_conn):
 
 - [ ] **Step 5: Commit** `feat(seed): line 2 with M01/M03 cycles and notices table`
 
-### Task A2: Ánh xạ phòng ban
+### Task 2 (A2): Ánh xạ phòng ban
 
 **Files:**
 - Create: `backend/onethread/departments.py`, `backend/tests/test_departments.py`
@@ -138,7 +138,7 @@ def test_labels_ts_mirrors_backend():
 - [ ] **Step 4:** pytest + vitest pass.
 - [ ] **Step 5: Commit** `feat: single department mapping (backend + labels mirror)`
 
-### Task A3: `GET /api/feed`
+### Task 3 (A3): `GET /api/feed`
 
 **Files:**
 - Create: `backend/onethread/queries/feed.py`, `backend/tests/test_feed.py`
@@ -195,7 +195,7 @@ def test_feed_includes_uploads(client, seeded_conn):
 - [ ] **Step 4:** `uv run pytest -q` pass.
 - [ ] **Step 5: Commit** `feat(api): merged notification feed`
 
-### Task A4: `GET /api/plant/state` và `GET /api/plant/overview`
+### Task 4 (A4): `GET /api/plant/state` và `GET /api/plant/overview`
 
 **Files:**
 - Create: `backend/onethread/queries/plant_state.py`, `backend/tests/test_plant_state.py`
@@ -267,7 +267,7 @@ def test_out_of_range_as_of(client, at):            # Review Focus #5
 - [ ] **Step 4:** `uv run pytest -q` pass.
 - [ ] **Step 5: Commit** `feat(api): plant state and overview as of a time`
 
-### Task A5: Xếp hạng search và cờ `traceable` của claim
+### Task 5 (A5): Xếp hạng search và cờ `traceable` của claim
 
 **Files:**
 - Modify: `backend/onethread/queries/repository.py` (`search`), `backend/onethread/queries/claims.py`, `frontend/src/api/types.ts` (`Claim.traceable`)
@@ -300,7 +300,7 @@ def test_claims_traceable_flag(client):
 
 ## Đợt B · Workspace store và shell
 
-### Task B1: Thao tác tab thuần (`store/tabs.ts`)
+### Task 6 (B1): Thao tác tab thuần (`store/tabs.ts`)
 
 **Files:**
 - Create: `frontend/src/store/tabs.ts`, `frontend/src/store/tabs.test.ts`
@@ -331,7 +331,7 @@ export function moveIn(g: Group, fromId: string, toId: string): Group
 - [ ] **Step 4:** Test pass.
 - [ ] **Step 5: Commit** `feat(web): pure tab-group operations`
 
-### Task B2: Viết lại store workspace (`store/demo.ts`)
+### Task 7 (B2): Viết lại store workspace (`store/demo.ts`)
 
 **Files:**
 - Modify: `frontend/src/store/demo.ts`, `frontend/src/store/demo.test.ts`, `frontend/src/lib/story.ts`, `frontend/src/lib/deepLink.ts`
@@ -408,7 +408,7 @@ Hành vi chính (đúng §3.2 của spec):
 - [ ] **Step 4:** Test của store pass. Các test component cũ **được phép đỏ** cho tới B4/B5. Ghi rõ danh sách test đỏ trong commit message.
 - [ ] **Step 5: Commit** `feat(web): workspace store with per-tab product state`
 
-### Task B3: Shell (TabBar, Workspace, Dock, Resizer, ActivityBar, Header, StatusBar, App)
+### Task 8 (B3): Shell (TabBar, Workspace, Dock, Resizer, ActivityBar, Header, StatusBar, App)
 
 **Files:**
 - Create: `frontend/src/shell/Workspace.tsx`, `frontend/src/shell/Resizer.tsx`, `frontend/src/shell/TabBar.test.tsx`, `frontend/src/shell/tabContent.tsx`
@@ -445,7 +445,7 @@ Chi tiết:
 - [ ] **Step 4:** Test của shell pass.
 - [ ] **Step 5: Commit** `feat(web): VS Code-style workspace shell`
 
-### Task B4: Chuyển thread và evidence sang state theo tab
+### Task 9 (B4): Chuyển thread và evidence sang state theo tab
 
 **Files:**
 - Create: `frontend/src/thread/ProductTabContext.ts`, `frontend/src/thread/LinkLegend.tsx`
@@ -489,7 +489,7 @@ Chi tiết:
 - [ ] **Step 4:** Các test trên pass.
 - [ ] **Step 5: Commit** `refactor(web): thread and evidence read per-tab state`
 
-### Task B5: Doc, report, agent cite, attach, các sidebar
+### Task 10 (B5): Doc, report, agent cite, attach, các sidebar
 
 **Files:**
 - Modify: `docs/DocDrawer.tsx` (đổi thành `DocBody`, export `DocTab({ id })`, bỏ drawer, scrim và focus trap), `report/ReportView.tsx` (`ReportView({ claimId })`), `agent/AgentPanel.tsx` (`CiteChip` gọi `goTo`), `agent/sources.ts` (claim = `activeProduct?.p.claimId ?? STORY_CLAIM`), `attach/AttachDialog.tsx` (target = node đang focus của product tab, hoặc `twin.selected`, hoặc null), `plant/PlantSidebar.tsx` (click gọi `goTo`; mục đang chọn = `twin.selected`), `data/DataView.tsx` (`DataSidebar` mở tab: "Documents" → main `table:docs`, "Review queue" → bottom `review`, bảng → main `table:<name>`; `DataView({ target })` render theo target), `review/ReviewQueueList.tsx` (link mở bằng `goTo`), `shell/tabContent.tsx`, `App.tsx`
@@ -514,7 +514,7 @@ Chi tiết:
 
 ## Đợt C · Twin, feed, dock, agent
 
-### Task C2: Feed ở rail trái
+### Task 11 (C2): Feed ở rail trái
 
 (Không có C1: phần type/client của mỗi endpoint nằm trong task dùng nó.)
 
@@ -560,7 +560,7 @@ Chi tiết:
 - [ ] **Step 4:** Test pass.
 - [ ] **Step 5: Commit** `feat(web): notifications & changes feed`
 
-### Task C3: Plant twin
+### Task 12 (C3): Plant twin
 
 **Files:**
 - Create: `frontend/src/plant/twinLayout.ts`, `plant/twinLayout.test.ts`, `plant/TwinView.tsx`, `plant/TwinNode.tsx`, `plant/DeptStrip.tsx`, `plant/SerialPicker.tsx`, `plant/TwinView.test.tsx`, `test/fixtures/plant.json`, `test/fixtures/plant_state.json`
@@ -607,7 +607,7 @@ Chi tiết:
 - [ ] **Step 4:** Test pass.
 - [ ] **Step 5: Commit** `feat(web): plant twin view`
 
-### Task C4: Nội dung dock (overview, nguồn dữ liệu, chi tiết feed, chart máy)
+### Task 13 (C4): Nội dung dock (overview, nguồn dữ liệu, chi tiết feed, chart máy)
 
 **Files:**
 - Create: `frontend/src/plant/PlantOverview.tsx`, `plant/DataSources.tsx`, `plant/Sparkline.tsx`, `feed/FeedDetail.tsx`, `plant/PlantOverview.test.tsx`, `feed/FeedDetail.test.tsx`, `test/fixtures/plant_overview.json`
@@ -643,7 +643,7 @@ Chi tiết:
 - [ ] **Step 4:** Test pass.
 - [ ] **Step 5: Commit** `feat(web): plant overview, data sources, feed detail, cycle bands`
 
-### Task C5: Context và giao diện của agent
+### Task 14 (C5): Context và giao diện của agent
 
 **Files:**
 - Modify: `agent/AgentPanel.tsx`, `agent/AgentPanel.test.tsx`, `store/demo.ts` (selector `agentContext(s): string`), `index.css`
@@ -660,7 +660,7 @@ Chi tiết:
 - [ ] **Step 4:** Test pass.
 - [ ] **Step 5: Commit** `feat(web): agent shows workspace context`
 
-### Task C6: Kiểm tra cuối và cập nhật kịch bản demo
+### Task 15 (C6): Kiểm tra cuối và cập nhật kịch bản demo
 
 **Files:**
 - Modify: `docs/demo/script.md` (Bước 1: feed ở rail trái thay cho ClaimsSidebar; Bước 2–3: product tab và dock; Khám phá tự do: twin, chip phòng ban, mở serial bằng `Ctrl K`), `README.md` (nếu có mô tả view cũ)
