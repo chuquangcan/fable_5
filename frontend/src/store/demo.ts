@@ -191,6 +191,14 @@ function detailTab(threadId: string, serial: string): NewTab {
   return { id: detailTabId(threadId), kind: 'thread', target: threadId, title: `Details · ${serial}` }
 }
 
+/** Open a product tab's details in the dock; when the split group already holds them, they stay there (one place per tab). */
+function withDetails(groups: Record<GroupId, Group>, threadId: string, serial: string, activate: boolean): Record<GroupId, Group> {
+  const id = detailTabId(threadId)
+  if (groups.bottom2.tabs.some((t) => t.id === id))
+    return activate ? { ...groups, bottom2: { ...groups.bottom2, active: id } } : groups
+  return { ...groups, bottom: openIn(groups.bottom, detailTab(threadId, serial), { activate }) }
+}
+
 let flashTimer: ReturnType<typeof setTimeout> | undefined
 /** Bumped per selected feed card, so only the latest card's reach is kept. */
 let reachToken = 0
@@ -202,17 +210,21 @@ const safeStorage: StateStorage = {
   removeItem: (k) => { try { localStorage.removeItem(k) } catch { /* nothing */ } },
 }
 
-type Saved = Pick<DemoState, 'groups' | 'product' | 'evidence' | 'twin' | 'dockActive' | 'layout' | 'asOf'> & { feed?: Pick<FeedState, 'read'> }
+type Saved = Pick<DemoState, 'groups' | 'product' | 'evidence' | 'twin' | 'dockActive' | 'layout'> & { feed?: Pick<FeedState, 'read'> }
 const jsonStorage = createJSONStorage<Saved>(() => safeStorage)!
 const storage: PersistStorage<Saved> = {
   getItem: (name) => { try { return jsonStorage.getItem(name) } catch { return null } },  // bad JSON → defaults
   setItem: jsonStorage.setItem,
   removeItem: jsonStorage.removeItem,
 }
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const isUsable = (p: unknown): p is Saved => {
-  const g = (p as Saved | undefined)?.groups
-  return !!g?.main?.tabs?.some((t) => t.id === 'twin') && !!g.bottom?.tabs?.some((t) => t.id === 'overview') && !!g.bottom2
-    && !!(p as Saved).layout && typeof (p as Saved).asOf === 'string'
+  if (!isObject(p)) return false
+  const { groups: g, product, evidence, dockActive, layout } = p as Saved
+  if (!g?.main?.tabs?.some((t) => t.id === 'twin') || !g.bottom?.tabs?.some((t) => t.id === 'overview') || !g.bottom2?.tabs) return false
+  if (!isObject(layout) || !isObject(product) || !isObject(evidence) || !isObject(dockActive)) return false
+  // every product tab needs its state, or it would wait for a thread forever
+  return g.main.tabs.every((t) => t.kind !== 'thread' || (isObject(product[t.id]) && typeof product[t.id].root === 'string'))
 }
 
 export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((set, get) => {
@@ -224,8 +236,7 @@ export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((se
   const showDetails = (tabId: string) => {
     const p = get().product[tabId]
     if (!p) return
-    const bottom = openIn(get().groups.bottom, detailTab(tabId, p.root))
-    setGroups(withGroup('bottom', bottom))
+    setGroups(withDetails(get().groups, tabId, p.root, true))
   }
 
   return {
@@ -280,7 +291,8 @@ export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((se
         bottom = closeIn(bottom, t.id)
         bottom2 = { tabs: [t], active: t.id }
       } else {
-        bottom = { ...bottom, tabs: [...bottom.tabs, ...bottom2.tabs] }
+        const here = new Set(bottom.tabs.map((t) => t.id))
+        bottom = { ...bottom, tabs: [...bottom.tabs, ...bottom2.tabs.filter((t) => !here.has(t.id))] }
         bottom2 = { tabs: [], active: null }
       }
       set((st) => ({ groups: { ...st.groups, bottom, bottom2 }, layout: { ...st.layout, split: on } }))
@@ -313,7 +325,7 @@ export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((se
         ? { root: serial, claimId, threadIds: cur?.threadIds ?? [], focusNodeId: null, mode: claimId ? 'fault' : 'normal', faultOrigin: null }
         : cur
       let groups = withGroup('main', openIn(s.groups.main, { id, kind: 'thread', target: serial, title: `Thread · ${serial}` }))
-      groups = withGroup('bottom', openIn(groups.bottom, detailTab(id, serial), { activate: false }), groups)
+      groups = withDetails(groups, id, serial, false)
       groups = followMain(s, groups)
       setGroups(groups, { product: { ...s.product, [id]: p }, ...(fresh ? { evidence: { ...s.evidence, [id]: 'overview' } } : {}) })
       return id
@@ -389,7 +401,7 @@ export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((se
   version: 1,
   storage,
   partialize: (s): Saved => ({
-    groups: s.groups, product: s.product, evidence: s.evidence, twin: s.twin, dockActive: s.dockActive, layout: s.layout, asOf: s.asOf,
+    groups: s.groups, product: s.product, evidence: s.evidence, twin: s.twin, dockActive: s.dockActive, layout: s.layout,
     feed: { read: s.feed.read },
   }),
   migrate: () => ({}) as Saved,  // an older shape is dropped: the defaults are a better start than a half-valid workspace
@@ -397,6 +409,7 @@ export const useDemo = create<DemoState>()(persist<DemoState, [], [], Saved>((se
     if (!isUsable(saved)) return current
     const read = Array.isArray(saved.feed?.read) ? saved.feed.read.filter((r) => typeof r === 'string') : []
     const twin = { ...current.twin, ...saved.twin, layers: { ...DEFAULT_LAYERS, ...saved.twin?.layers } }  // saves from before layers existed
-    return { ...current, ...saved, twin, feed: { ...current.feed, read } }
+    const { asOf: _clock, ...rest } = saved as Saved & { asOf?: unknown }  // older saves carried the clock; a reload starts at the demo time
+    return { ...current, ...rest, twin, feed: { ...current.feed, read } }
   },
 }))

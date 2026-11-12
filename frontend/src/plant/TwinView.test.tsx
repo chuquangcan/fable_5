@@ -115,3 +115,21 @@ test('a failing plant state shows an error with Retry instead of a blank pane', 
   await userEvent.click(await screen.findByRole('button', { name: 'Retry' }))
   expect(await screen.findByTestId('twin-M02')).toBeInTheDocument()
 })
+
+test('moving the clock keeps the twin on screen instead of reloading it', async () => {
+  render(<TwinView />)
+  await screen.findByTestId('twin-M02')
+  vi.mocked(api.getPlantState).mockImplementationOnce(() => new Promise(() => {}))
+  act(() => st().setAsOf('2026-11-03T14:00:00+07:00'))
+  expect(screen.getByTestId('twin-M02')).toBeInTheDocument()
+  expect(api.getPlantState).toHaveBeenLastCalledWith('2026-11-03T14:00:00+07:00')
+  expect(api.getPlant).toHaveBeenCalledTimes(1)
+})
+
+test('"View on thread" is disabled when no product tab holds the selected object', async () => {
+  render(<TwinView />)
+  fireEvent.click(await screen.findByTestId('twin-M02'))
+  expect(screen.getByRole('button', { name: 'View on thread' })).toBeDisabled()
+  act(() => { st().openProduct('MH20-0001'); st().setThreadIds(threadTabId('MH20-0001'), ['M02']); st().activate('main', 'twin') })
+  expect(screen.getByRole('button', { name: 'View on thread' })).toBeEnabled()
+})

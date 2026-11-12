@@ -59,6 +59,8 @@ interface Line { dept: string; id: string; x1: number; y1: number; x2: number; y
 function Canvas({ plant, state, feed }: { plant: PlantArea[]; state: PlantState; feed: FeedItem[] }) {
   const layers = useDemo((s) => s.twin.layers)
   const selected = useDemo((s) => s.twin.selected)
+  // only when some product tab's thread holds the object (spec: otherwise hide the action)
+  const onAThread = useDemo((s) => !!selected && s.groups.main.tabs.some((t) => t.kind === 'thread' && !!s.product[t.id]?.threadIds.includes(selected)))
   const dept = useDemo((s) => s.feed.dept)
   const read = useDemo((s) => s.feed.read)
   const { selectTwin, toggleLayer, viewOnThread } = useDemo.getState()
@@ -133,7 +135,7 @@ function Canvas({ plant, state, feed }: { plant: PlantArea[]; state: PlantState;
         <button className="btn" aria-label="Zoom out" onClick={() => void rf.zoomOut()}>−</button>
         <button className="btn" aria-label="Zoom in" onClick={() => void rf.zoomIn()}>+</button>
         <button className="btn" onClick={() => void rf.fitView()}>Fit to frame</button>
-        <button className="btn" disabled={!selected} onClick={() => selected && viewOnThread(selected)}>View on thread</button>
+        <button className="btn" disabled={!onAThread} title={onAThread ? undefined : 'No open product tab contains this object'} onClick={() => selected && viewOnThread(selected)}>View on thread</button>
       </div>
       <div className="twin-canvas">
         <ReactFlow
@@ -164,12 +166,15 @@ function Canvas({ plant, state, feed }: { plant: PlantArea[]; state: PlantState;
 export function TwinView() {
   const asOf = useDemo((s) => s.asOf)
   const dataVersion = useDemo((s) => s.dataVersion)
-  const data = useAsync(() => Promise.all([getPlant(), getPlantState(asOf)]), [asOf, dataVersion])
+  // keyed loads keep the last plant on screen while the clock or the data moves, so zoom, pan and pickers survive
+  const plant = useAsync(getPlant, [dataVersion], 'plant')
+  const state = useAsync(() => getPlantState(asOf), [asOf, dataVersion], 'state')
   const feed = useFeed()
-  if (data.status !== 'ok') return <Pending state={data} />
+  if (plant.status !== 'ok') return <Pending state={plant} />
+  if (state.status !== 'ok') return <Pending state={state} />
   return (
     <ReactFlowProvider>
-      <Canvas plant={data.data[0]} state={data.data[1]} feed={feed.status === 'ok' ? feed.data : []} />
+      <Canvas plant={plant.data} state={state.data} feed={feed.status === 'ok' ? feed.data : []} />
     </ReactFlowProvider>
   )
 }

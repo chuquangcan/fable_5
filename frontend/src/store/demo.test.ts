@@ -261,3 +261,42 @@ test('agent context: the plant, a selected object, a feed card, a product tab wi
   s().activate('main', 'twin')
   expect(agentContext(s())).toBe('Feed · AL-0001')
 })
+
+test('details split into the second dock group stay there: selecting a node and joining never duplicates a tab', () => {
+  s().openProduct('MH20-0457')
+  s().splitDock(true)
+  expect(ids('bottom2')).toEqual([detailTabId(T2)])
+  s().selectNode(T2, 'M02')
+  s().openProduct('MH20-0457')
+  expect(ids('bottom')).not.toContain(detailTabId(T2))
+  expect(s().groups.bottom2.active).toBe(detailTabId(T2))
+  s().splitDock(false)
+  const all = ids('bottom')
+  expect(all.filter((id) => id === detailTabId(T2))).toHaveLength(1)
+  expect(new Set(all).size).toBe(all.length)
+})
+
+test('the demo clock is not saved: a reload opens at the default as-of', async () => {
+  s().setAsOf('2027-02-10T00:00:00+07:00')
+  s().openProduct('MH20-0457')
+  const saved = JSON.parse(localStorage.getItem('onethread.workspace') ?? '{}')
+  expect(saved.state.asOf).toBeUndefined()
+  saved.state.asOf = '2027-02-10T00:00:00+07:00'  // a save from before this change
+  localStorage.setItem('onethread.workspace', JSON.stringify(saved))
+  s().setAsOf(DEFAULT_AS_OF)
+  await useDemo.persist.rehydrate()
+  expect(s().asOf).toBe(DEFAULT_AS_OF)
+  expect(s().groups.main.active).toBe(T2)
+})
+
+test('a saved workspace with broken product state falls back to the default one', async () => {  // Review Focus #1
+  s().openProduct('MH20-0457')
+  const good = JSON.parse(localStorage.getItem('onethread.workspace') ?? '{}')
+  for (const product of [null, {}]) {
+    s().reset()
+    localStorage.setItem('onethread.workspace', JSON.stringify({ ...good, state: { ...good.state, product } }))
+    await useDemo.persist.rehydrate()
+    expect(ids('main')).toEqual(['twin'])
+    expect(s().product).toEqual({})
+  }
+})

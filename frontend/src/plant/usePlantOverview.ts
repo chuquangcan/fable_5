@@ -6,7 +6,7 @@ import { useDemo } from '../store/demo'
 export function usePlantOverview() {
   const asOf = useDemo((s) => s.asOf)
   const dataVersion = useDemo((s) => s.dataVersion)
-  return useAsync(() => getPlantOverview(asOf), [asOf, dataVersion])
+  return useAsync(() => getPlantOverview(asOf), [asOf, dataVersion], 'overview')  // keep the tables on screen while reloading
 }
 
 export const secs = (v: number | null) => (v == null ? '—' : `${Math.round(v * 10) / 10} s`)
