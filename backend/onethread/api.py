@@ -14,8 +14,8 @@ from onethread.agent.replay import default_fixture_path, load_fixture
 from onethread.agent.stream import agent_event_stream
 from onethread.config import settings
 from onethread.db import connect
-from onethread.queries import (analysis, claims, docs, events, fault, feed, impact, links, metrics, plant, repository,
-                               summary, thread_flow, trace)
+from onethread.queries import (analysis, claims, docs, events, fault, feed, impact, links, metrics, plant, plant_state,
+                               repository, summary, thread_flow, trace)
 from onethread.queries.common import NotFound
 from onethread.report import ReportDraft, build_report_draft
 
@@ -186,6 +186,16 @@ def api_plant(conn=Conn) -> list[plant.Area]:
 @app.get("/api/feed")
 def api_feed(conn=Conn) -> list[feed.FeedItem]:
     return feed.list_feed(conn)
+
+
+@app.get("/api/plant/state")
+def api_plant_state(at: datetime | None = None, conn=Conn) -> plant_state.PlantState:
+    return plant_state.plant_state(conn, at or feed.DEFAULT_AS_OF)
+
+
+@app.get("/api/plant/overview")
+def api_plant_overview(at: datetime | None = None, conn=Conn) -> plant_state.PlantOverview:
+    return plant_state.plant_overview(conn, at or feed.DEFAULT_AS_OF)
 
 
 @app.get("/api/db/tables")
